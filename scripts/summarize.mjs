@@ -11,7 +11,7 @@
  * The target name is derived from the filename (e.g. "dynoxide" from "dynoxide.json").
  */
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { basename, join } from 'node:path'
 
 const files = process.argv.slice(2)
@@ -37,6 +37,16 @@ const rows = []
 for (const file of files) {
   const target = basename(file, '.json').replace(/-/g, ' ')
   const raw = JSON.parse(readFileSync(file, 'utf8'))
+
+  // Run date comes from the Vitest run itself. Target version comes from an
+  // optional sibling `<target>.version` file, which CI writes for targets that
+  // have a meaningful release identifier (e.g. ExtendDB's release tag).
+  const runDate = raw.startTime
+    ? new Date(raw.startTime).toISOString().slice(0, 10)
+    : '-'
+  const versionFile = file.replace(/\.json$/, '.version')
+  const version =
+    (existsSync(versionFile) && readFileSync(versionFile, 'utf8').trim()) || '-'
 
   const tests = raw.testResults?.flatMap(tr =>
     tr.assertionResults?.map(ar => ({
@@ -78,12 +88,14 @@ for (const file of files) {
     failed: summary.tier1.f + summary.tier2.f + summary.tier3.f,
     skipped: summary.tier1.s + summary.tier2.s + summary.tier3.s,
     count: allTotal,
+    version,
+    runDate,
   })
 }
 
 // Print markdown table
-console.log('| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip |')
-console.log('|--------|--------|--------|--------|-------|------|------|------|')
+console.log('| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Run date |')
+console.log('|--------|--------|--------|--------|-------|------|------|------|---------|----------|')
 for (const r of rows) {
-  console.log(`| ${r.target} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.total} | ${r.passed} | ${r.failed} | ${r.skipped} |`)
+  console.log(`| ${r.target} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.total} | ${r.passed} | ${r.failed} | ${r.skipped} | ${r.version} | ${r.runDate} |`)
 }
