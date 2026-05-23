@@ -310,4 +310,4 @@ All test data must be synthetic. Don't use real names, emails, addresses, or any
 
 ## Licence
 
-MIT
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).

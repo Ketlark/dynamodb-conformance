@@ -1,6 +1,6 @@
 {
   "name": "dynamodb-conformance",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "Independent conformance test suite for DynamoDB-compatible endpoints",
   "type": "module",
   "scripts": {
@@ -25,5 +25,5 @@
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   },
-  "license": "MIT"
+  "license": "Apache-2.0"
 }

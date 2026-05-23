@@ -91,6 +91,10 @@ AI tools are welcome. If an AI tool drafted or materially shaped the
 change, say so in the PR description. A single line is enough. This
 helps calibrate review; it is not a gate.
 
+## Licensing
+
+The conformance suite is licensed under the Apache License 2.0. By submitting a contribution, you agree that your contribution is licensed under the same terms.
+
 ## Where to ask
 
 GitHub Issues:

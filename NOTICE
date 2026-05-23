@@ -1,0 +1,13 @@
+DynamoDB Conformance Suite
+A conformance test suite for AWS DynamoDB-compatible implementations.
+
+Copyright 2026 Martin Hicks and the dynamodb-conformance contributors
+
+Portions were previously distributed under the MIT License and are
+incorporated here under the Apache License 2.0 by permission of that
+license.
+
+DynamoDB is a trademark of Amazon.com, Inc. or its affiliates. This software
+is an independent project and is not affiliated with, endorsed by, or
+sponsored by Amazon. The license does not grant permission to use those
+trade names, trademarks, service marks, or product names.
