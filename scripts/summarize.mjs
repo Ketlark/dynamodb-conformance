@@ -1,28 +1,38 @@
 #!/usr/bin/env node
 
 /**
- * Post-process Vitest JSON output files into a Markdown comparison table.
+ * Post-process Vitest JSON output files into the Markdown comparison table.
  *
  * Usage:
- *   node scripts/summarize.mjs results/dynamodb.json results/dynoxide.json ...
- *   node scripts/summarize.mjs results/*.json
+ *   node scripts/summarize.mjs                 # all results/*.json -> stdout
+ *   node scripts/summarize.mjs results/*.json  # explicit files     -> stdout
+ *   node scripts/summarize.mjs --write         # splice into README.md markers
  *
- * Each JSON file should be a Vitest --reporter=json output.
- * The target name is derived from the filename (e.g. "dynoxide" from "dynoxide.json").
+ * Each JSON file is a Vitest --reporter=json output; the target slug is the
+ * filename (e.g. "dynoxide" from "dynoxide.json"). Run date comes from the
+ * Vitest run; target version from an optional sibling "<slug>.version" file.
+ *
+ * The real-DynamoDB row is synthesised, not read from a file: real DynamoDB is
+ * the ground truth, so it is 100% by definition across the full suite. This
+ * keeps the row present and correct even on runs that don't exercise AWS.
  */
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 
-const files = process.argv.slice(2)
+const argv = process.argv.slice(2)
+const write = argv.includes('--write')
+const files = argv.filter((a) => !a.startsWith('--'))
+
 if (files.length === 0) {
-  // Default: read all JSON files from results/
   try {
-    const dir = 'results'
-    const entries = readdirSync(dir).filter(f => f.endsWith('.json'))
-    files.push(...entries.map(f => join(dir, f)))
+    files.push(
+      ...readdirSync('results')
+        .filter((f) => f.endsWith('.json'))
+        .map((f) => join('results', f)),
+    )
   } catch {
-    console.error('Usage: node scripts/summarize.mjs [results/*.json]')
+    console.error('Usage: node scripts/summarize.mjs [--write] [results/*.json]')
     process.exit(1)
   }
 }
@@ -32,15 +42,28 @@ if (files.length === 0) {
   process.exit(1)
 }
 
+// Display names for the published table. Unlisted slugs fall back to a
+// hyphen-stripped form.
+const DISPLAY = {
+  dynamodb: 'DynamoDB',
+  'dynamodb-local': 'DynamoDB Local',
+  dynoxide: 'Dynoxide',
+  dynalite: 'Dynalite',
+  localstack: 'LocalStack',
+  ministack: 'Ministack',
+  floci: 'Floci',
+  extenddb: 'ExtendDB',
+}
+const display = (slug) => DISPLAY[slug] ?? slug.replace(/-/g, ' ')
+
 const rows = []
 
 for (const file of files) {
-  const target = basename(file, '.json').replace(/-/g, ' ')
+  const slug = basename(file, '.json')
+  if (slug === 'dynamodb') continue // ground truth is synthesised below
+
   const raw = JSON.parse(readFileSync(file, 'utf8'))
 
-  // Run date comes from the Vitest run itself. Target version comes from an
-  // optional sibling `<target>.version` file, which CI writes for targets that
-  // have a meaningful release identifier (e.g. ExtendDB's release tag).
   const runDate = raw.startTime
     ? new Date(raw.startTime).toISOString().slice(0, 10)
     : '-'
@@ -48,13 +71,10 @@ for (const file of files) {
   const version =
     (existsSync(versionFile) && readFileSync(versionFile, 'utf8').trim()) || '-'
 
-  const tests = raw.testResults?.flatMap(tr =>
-    tr.assertionResults?.map(ar => ({
-      file: tr.name,
-      status: ar.status, // 'passed' | 'failed' | 'pending'
-      fullName: ar.fullName,
-    })) ?? []
-  ) ?? []
+  const tests =
+    raw.testResults?.flatMap(
+      (tr) => tr.assertionResults?.map((ar) => ({ file: tr.name, status: ar.status })) ?? [],
+    ) ?? []
 
   const tier = (filePath) => {
     if (filePath.includes('/tier1/')) return 'tier1'
@@ -64,7 +84,6 @@ for (const file of files) {
   }
 
   const summary = { tier1: { p: 0, f: 0, s: 0 }, tier2: { p: 0, f: 0, s: 0 }, tier3: { p: 0, f: 0, s: 0 } }
-
   for (const t of tests) {
     const tierKey = tier(t.file)
     if (!(tierKey in summary)) continue
@@ -73,13 +92,13 @@ for (const file of files) {
     else summary[tierKey].s++
   }
 
-  const pct = (p, total) => total === 0 ? '-' : `${((p / total) * 100).toFixed(1)}%`
   const total = (s) => s.p + s.f + s.s
+  const pct = (p, t) => (t === 0 ? '-' : `${((p / t) * 100).toFixed(1)}%`)
   const allP = summary.tier1.p + summary.tier2.p + summary.tier3.p
   const allTotal = total(summary.tier1) + total(summary.tier2) + total(summary.tier3)
 
   rows.push({
-    target,
+    target: display(slug),
     tier1: pct(summary.tier1.p, total(summary.tier1)),
     tier2: pct(summary.tier2.p, total(summary.tier2)),
     tier3: pct(summary.tier3.p, total(summary.tier3)),
@@ -93,9 +112,50 @@ for (const file of files) {
   })
 }
 
-// Print markdown table
-console.log('| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Run date |')
-console.log('|--------|--------|--------|--------|-------|------|------|------|---------|----------|')
-for (const r of rows) {
-  console.log(`| ${r.target} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.total} | ${r.passed} | ${r.failed} | ${r.skipped} | ${r.version} | ${r.runDate} |`)
+// Suite size: the largest test count seen, i.e. a full-suite run.
+const suiteSize = Math.max(0, ...rows.map((r) => r.count))
+
+// Sort emulators by total descending (`-` last), then by name.
+const num = (t) => (t === '-' ? -1 : parseFloat(t))
+rows.sort((a, b) => num(b.total) - num(a.total) || a.target.localeCompare(b.target))
+
+const groundTruth = {
+  target: 'DynamoDB',
+  tier1: '100%',
+  tier2: '100%',
+  tier3: '100%',
+  total: '100%',
+  passed: suiteSize,
+  failed: 0,
+  skipped: 0,
+  version: 'live (AWS)',
+  runDate: '-',
+}
+
+const ordered = [groundTruth, ...rows]
+const fmt = (r) =>
+  `| ${r.target} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.total} | ${r.passed} | ${r.failed} | ${r.skipped} | ${r.version} | ${r.runDate} |`
+
+const table = [
+  '| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Run date |',
+  '|--------|--------|--------|--------|-------|------|------|------|---------|----------|',
+  ...ordered.map(fmt),
+].join('\n')
+
+if (write) {
+  const path = 'README.md'
+  const start = '<!-- results:start -->'
+  const end = '<!-- results:end -->'
+  const md = readFileSync(path, 'utf8')
+  const s = md.indexOf(start)
+  const e = md.indexOf(end)
+  if (s === -1 || e === -1) {
+    console.error(`Could not find ${start} / ${end} markers in ${path}`)
+    process.exit(1)
+  }
+  const updated = `${md.slice(0, s + start.length)}\n${table}\n${md.slice(e)}`
+  writeFileSync(path, updated)
+  console.error(`Updated the results table in ${path}.`)
+} else {
+  console.log(table)
 }

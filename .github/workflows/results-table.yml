@@ -1,0 +1,90 @@
+name: Update Results Table
+
+# Regenerate the README results table from a conformance run's artifacts and
+# commit it back. Runs automatically when a Conformance Tests run finishes on
+# main, and on demand from the Actions tab.
+on:
+  workflow_run:
+    workflows: ["Conformance Tests"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Conformance run to pull results from (blank = latest completed)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  actions: read
+
+# Serialise table commits so a manual run and an auto run can't race the push.
+concurrency:
+  group: results-table
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    # Manual runs always proceed; auto runs only for successful main runs (skip
+    # PR conformance runs, which must never write to main).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve conformance run
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RID="${{ github.event.inputs.run_id }}"
+          [ -z "$RID" ] && RID="${{ github.event.workflow_run.id }}"
+          [ -z "$RID" ] && RID=$(gh run list --workflow conformance.yml --status completed -L 1 --json databaseId --jq '.[0].databaseId')
+          if [ -z "$RID" ]; then
+            echo "No completed Conformance Tests run found." >&2
+            exit 1
+          fi
+          echo "id=$RID" >> "$GITHUB_OUTPUT"
+          echo "Pulling results from conformance run $RID"
+
+      - name: Overlay result artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "${{ steps.run.outputs.id }}" --pattern 'results-*' --dir /tmp/artifacts
+          # Each results-<target> artifact carries that target's fresh files
+          # (plus stale copies of the others), so take only each target's own.
+          shopt -s nullglob
+          for d in /tmp/artifacts/results-*/; do
+            target=$(basename "$d"); target=${target#results-}
+            for f in "$d$target.json" "$d$target.version"; do
+              [ -f "$f" ] && cp -f "$f" results/
+            done
+          done
+
+      - name: Regenerate results table
+        run: node scripts/summarize.mjs --write
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results README.md
+          if git diff --staged --quiet; then
+            echo "Results table already up to date."
+          else
+            git commit -m "chore: update results table [skip ci]"
+            git pull --rebase
+            git push
+          fi
