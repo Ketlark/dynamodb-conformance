@@ -137,8 +137,8 @@ const fmt = (r) =>
   `| ${r.target} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.total} | ${r.passed} | ${r.failed} | ${r.skipped} | ${r.version} | ${r.runDate} |`
 
 const table = [
-  '| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Run date |',
-  '|--------|--------|--------|--------|-------|------|------|------|---------|----------|',
+  '| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |',
+  '|--------|--------|--------|--------|-------|------|------|------|---------|------|',
   ...ordered.map(fmt),
 ].join('\n')
 

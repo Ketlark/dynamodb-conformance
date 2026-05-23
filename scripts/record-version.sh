@@ -27,7 +27,10 @@ case "$target" in
   extenddb)   ver="${EXTENDDB_REF:-}" ;;
   dynoxide)   ver=$(npm view dynoxide version 2>/dev/null) ;;
   dynalite)   ver=$(npm view dynalite version 2>/dev/null) ;;
-  localstack) ver=$(curl -fsS http://localhost:4566/_localstack/info 2>/dev/null | jq -r '.version // empty') ;;
+  localstack)
+    ver=$(curl -fsS http://localhost:4566/_localstack/info 2>/dev/null | jq -r '.version // empty')
+    ver=${ver%%:*} # drop any :git-hash suffix
+    ;;
 esac
 
 # Container targets (and a fallback for any image-backed target): the resolved
@@ -35,7 +38,8 @@ esac
 if [ -z "$ver" ] && [ -n "${TARGET_IMAGE:-}" ]; then
   digest=$(docker inspect --format '{{ if .RepoDigests }}{{ index .RepoDigests 0 }}{{ end }}' "$TARGET_IMAGE" 2>/dev/null)
   if [ -n "$digest" ]; then
-    ver="${TARGET_IMAGE##*:} ($(printf '%s' "${digest##*sha256:}" | cut -c1-12))"
+    ver="${digest##*sha256:}"
+    ver="${ver:0:12}"
   fi
 fi
 
