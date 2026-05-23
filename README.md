@@ -42,12 +42,6 @@ and Ministack; transactions on Dynalite). The total percentage treats
 skips as conformance gaps, so they pull the score down the same way a
 fail would.
 
-ExtendDB is not in the table above yet. It is tested by CI against its
-latest tagged release rather than `main`: it ships no binaries, so CI builds
-the release from source, and pinning to releases keeps the published number
-reproducible instead of tracking a moving (and possibly broken) `main`. Its
-row lands with the first release run.
-
 Regenerate with `npm run results:table`. The run date comes from each result
 file; the version comes from a `results/<target>.version` sidecar that every CI
 job writes — the npm version, container image digest, release tag, or `live`
