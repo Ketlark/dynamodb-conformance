@@ -28,20 +28,19 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 <!-- results:start -->
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|------|------|------|---------|------|
-| DynamoDB | 100% | 100% | 100% | 100% | 601 | 0 | 0 | live (AWS) | - |
-| Dynoxide | 100.0% | 100.0% | 100.0% | 100.0% | 601 | 0 | 0 | 0.9.13 | 2026-05-23 |
-| Floci | 99.7% | 98.1% | 100.0% | 99.5% | 598 | 3 | 0 | efa6922b024a | 2026-05-23 |
-| ExtendDB | 100.0% | 75.7% | 100.0% | 95.8% | 576 | 0 | 25 | v0.1.0 | 2026-05-23 |
-| LocalStack | 99.0% | 96.1% | 69.7% | 89.0% | 535 | 66 | 0 | 2026.5.0 | 2026-05-23 |
-| DynamoDB Local | 99.0% | 91.3% | 69.7% | 88.2% | 530 | 71 | 0 | d89f8fcc6b1a | 2026-05-23 |
-| Dynalite | 98.3% | 9.7% | 82.6% | 78.0% | 469 | 89 | 43 | 4.0.0 | 2026-05-23 |
-| Ministack | 85.8% | 76.7% | 36.9% | 68.4% | 411 | 190 | 0 | 89d602080662 | 2026-05-23 |
+| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 601 | 0 | 0 | live (AWS) | 2026-05-23 |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 100.0% | 100.0% | 100.0% | 601 | 0 | 0 | 0.9.13 | 2026-05-23 |
+| [Floci](https://github.com/floci-io/floci) | 99.7% | 98.1% | 100.0% | 99.5% | 598 | 3 | 0 | efa6922b024a | 2026-05-23 |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) | 100.0% | 75.7% | 100.0% | 95.8% | 576 | 0 | 25 | v0.1.0 | 2026-05-23 |
+| [LocalStack](https://github.com/localstack/localstack) | 99.0% | 96.1% | 69.7% | 89.0% | 535 | 66 | 0 | 2026.5.0 | 2026-05-23 |
+| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 99.0% | 91.3% | 69.7% | 88.2% | 530 | 71 | 0 | d89f8fcc6b1a | 2026-05-23 |
+| [Dynalite](https://github.com/architect/dynalite) | 98.3% | 9.7% | 82.6% | 78.0% | 469 | 89 | 43 | 4.0.0 | 2026-05-23 |
+| [Ministack](https://github.com/ministackorg/ministack) | 85.8% | 76.7% | 36.9% | 68.4% | 411 | 190 | 0 | 89d602080662 | 2026-05-23 |
 <!-- results:end -->
 
 DynamoDB is the ground truth. Skipped tests are deliberate - each test
 file probes for feature support in `beforeAll` and skips itself if the
-target doesn't implement that operation (PartiQL on Dynalite, Floci,
-and Ministack; transactions on Dynalite). The total percentage treats
+target doesn't implement that operation. The total percentage treats
 skips as conformance gaps, so they pull the score down the same way a
 fail would.
 

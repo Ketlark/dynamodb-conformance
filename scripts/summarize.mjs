@@ -56,17 +56,39 @@ const DISPLAY = {
 }
 const display = (slug) => DISPLAY[slug] ?? slug.replace(/-/g, ' ')
 
+// Project home for each target, linked from its name in the table. The two AWS
+// targets have no source repo, so they point at their AWS pages.
+const REPO = {
+  dynamodb: 'https://aws.amazon.com/dynamodb/',
+  'dynamodb-local':
+    'https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html',
+  dynoxide: 'https://github.com/nubo-db/dynoxide',
+  dynalite: 'https://github.com/architect/dynalite',
+  localstack: 'https://github.com/localstack/localstack',
+  ministack: 'https://github.com/ministackorg/ministack',
+  floci: 'https://github.com/floci-io/floci',
+  extenddb: 'https://github.com/ExtendDB/extenddb',
+}
+const label = (slug) => (REPO[slug] ? `[${display(slug)}](${REPO[slug]})` : display(slug))
+
 const rows = []
+let groundTruthDate = '-'
 
 for (const file of files) {
   const slug = basename(file, '.json')
-  if (slug === 'dynamodb') continue // ground truth is synthesised below
-
   const raw = JSON.parse(readFileSync(file, 'utf8'))
 
   const runDate = raw.startTime
     ? new Date(raw.startTime).toISOString().slice(0, 10)
     : '-'
+
+  if (slug === 'dynamodb') {
+    // Scores are synthesised below, but keep the date of the last successful
+    // real-AWS run so the ground-truth row isn't dateless.
+    groundTruthDate = runDate
+    continue
+  }
+
   const versionFile = file.replace(/\.json$/, '.version')
   const version =
     (existsSync(versionFile) && readFileSync(versionFile, 'utf8').trim()) || '-'
@@ -98,7 +120,7 @@ for (const file of files) {
   const allTotal = total(summary.tier1) + total(summary.tier2) + total(summary.tier3)
 
   rows.push({
-    target: display(slug),
+    target: label(slug),
     tier1: pct(summary.tier1.p, total(summary.tier1)),
     tier2: pct(summary.tier2.p, total(summary.tier2)),
     tier3: pct(summary.tier3.p, total(summary.tier3)),
@@ -120,7 +142,7 @@ const num = (t) => (t === '-' ? -1 : parseFloat(t))
 rows.sort((a, b) => num(b.total) - num(a.total) || a.target.localeCompare(b.target))
 
 const groundTruth = {
-  target: 'DynamoDB',
+  target: label('dynamodb'),
   tier1: '100%',
   tier2: '100%',
   tier3: '100%',
@@ -129,7 +151,7 @@ const groundTruth = {
   failed: 0,
   skipped: 0,
   version: 'live (AWS)',
-  runDate: '-',
+  runDate: groundTruthDate,
 }
 
 const ordered = [groundTruth, ...rows]
