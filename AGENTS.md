@@ -9,8 +9,8 @@ others) contributing to this suite. Humans are welcome to read it too;
 An independent conformance test suite for DynamoDB-compatible
 endpoints. Tests are first run against real AWS DynamoDB to establish
 ground truth, then against any target (DynamoDB Local, Dynoxide,
-Dynalite, LocalStack, or anything else implementing the DynamoDB HTTP
-API). A target passes only if it returns the same answer real
+Dynalite, LocalStack, ExtendDB, or anything else implementing the
+DynamoDB HTTP API). A target passes only if it returns the same answer real
 DynamoDB does.
 
 ## Ground rules for contributions
@@ -89,7 +89,7 @@ Before opening a PR that adds or modifies a test:
    accelerates maintainer review.
 
 Regenerating the published results table across all tracked targets
-(DynamoDB, Dynoxide, DynamoDB Local, Dynalite, LocalStack) is a
+(DynamoDB, Dynoxide, DynamoDB Local, Dynalite, LocalStack, ExtendDB) is a
 maintainer task, not a contributor requirement. Do not hold a PR for
 it.
 

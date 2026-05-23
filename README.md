@@ -1,6 +1,6 @@
 # DynamoDB Conformance Suite
 
-An independent test suite that validates any DynamoDB-compatible endpoint against real DynamoDB behaviour. It works against DynamoDB, DynamoDB Local, Dynoxide, Dynalite, LocalStack, Floci, Ministack, or anything else that implements the DynamoDB HTTP API.
+An independent test suite that validates any DynamoDB-compatible endpoint against real DynamoDB behaviour. It works against DynamoDB, DynamoDB Local, Dynoxide, Dynalite, LocalStack, ExtendDB, Floci, Ministack, or anything else that implements the DynamoDB HTTP API.
 
 ## Why this exists
 
@@ -25,15 +25,15 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 
 ## Results
 
-| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip |
-|--------|--------|--------|--------|-------|------|------|------|
-| DynamoDB | 100% | 100% | 100% | 100% | 601 | 0 | 0 |
-| Dynoxide | 100.0% | 100.0% | 100.0% | 100.0% | 601 | 0 | 0 |
-| LocalStack | 99.0% | 96.1% | 69.7% | 89.0% | 535 | 66 | 0 |
-| DynamoDB Local | 99.0% | 91.3% | 69.7% | 88.2% | 530 | 71 | 0 |
-| Dynalite | 98.3% | 9.7% | 82.6% | 78.0% | 469 | 89 | 43 |
-| Ministack | 85.1% | 58.3% | 23.6% | 60.6% | 364 | 219 | 18 |
-| Floci | 78.2% | 64.1% | 25.6% | 58.7% | 353 | 223 | 25 |
+| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Run date |
+|--------|--------|--------|--------|-------|------|------|------|---------|----------|
+| DynamoDB | 100% | 100% | 100% | 100% | 601 | 0 | 0 | live | 2026-04-27 |
+| Dynoxide | 100.0% | 100.0% | 100.0% | 100.0% | 601 | 0 | 0 | - | 2026-04-27 |
+| LocalStack | 99.0% | 96.1% | 69.7% | 89.0% | 535 | 66 | 0 | - | 2026-04-27 |
+| DynamoDB Local | 99.0% | 91.3% | 69.7% | 88.2% | 530 | 71 | 0 | - | 2026-04-27 |
+| Dynalite | 98.3% | 9.7% | 82.6% | 78.0% | 469 | 89 | 43 | - | 2026-04-27 |
+| Ministack | 85.1% | 58.3% | 23.6% | 60.6% | 364 | 219 | 18 | - | 2026-04-27 |
+| Floci | 78.2% | 64.1% | 25.6% | 58.7% | 353 | 223 | 25 | - | 2026-04-27 |
 
 DynamoDB is the ground truth. Skipped tests are deliberate - each test
 file probes for feature support in `beforeAll` and skips itself if the
@@ -42,7 +42,16 @@ and Ministack; transactions on Dynalite). The total percentage treats
 skips as conformance gaps, so they pull the score down the same way a
 fail would.
 
-Regenerate with `npm run results:table`.
+ExtendDB is not in the table above yet. It is tested by CI against its
+latest tagged release rather than `main`: it ships no binaries, so CI builds
+the release from source, and pinning to releases keeps the published number
+reproducible instead of tracking a moving (and possibly broken) `main`. Its
+row lands with the first release run.
+
+Regenerate with `npm run results:table`. The run date comes from each result
+file; the version comes from a `results/<target>.version` sidecar that every CI
+job writes — the npm version, container image digest, release tag, or `live`
+for real AWS. A `-` marks a run captured before version recording was added.
 
 ## Tiers
 
@@ -117,6 +126,32 @@ docker run -d --name floci -p 4566:4566 floci/floci:latest
 DYNAMODB_ENDPOINT=http://localhost:4566 npm test
 docker stop floci && docker rm floci
 ```
+
+### ExtendDB
+
+ExtendDB is heavier than the other local targets: it builds from source
+(Rust), stores data in PostgreSQL 14+, mandates TLS, and verifies SigV4
+against a local IAM store. `scripts/run-extenddb.sh` automates the whole
+bring-up (build, init, a `dynamodb:*` IAM user, access key, serve) against a
+PostgreSQL instance, and the CI job uses it. To wire it up by hand instead,
+build ExtendDB, run `extenddb init`, create an IAM user with a `dynamodb:*`
+policy plus an access key (ExtendDB getting-started guide, "Post-init
+workflow"), then start it and point the suite at it:
+
+```bash
+./target/release/extenddb serve --config extenddb.toml   # https://127.0.0.1:8000
+
+# The JS SDK ignores AWS_CA_BUNDLE; trust the self-signed cert via NODE_EXTRA_CA_CERTS.
+export NODE_EXTRA_CA_CERTS=~/.extenddb/tls/cert.pem
+export AWS_ACCESS_KEY_ID=<access-key-id>        # a real key — ExtendDB verifies the signature
+export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+export AWS_REGION=us-east-1
+export DYNAMODB_ENDPOINT=https://127.0.0.1:8000
+CONFORMANCE_TARGET=extenddb npm test            # writes results/extenddb.json
+```
+
+Use `127.0.0.1` or `localhost` (both are in the cert's SANs). ExtendDB does
+not implement PartiQL, so those Tier 2 tests skip.
 
 ### Real DynamoDB
 
@@ -224,6 +259,13 @@ You'd need a raw HTTP test layer using `fetch()` with `aws4` signing for those. 
 2. Run: `DYNAMODB_ENDPOINT=http://localhost:<port> npx vitest run --reporter=json --outputFile=results/<target>.json`
 3. Generate the table: `npm run results:table`
 4. Submit a PR with the results JSON
+
+If the target speaks HTTPS only or verifies request signatures (ExtendDB is
+the first such target), two extra steps apply: trust its certificate with
+`NODE_EXTRA_CA_CERTS=/path/to/cert.pem` (the JS SDK does **not** read
+`AWS_CA_BUNDLE`), and pass a real `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
+whose policy allows the operations the suite exercises. Before committing the
+results JSON, grep it for your key to be sure no credential leaked into it.
 
 ### Test data
 

@@ -7,8 +7,13 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      extenddb_ref:
+        description: "ExtendDB git ref to build (blank = latest release)"
+        required: false
+        default: ""
   repository_dispatch:
-    types: [dynoxide-release]
+    types: [dynoxide-release, extenddb-release]
 
 permissions:
   contents: read
@@ -63,6 +68,10 @@ jobs:
           tr '\t' '\n' | \
           xargs -P4 -I{} aws dynamodb delete-table --table-name {} 2>/dev/null || true
 
+      - name: Record target version
+        if: always()
+        run: scripts/record-version.sh dynamodb
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
@@ -98,6 +107,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
           AWS_REGION: us-east-1
         run: npm test
+
+      - name: Record target version
+        if: always()
+        env:
+          TARGET_IMAGE: amazon/dynamodb-local:latest
+        run: scripts/record-version.sh dynamodb-local
 
       - name: Upload results
         if: always()
@@ -141,6 +156,12 @@ jobs:
           AWS_REGION: us-east-1
         run: npm test
 
+      - name: Record target version
+        if: always()
+        env:
+          TARGET_IMAGE: localstack/localstack:latest
+        run: scripts/record-version.sh localstack
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
@@ -176,6 +197,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
           AWS_REGION: us-east-1
         run: npm test
+
+      - name: Record target version
+        if: always()
+        run: scripts/record-version.sh dynoxide
 
       - name: Upload results
         if: always()
@@ -213,6 +238,12 @@ jobs:
           AWS_REGION: us-east-1
         run: npm test
 
+      - name: Record target version
+        if: always()
+        env:
+          TARGET_IMAGE: floci/floci:latest
+        run: scripts/record-version.sh floci
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
@@ -248,6 +279,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: fakeSecretAccessKey
           AWS_REGION: us-east-1
         run: npm test
+
+      - name: Record target version
+        if: always()
+        env:
+          TARGET_IMAGE: ministackorg/ministack:latest
+        run: scripts/record-version.sh ministack
 
       - name: Upload results
         if: always()
@@ -285,9 +322,97 @@ jobs:
           AWS_REGION: us-east-1
         run: npm test
 
+      - name: Record target version
+        if: always()
+        run: scripts/record-version.sh dynalite
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: results-dynalite
+          path: results/
+
+  test-extenddb:
+    name: ExtendDB
+    # ExtendDB ships no binaries and `main` is a moving target, so CI builds its
+    # latest tagged *release* from source (override via the workflow_dispatch
+    # input). The Rust build makes this the heaviest job, so it skips PRs and
+    # runs on push, the weekly schedule, manual dispatch, and ExtendDB releases.
+    if: github.event_name != 'pull_request'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve ExtendDB ref (latest release unless overridden)
+        id: ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REF='${{ github.event.inputs.extenddb_ref }}'
+          if [ -z "$REF" ]; then
+            REF=$(gh release view -R ExtendDB/extenddb --json tagName --jq .tagName)
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "Building ExtendDB at $REF"
+
+      - name: Checkout ExtendDB
+        uses: actions/checkout@v4
+        with:
+          repository: ExtendDB/extenddb
+          ref: ${{ steps.ref.outputs.ref }}
+          path: extenddb
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: extenddb
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build and start ExtendDB, mint conformance credentials
+        env:
+          EXTENDDB_DIR: ${{ github.workspace }}/extenddb
+          PGHOST: 127.0.0.1
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: ./scripts/run-extenddb.sh
+
+      - name: Run conformance suite
+        continue-on-error: true # ExtendDB has known gaps (e.g. PartiQL)
+        env:
+          CONFORMANCE_TARGET: extenddb
+        run: npm test
+
+      - name: Record target version
+        if: always()
+        env:
+          EXTENDDB_REF: ${{ steps.ref.outputs.ref }}
+        run: scripts/record-version.sh extenddb
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-extenddb
           path: results/
