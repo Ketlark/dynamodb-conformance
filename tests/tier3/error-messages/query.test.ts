@@ -5,6 +5,7 @@ import {
 import { ddb } from '../../../src/client.js'
 import {
   compositeTableDef,
+  hashTableDef,
 } from '../../../src/helpers.js'
 
 describe('Query — exact error messages', () => {
@@ -164,6 +165,47 @@ describe('Query — exact error messages', () => {
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toBe(
         'Invalid FilterExpression: An expression attribute name used in the document path is not defined; attribute name: #missing',
+      )
+    }
+  })
+
+  it('redundant parentheses in KeyConditionExpression: full error string', async () => {
+    try {
+      await ddb.send(
+        new QueryCommand({
+          TableName: hashTableDef.name,
+          KeyConditionExpression: '((pk = :v))',
+          ExpressionAttributeValues: { ':v': { S: 'val' } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid KeyConditionExpression: The expression has redundant parentheses;',
+      )
+    }
+  })
+
+  // Query and Scan return different messages for the same malformed key: Query
+  // gives this short form, Scan gives a longer one (see scan.test.ts).
+  it('malformed ExclusiveStartKey: short invalid-starting-key error', async () => {
+    try {
+      await ddb.send(
+        new QueryCommand({
+          TableName: compositeTableDef.name,
+          KeyConditionExpression: 'pk = :v',
+          ExpressionAttributeValues: { ':v': { S: 'val' } },
+          ExclusiveStartKey: { bad: { S: 'p' } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'The provided starting key is invalid',
       )
     }
   })

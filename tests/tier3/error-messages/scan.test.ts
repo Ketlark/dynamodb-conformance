@@ -98,4 +98,64 @@ describe('Scan — exact error messages', () => {
       )
     }
   })
+
+  it('begins_with with non-string operand: full operand-type error', async () => {
+    try {
+      await ddb.send(
+        new ScanCommand({
+          TableName: hashTableDef.name,
+          FilterExpression: 'begins_with(#a, :n)',
+          ExpressionAttributeNames: { '#a': 'data' },
+          ExpressionAttributeValues: { ':n': { N: '1' } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid FilterExpression: Incorrect operand type for operator or function; operator or function: begins_with, operand type: N',
+      )
+    }
+  })
+
+  it('redundant parentheses in FilterExpression: full error string', async () => {
+    try {
+      await ddb.send(
+        new ScanCommand({
+          TableName: hashTableDef.name,
+          FilterExpression: '((#a = :v))',
+          ExpressionAttributeNames: { '#a': 'data' },
+          ExpressionAttributeValues: { ':v': { S: 'x' } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid FilterExpression: The expression has redundant parentheses;',
+      )
+    }
+  })
+
+  // Scan returns the long form of the invalid-starting-key error; Query returns
+  // a shorter one (see query.test.ts). Pin each separately.
+  it('malformed ExclusiveStartKey: long schema-mismatch error', async () => {
+    try {
+      await ddb.send(
+        new ScanCommand({
+          TableName: hashTableDef.name,
+          ExclusiveStartKey: { bad: { S: 'p' } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'The provided starting key is invalid: The provided key element does not match the schema',
+      )
+    }
+  })
 })
