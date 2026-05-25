@@ -3,6 +3,8 @@ import {
   DeleteTableCommand,
   DeleteItemCommand,
   DescribeTableCommand,
+  UpdateTableCommand,
+  UpdateContinuousBackupsCommand,
   ListTablesCommand,
   QueryCommand,
   DynamoDBServiceException,
@@ -181,6 +183,87 @@ export async function deleteTable(tableName: string): Promise<void> {
   } catch (e: unknown) {
     if (e instanceof ResourceNotFoundException) return
     if (e instanceof ResourceInUseException) return // already being deleted
+    // A deletion-protected table cannot be deleted until protection is
+    // disabled. Disable and retry once so cleanup is robust.
+    if (
+      e instanceof DynamoDBServiceException &&
+      e.name === 'ValidationException' &&
+      /protected against deletion|deletion protection is enabled/i.test(e.message)
+    ) {
+      // Best-effort: disable protection then delete. A target that blocks the
+      // delete but rejects the protection toggle (some emulators) must not make
+      // cleanup throw and poison the run.
+      try {
+        await disableDeletionProtection(tableName)
+        await waitUntilActive(tableName)
+        await ddb.send(new DeleteTableCommand({ TableName: tableName }))
+      } catch {
+        // give up; cleanup is best-effort
+      }
+      return
+    }
+    throw e
+  }
+}
+
+/**
+ * Retry an operation while DynamoDB is still enabling continuous backups on a
+ * freshly-created table (CreateBackup and UpdateContinuousBackups both throw
+ * ContinuousBackupsUnavailableException during that window).
+ */
+export async function retryWhileBackupsEnabling<T>(
+  fn: () => Promise<T>,
+  timeoutMs = 120_000,
+): Promise<T> {
+  const start = Date.now()
+  let delay = 0
+  for (;;) {
+    try {
+      return await fn()
+    } catch (e: unknown) {
+      if (
+        e instanceof DynamoDBServiceException &&
+        e.name === 'ContinuousBackupsUnavailableException' &&
+        Date.now() - start < timeoutMs
+      ) {
+        if (delay > 0) await sleep(delay)
+        delay = Math.min(delay || 2000, 5000)
+        continue
+      }
+      throw e
+    }
+  }
+}
+
+/** Enable point-in-time recovery, waiting out the post-create enabling window. */
+export async function enablePitr(tableName: string): Promise<void> {
+  await retryWhileBackupsEnabling(() =>
+    ddb.send(
+      new UpdateContinuousBackupsCommand({
+        TableName: tableName,
+        PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true },
+      }),
+    ),
+  )
+}
+
+/**
+ * Disable deletion protection, absorbing DynamoDB's throttle on changing the
+ * deletion-protection setting more than once per 15 seconds.
+ */
+async function disableDeletionProtection(tableName: string): Promise<void> {
+  try {
+    await ddb.send(
+      new UpdateTableCommand({ TableName: tableName, DeletionProtectionEnabled: false }),
+    )
+  } catch (e: unknown) {
+    if (e instanceof DynamoDBServiceException && e.name === 'ThrottlingException') {
+      await sleep(16_000)
+      await ddb.send(
+        new UpdateTableCommand({ TableName: tableName, DeletionProtectionEnabled: false }),
+      )
+      return
+    }
     throw e
   }
 }
@@ -199,7 +282,11 @@ export async function cleanupAllTables(): Promise<void> {
   } while (exclusiveStartTableName)
 
   for (let i = 0; i < allNames.length; i += 10) {
-    await Promise.all(allNames.slice(i, i + 10).map(deleteTable))
+    // Best-effort: one undeletable table (e.g. a deletion-protected table on a
+    // target that won't toggle protection off) must not poison setup.
+    await Promise.all(
+      allNames.slice(i, i + 10).map((n) => deleteTable(n).catch(() => {})),
+    )
   }
 }
 
