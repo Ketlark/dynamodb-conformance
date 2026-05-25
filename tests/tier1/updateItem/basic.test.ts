@@ -548,3 +548,200 @@ describe('UpdateItem — return values', () => {
     await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-ret3' } }])
   })
 })
+
+describe('UpdateItem — SET evaluation semantics', () => {
+  const keys: { pk: { S: string } }[] = []
+  afterAll(async () => {
+    await cleanupItems(hashTableDef.name, keys)
+  })
+
+  it('a second SET clause reads the pre-update value of another attribute', async () => {
+    const pk = 'upd-snapshot'
+    keys.push({ pk: { S: pk } })
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, a: { S: 'OLD' } },
+      }),
+    )
+    // DynamoDB evaluates the whole expression against the pre-update snapshot,
+    // so `b` gets the old value of `a`, not the value just assigned in the same call.
+    const res = await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        UpdateExpression: 'SET a = :v, b = a',
+        ExpressionAttributeValues: { ':v': { S: 'NEW' } },
+        ReturnValues: 'ALL_NEW',
+      }),
+    )
+    expect(res.Attributes!.a.S).toBe('NEW')
+    expect(res.Attributes!.b.S).toBe('OLD')
+  })
+
+  it('applies parenthesised arithmetic (SET c = (c - :v))', async () => {
+    const pk = 'upd-paren'
+    keys.push({ pk: { S: pk } })
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, c: { N: '10' } },
+      }),
+    )
+    const res = await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        UpdateExpression: 'SET c = (c - :v)',
+        ExpressionAttributeValues: { ':v': { N: '3' } },
+        ReturnValues: 'ALL_NEW',
+      }),
+    )
+    expect(res.Attributes!.c.N).toBe('7')
+  })
+
+  it('applies arithmetic around if_not_exists (SET v = if_not_exists(v, :d) - :amt)', async () => {
+    const pk = 'upd-ifnot-arith'
+    keys.push({ pk: { S: pk } })
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, v: { N: '10' } },
+      }),
+    )
+    const res = await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        UpdateExpression: 'SET v = if_not_exists(v, :d) - :amt',
+        ExpressionAttributeValues: { ':d': { N: '0' }, ':amt': { N: '3' } },
+        ReturnValues: 'ALL_NEW',
+      }),
+    )
+    expect(res.Attributes!.v.N).toBe('7')
+  })
+
+  it('composes nested functions: list_append(if_not_exists(list, :empty), :more) on a missing list', async () => {
+    const pk = 'upd-nested-fn'
+    keys.push({ pk: { S: pk } })
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk } },
+      }),
+    )
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        UpdateExpression: 'SET mylist = list_append(if_not_exists(mylist, :empty), :more)',
+        ExpressionAttributeValues: { ':empty': { L: [] }, ':more': { L: [{ S: 'x' }] } },
+      }),
+    )
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(result.Item!.mylist.L).toEqual([{ S: 'x' }])
+  })
+
+  it('list_append argument order controls prepend vs append', async () => {
+    const pk = 'upd-prepend'
+    keys.push({ pk: { S: pk } })
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, vals: { L: [{ S: 'b' }, { S: 'c' }] } },
+      }),
+    )
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        UpdateExpression: 'SET vals = list_append(:new, vals)',
+        ExpressionAttributeValues: { ':new': { L: [{ S: 'a' }] } },
+      }),
+    )
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(result.Item!.vals.L).toEqual([{ S: 'a' }, { S: 'b' }, { S: 'c' }])
+  })
+})
+
+describe('UpdateItem — ReturnValues granularity', () => {
+  const keys: { pk: { S: string } }[] = []
+  afterAll(async () => {
+    await cleanupItems(hashTableDef.name, keys)
+  })
+
+  it('UPDATED_NEW on a create returns the newly set attributes', async () => {
+    const pk = 'rv-create'
+    keys.push({ pk: { S: pk } })
+    const res = await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        UpdateExpression: 'SET a = :a',
+        ExpressionAttributeValues: { ':a': { S: 'x' } },
+        ReturnValues: 'UPDATED_NEW',
+      }),
+    )
+    // Even when the update creates the item, AWS returns the set attribute.
+    expect(res.Attributes).toBeDefined()
+    expect(res.Attributes!.a.S).toBe('x')
+  })
+
+  it('UPDATED_NEW on a nested SET returns only the changed fragment', async () => {
+    const pk = 'rv-nested'
+    keys.push({ pk: { S: pk } })
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: {
+          pk: { S: pk },
+          parent: { M: { keep: { S: 'k' }, child: { S: 'old' } } },
+        },
+      }),
+    )
+    const res = await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        UpdateExpression: 'SET parent.child = :v',
+        ExpressionAttributeValues: { ':v': { S: 'new' } },
+        ReturnValues: 'UPDATED_NEW',
+      }),
+    )
+    // Only the changed path comes back, not the whole parent map.
+    expect(res.Attributes!.parent.M!.child.S).toBe('new')
+    expect(res.Attributes!.parent.M!.keep).toBeUndefined()
+  })
+
+  it('REMOVE with UPDATED_NEW omits Attributes (nothing was set to a new value)', async () => {
+    const pk = 'rv-remove'
+    keys.push({ pk: { S: pk } })
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, x: { S: 'keep' }, y: { S: 'drop' } },
+      }),
+    )
+    const res = await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        UpdateExpression: 'REMOVE y',
+        ReturnValues: 'UPDATED_NEW',
+      }),
+    )
+    expect(res.Attributes).toBeUndefined()
+  })
+})
