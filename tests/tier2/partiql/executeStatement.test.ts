@@ -2,6 +2,7 @@ import {
   ExecuteStatementCommand,
   GetItemCommand,
   PutItemCommand,
+  DeleteItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { hashTableDef, compositeTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
@@ -407,6 +408,166 @@ describe('ExecuteStatement — PartiQL', () => {
     }))
     expect(notMissing.Items).toHaveLength(1)
     expect(notMissing.Items![0].pk.S).toBe('pq-neg-a')
+  })
+
+  // ── Non-key predicates in PartiQL write WHERE clauses ─────────────────
+  // AWS treats a non-key predicate in a DELETE/UPDATE WHERE as a condition that
+  // must hold. When the item exists but the predicate is false, the write fails
+  // with ConditionalCheckFailedException and the item is left untouched. A
+  // missing key is a silent no-op (not ConditionalCheckFailed). The full primary
+  // key is mandatory; omitting it is a ValidationException.
+
+  it('DELETE with a false non-key predicate fails ConditionalCheckFailed and leaves the item', async () => {
+    const pk = 'pq-pred-del-false'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, name: { S: 'alpha' }, n: { N: '5' } },
+    }))
+
+    await expectDynamoError(
+      () => ddb.send(new ExecuteStatementCommand({
+        Statement: `DELETE FROM "${hashTableDef.name}" WHERE pk = '${pk}' AND "name" = 'beta'`,
+      })),
+      'ConditionalCheckFailedException',
+    )
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item).toBeDefined()
+    expect(after.Item!.name.S).toBe('alpha')
+  })
+
+  it('DELETE with a true non-key predicate removes the item', async () => {
+    const pk = 'pq-pred-del-true'
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, name: { S: 'alpha' } },
+    }))
+
+    await ddb.send(new ExecuteStatementCommand({
+      Statement: `DELETE FROM "${hashTableDef.name}" WHERE pk = '${pk}' AND "name" = 'alpha'`,
+    }))
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item).toBeUndefined()
+  })
+
+  it('UPDATE with a false non-key predicate fails ConditionalCheckFailed and leaves the item', async () => {
+    const pk = 'pq-pred-upd-false'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, name: { S: 'alpha' }, n: { N: '5' } },
+    }))
+
+    await expectDynamoError(
+      () => ddb.send(new ExecuteStatementCommand({
+        Statement: `UPDATE "${hashTableDef.name}" SET n = 9 WHERE pk = '${pk}' AND "name" = 'beta'`,
+      })),
+      'ConditionalCheckFailedException',
+    )
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.n.N).toBe('5')
+  })
+
+  it('UPDATE with a true non-key predicate mutates the item', async () => {
+    const pk = 'pq-pred-upd-true'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, name: { S: 'alpha' }, n: { N: '5' } },
+    }))
+
+    await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET n = 9 WHERE pk = '${pk}' AND "name" = 'alpha'`,
+    }))
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.n.N).toBe('9')
+  })
+
+  it('DELETE with a false NOT begins_with predicate fails ConditionalCheckFailed', async () => {
+    const pk = 'pq-pred-fn-false'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, name: { S: 'alpha' } },
+    }))
+
+    // name is 'alpha' which begins with 'al', so NOT begins_with(name, 'al') is false.
+    await expectDynamoError(
+      () => ddb.send(new ExecuteStatementCommand({
+        Statement: `DELETE FROM "${hashTableDef.name}" WHERE pk = '${pk}' AND NOT begins_with("name", 'al')`,
+      })),
+      'ConditionalCheckFailedException',
+    )
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item).toBeDefined()
+  })
+
+  it('DELETE with a true NOT begins_with predicate removes the item', async () => {
+    const pk = 'pq-pred-fn-true'
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, name: { S: 'alpha' } },
+    }))
+
+    await ddb.send(new ExecuteStatementCommand({
+      Statement: `DELETE FROM "${hashTableDef.name}" WHERE pk = '${pk}' AND NOT begins_with("name", 'zz')`,
+    }))
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item).toBeUndefined()
+  })
+
+  it('rejects a write WHERE clause that omits the primary key', async () => {
+    const pk = 'pq-pred-nopk'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, name: { S: 'alpha' } },
+    }))
+
+    await expectDynamoError(
+      () => ddb.send(new ExecuteStatementCommand({
+        Statement: `DELETE FROM "${hashTableDef.name}" WHERE "name" = 'alpha'`,
+      })),
+      'ValidationException',
+      'Where clause does not contain a mandatory equality on all key attributes',
+    )
+  })
+
+  it('DELETE on a missing key with a non-key predicate is a silent no-op', async () => {
+    const pk = 'pq-pred-missing'
+    // Ensure the key does not exist.
+    await ddb.send(new DeleteItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } },
+    }))
+
+    // The item does not exist, so the condition is never evaluated. This succeeds
+    // as a no-op rather than raising ConditionalCheckFailedException.
+    await ddb.send(new ExecuteStatementCommand({
+      Statement: `DELETE FROM "${hashTableDef.name}" WHERE pk = '${pk}' AND "name" = 'x'`,
+    }))
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item).toBeUndefined()
   })
 
   // ── Error tests ───────────────────────────────────────────────────────
