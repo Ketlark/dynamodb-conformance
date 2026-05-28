@@ -152,3 +152,82 @@ describe('Nested attribute projection', () => {
     await cleanupItems(hashTableDef.name, [{ pk: { S: k } }])
   })
 })
+
+describe('GetItem — projection matching nothing', () => {
+  const pk = 'get-emptyproj'
+
+  beforeAll(async () => {
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, name: { S: 'Alice' } },
+      }),
+    )
+  })
+
+  afterAll(async () => {
+    await cleanupItems(hashTableDef.name, [{ pk: { S: pk } }])
+  })
+
+  it('returns an empty Item when ProjectionExpression matches no attribute on a present item', async () => {
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        ProjectionExpression: 'nonexistent',
+        ConsistentRead: true,
+      }),
+    )
+
+    // The item exists but the projection selects nothing. Unlike TransactGetItems
+    // (which omits Item entirely), GetItem returns Item as an empty {} object.
+    expect(result.Item).toBeDefined()
+    expect(Object.keys(result.Item!)).toHaveLength(0)
+  })
+
+  it('returns an empty Item when legacy AttributesToGet matches no attribute on a present item', async () => {
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        AttributesToGet: ['nonexistent'],
+        ConsistentRead: true,
+      }),
+    )
+
+    // Legacy AttributesToGet behaves identically to ProjectionExpression here.
+    expect(result.Item).toBeDefined()
+    expect(Object.keys(result.Item!)).toHaveLength(0)
+  })
+
+  it('still returns Item when projecting an attribute that exists', async () => {
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        ProjectionExpression: '#n',
+        ExpressionAttributeNames: { '#n': 'name' },
+        ConsistentRead: true,
+      }),
+    )
+
+    expect(result.Item).toBeDefined()
+    expect(result.Item!.name.S).toBe('Alice')
+  })
+
+  it('still returns Item when projecting the key attribute pk explicitly', async () => {
+    // GetItem does not auto-include keys, but an explicitly projected key resolves
+    // and so Item is returned (it is not the empty-projection case).
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: pk } },
+        ProjectionExpression: 'pk',
+        ConsistentRead: true,
+      }),
+    )
+
+    expect(result.Item).toBeDefined()
+    expect(result.Item!.pk.S).toBe(pk)
+  })
+})

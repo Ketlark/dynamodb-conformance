@@ -122,6 +122,44 @@ describe('BatchGetItem — ProjectionExpression', () => {
   })
 })
 
+describe('BatchGetItem — projection matching nothing', () => {
+  const pk = 'bg-emptyproj'
+
+  beforeAll(async () => {
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, name: { S: 'Alice' } },
+      }),
+    )
+  })
+
+  afterAll(async () => {
+    await cleanupItems(hashTableDef.name, [{ pk: { S: pk } }])
+  })
+
+  it('keeps an empty {} entry when the projection matches no attribute on a present item', async () => {
+    const result = await ddb.send(
+      new BatchGetItemCommand({
+        RequestItems: {
+          [hashTableDef.name]: {
+            Keys: [{ pk: { S: pk } }],
+            ProjectionExpression: 'nonexistent',
+            ConsistentRead: true,
+          },
+        },
+      }),
+    )
+
+    // The item exists but the projection selects nothing. BatchGetItem does NOT
+    // drop the item the way it drops non-existent keys; it keeps an empty {}
+    // entry in the Responses array.
+    const items = result.Responses![hashTableDef.name]
+    expect(items).toHaveLength(1)
+    expect(Object.keys(items[0])).toHaveLength(0)
+  })
+})
+
 describe('BatchGetItem — multiple tables', () => {
   const hashKey = { pk: { S: 'bg-multi-hash' } }
   const compositeKey = { pk: { S: 'bg-multi-comp' }, sk: { S: 'sk1' } }
