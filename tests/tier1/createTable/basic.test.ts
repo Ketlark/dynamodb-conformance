@@ -119,6 +119,38 @@ describe('CreateTable — basic', () => {
   })
 })
 
+describe('CreateTable — TableId', () => {
+  const tablesToCleanup: string[] = []
+
+  afterAll(async () => {
+    await Promise.all(tablesToCleanup.map(deleteTable))
+  })
+
+  it('returns a TableId on CreateTable that matches the subsequent DescribeTable', async () => {
+    const name = uniqueTableName('ct_tableid')
+    tablesToCleanup.push(name)
+
+    const created = await ddb.send(
+      new CreateTableCommand({
+        TableName: name,
+        AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+        KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+        BillingMode: 'PAY_PER_REQUEST',
+      }),
+    )
+
+    const createId = created.TableDescription!.TableId
+    expect(typeof createId).toBe('string')
+    expect(createId!.length).toBeGreaterThan(0)
+
+    await waitUntilActive(name)
+
+    const desc = await ddb.send(new DescribeTableCommand({ TableName: name }))
+    // The id assigned at creation persists and is reported identically by DescribeTable.
+    expect(desc.Table!.TableId).toBe(createId)
+  })
+})
+
 describe('CreateTable — validation', () => {
   it('rejects a table name shorter than 3 characters', async () => {
     await expectDynamoError(

@@ -54,6 +54,23 @@ describe('DescribeTable — basic', () => {
   })
 })
 
+describe('DescribeTable — TableId', () => {
+  it('returns a stable TableId across repeated DescribeTable calls', async () => {
+    const first = await ddb.send(
+      new DescribeTableCommand({ TableName: hashTableDef.name }),
+    )
+    const second = await ddb.send(
+      new DescribeTableCommand({ TableName: hashTableDef.name }),
+    )
+
+    const id = first.Table!.TableId
+    expect(typeof id).toBe('string')
+    expect(id!.length).toBeGreaterThan(0)
+    // TableId is an identity that does not change between reads of the same table.
+    expect(second.Table!.TableId).toBe(id)
+  })
+})
+
 describe('DescribeTable — validation', () => {
   it('returns ResourceNotFoundException for non-existent table', async () => {
     await expectDynamoError(
