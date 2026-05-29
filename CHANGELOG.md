@@ -3,6 +3,22 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
+## 2026-05-28
+
+Grew to 699 tests, up 15 on the previous run: seven more in Tier 1 and eight
+more in Tier 2.
+
+Tier 1 picked up two behaviours. A GetItem or BatchGetItem whose projection
+matches nothing on a present item still returns that item as an empty result,
+rather than treating it as absent. And the TableId from CreateTable matches the
+one DescribeTable reports, holding stable across repeated calls rather than
+being minted fresh each time.
+
+Tier 2 picked up PartiQL writes with a non-key WHERE predicate. DELETE and
+UPDATE evaluate the whole predicate, so a false one fails with
+ConditionalCheckFailed and leaves the item untouched, a write WHERE that omits
+the primary key is rejected, and a DELETE on an absent key is a silent no-op.
+
 ## 2026-05-26
 
 Grew to 684 tests with a control-plane and table-configuration sweep: the
