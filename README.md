@@ -28,14 +28,14 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 <!-- results:start -->
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|------|------|------|---------|------|
-| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 684 | 0 | 0 | live (AWS) | 2026-05-26 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) | 94.8% | 94.5% | 97.2% | 95.5% | 640 | 30 | 14 | 0.9.13 | 2026-05-26 |
-| [ExtendDB](https://github.com/ExtendDB/extenddb) | 93.1% | 93.3% | 94.9% | 93.7% | 609 | 41 | 34 | v0.1.0 | 2026-05-26 |
-| [Floci](https://github.com/floci-io/floci) | 93.9% | 91.3% | 93.9% | 93.5% | 631 | 44 | 9 | e981a5afd790 | 2026-05-26 |
-| [LocalStack](https://github.com/localstack/localstack) | 98.6% | 92.2% | 68.7% | 88.0% | 595 | 81 | 8 | 2026.5.0 | 2026-05-26 |
-| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 97.7% | 88.3% | 69.2% | 87.0% | 584 | 87 | 13 | d89f8fcc6b1a | 2026-05-26 |
-| [Dynalite](https://github.com/architect/dynalite) | 95.4% | 16.9% | 82.7% | 82.9% | 518 | 107 | 59 | 4.0.0 | 2026-05-26 |
-| [Ministack](https://github.com/ministackorg/ministack) | 80.9% | 73.7% | 35.0% | 65.1% | 439 | 235 | 10 | 9641f520cebd | 2026-05-26 |
+| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 699 | 0 | 0 | live (AWS) | 2026-05-29 |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) | 94.3% | 90.7% | 97.2% | 94.6% | 648 | 37 | 14 | 0.9.13 | 2026-05-29 |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) | 93.2% | 93.3% | 94.9% | 93.8% | 616 | 41 | 42 | v0.1.0 | 2026-05-29 |
+| [Floci](https://github.com/floci-io/floci) | 93.5% | 87.8% | 93.9% | 92.6% | 639 | 51 | 9 | 67825c62ff44 | 2026-05-29 |
+| [LocalStack](https://github.com/localstack/localstack) | 98.6% | 92.7% | 68.7% | 88.3% | 610 | 81 | 8 | 2026.5.1 | 2026-05-29 |
+| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 97.2% | 89.1% | 69.2% | 87.0% | 597 | 89 | 13 | d89f8fcc6b1a | 2026-05-29 |
+| [Ministack](https://github.com/ministackorg/ministack) | 95.8% | 87.9% | 72.0% | 87.0% | 608 | 91 | 0 | b852d7c01e53 | 2026-05-29 |
+| [Dynalite](https://github.com/architect/dynalite) | 95.5% | 16.9% | 82.7% | 83.1% | 525 | 107 | 67 | 4.0.0 | 2026-05-29 |
 <!-- results:end -->
 
 DynamoDB is the ground truth. The percentage is correctness over the
