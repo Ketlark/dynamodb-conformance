@@ -29,7 +29,7 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|------|------|------|---------|------|
 | [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 699 | 0 | 0 | live (AWS) | 2026-05-29 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) | 94.3% | 90.7% | 97.2% | 94.6% | 648 | 37 | 14 | 0.9.13 | 2026-05-29 |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 100.0% | 100.0% | 100.0% | 685 | 0 | 14 | 0.10.0 | 2026-05-29 |
 | [ExtendDB](https://github.com/ExtendDB/extenddb) | 93.2% | 93.3% | 94.9% | 93.8% | 616 | 41 | 42 | v0.1.0 | 2026-05-29 |
 | [Floci](https://github.com/floci-io/floci) | 93.5% | 87.8% | 93.9% | 92.6% | 639 | 51 | 9 | 67825c62ff44 | 2026-05-29 |
 | [LocalStack](https://github.com/localstack/localstack) | 98.6% | 92.7% | 68.7% | 88.3% | 610 | 81 | 8 | 2026.5.1 | 2026-05-29 |
