@@ -38,6 +38,8 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 | [Dynalite](https://github.com/architect/dynalite) | 95.5% | 16.9% | 82.7% | 83.1% | 525 | 107 | 67 | 4.0.0 | 2026-05-29 |
 <!-- results:end -->
 
+**Live results:** [paritysuite.org](https://paritysuite.org) - the full table for every target, tracked run over run.
+
 DynamoDB is the ground truth. The percentage is correctness over the
 operations a target implements - `Pass / (Pass + Fail)`. Skips are not
 counted against it. A skipped test is deliberate: each test file probes
