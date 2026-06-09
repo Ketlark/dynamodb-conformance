@@ -64,7 +64,7 @@ Run date columns from the run, and commits the refreshed table. Run
 
 **Tier 2 - Complete.** Less common but documented features. Transactions, PartiQL, LSIs, TTL, streams, tags. An emulator that passes Tier 1 but fails some Tier 2 is usable with caveats.
 
-**Tier 3 - Strict.** Validation ordering, exact error message formatting, edge cases around limits, legacy API compatibility (ScanFilter, QueryFilter). An emulator that passes Tier 1 and Tier 2 but fails some Tier 3 is production-quality for local dev.
+**Tier 3 - Strict.** Validation ordering, error behaviour at a range of strictness (exact where DynamoDB's wording is stable, structural where its rendering is non-deterministic), edge cases around limits, legacy API compatibility (ScanFilter, QueryFilter). An emulator that passes Tier 1 and Tier 2 but fails some Tier 3 is production-quality for local dev.
 
 The tiers give emulator authors something meaningful to report. "100% Tier 1, 95% Tier 2, 80% Tier 3" tells you far more than a single percentage.
 
@@ -73,11 +73,11 @@ The tiers give emulator authors something meaningful to report. "100% Tier 1, 95
 Tier 3 splits into four sub-directories by what each test asserts:
 
 - `validation-ordering/` - which validation fires first when a request has multiple problems. Uses `toContain` against the message; the wording can drift, the ordering should not.
-- `error-messages/` - the exact error string DynamoDB returns. Uses inline `try/catch` with `expect(err).toBeInstanceOf(...)` and `expect(err.message).toBe(...)`.
+- `error-messages/` - the error DynamoDB returns. Uses inline `try/catch` with `expect(err).toBeInstanceOf(...)` and `expect(err.name).toBe(...)`; the message is matched exactly where it's stable and structurally (`toContain` on the field and constraint) where AWS's rendering varies by region or SDK version.
 - `limits/` - hard-coded service limits and the errors that fire when you cross them (item size, batch size, response size, transaction size).
 - `legacy-api/` - the older request shapes (`AttributeUpdates`, `QueryFilter`, `ScanFilter`, `Expected`, `AttributesToGet`) for backwards compatibility.
 
-A new test goes in whichever sub-directory matches what it asserts. If you care about the exact wording, that's `error-messages/`. If you only care which error fires, that's `validation-ordering/`.
+A new test goes in whichever sub-directory matches what it asserts. If you care about the message the service returns, that's `error-messages/`. If you only care which error fires, that's `validation-ordering/`.
 
 ## Running against targets
 
