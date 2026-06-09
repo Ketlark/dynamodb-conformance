@@ -167,11 +167,22 @@ const ordered = [groundTruth, ...rows]
 const fmt = (r) =>
   `| ${r.target} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.total} | ${r.passed} | ${r.failed} | ${r.skipped} | ${r.version} | ${r.runDate} |`
 
-const table = [
+const tableBody = [
   '| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |',
   '|--------|--------|--------|--------|-------|------|------|------|---------|------|',
   ...ordered.map(fmt),
 ].join('\n')
+
+// Ground-truth region, stamped into results/dynamodb.region by record-version.sh.
+// Shown with the table so a reader sees which region the numbers come from.
+const region = existsSync('results/dynamodb.region')
+  ? readFileSync('results/dynamodb.region', 'utf8').trim()
+  : ''
+const caption =
+  region && region !== '-'
+    ? `_Scored against real DynamoDB in \`${region}\`; behaviour varies by region and over time, so these are point-in-time figures._`
+    : ''
+const table = caption ? `${caption}\n\n${tableBody}` : tableBody
 
 if (write) {
   const path = 'README.md'

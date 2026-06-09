@@ -26,6 +26,8 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 ## Results
 
 <!-- results:start -->
+_Scored against real DynamoDB in `eu-west-2`; behaviour varies by region and over time, so these are point-in-time figures._
+
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|------|------|------|---------|------|
 | [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 699 | 0 | 0 | live (AWS) | 2026-06-09 |
@@ -148,7 +150,7 @@ workflow"), then start it and point the suite at it:
 export NODE_EXTRA_CA_CERTS=~/.extenddb/tls/cert.pem
 export AWS_ACCESS_KEY_ID=<access-key-id>        # a real key — ExtendDB verifies the signature
 export AWS_SECRET_ACCESS_KEY=<secret-access-key>
-export AWS_REGION=us-east-1
+export AWS_REGION=us-east-1                      # SigV4 signing region for the local endpoint, not the ground-truth region (eu-west-2)
 export DYNAMODB_ENDPOINT=https://127.0.0.1:8000
 CONFORMANCE_TARGET=extenddb npm test            # writes results/extenddb.json
 ```
