@@ -51,7 +51,7 @@ jobs:
           aws-region: eu-west-2
           role-duration-seconds: 7200
 
-      - name: Run gating conformance suite (excludes GSI lifecycle and cloud-only ops — see README)
+      - name: Run gating conformance suite (excludes GSI lifecycle and integration suites — see README)
         env:
           CONFORMANCE_TARGET: dynamodb
           AWS_REGION: eu-west-2
@@ -86,44 +86,65 @@ jobs:
           path: results/
 
       # A scheduled red survived the retry, so it is deterministic: either real
-      # AWS drift to re-characterise or a flake the retry missed. File or update a
-      # single deduped issue so it is actionable, not a silent X. A later
-      # cross-region drift signal will label the verdict at the body's triage slot.
+      # AWS drift or a flake the retry missed. Re-capture eu-west-2's raw wording
+      # and diff it against the committed baseline so the failure can be labelled
+      # drift-versus-flake. continue-on-error: a capture hiccup must not block the
+      # issue - the reporter falls back to a generic triage note without a verdict.
+      - name: Compute the drift verdict
+        if: failure() && github.event_name == 'schedule'
+        continue-on-error: true
+        env:
+          AWS_REGION: eu-west-2
+        run: |
+          node scripts/capture-validation-messages.mjs eu-west-2 > "$RUNNER_TEMP/euw2.json"
+          node scripts/drift-diff.mjs "$RUNNER_TEMP/euw2.json" \
+            --baseline captures/2026-06-09-validation-rewording.json \
+            --region eu-west-2 --out "$RUNNER_TEMP/drift.json"
+
+      # File or update a single deduped issue so a red Monday is actionable, not a
+      # silent X. The drift verdict (if computed above) labels it aws-drift-confirmed
+      # or likely-flake and fills the body's triage slot.
       - name: Report a deterministic failure as an issue
         if: failure() && github.event_name == 'schedule'
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          node scripts/report-failure.mjs results/dynamodb.json "$RUN_URL" > "$RUNNER_TEMP/issue-body.md"
-          gh label create scheduled-red --color B60205 \
-            --description "Scheduled conformance run went red" 2>/dev/null || true
+          drift_args=()
+          if [ -f "$RUNNER_TEMP/drift.json" ]; then
+            drift_args=(--drift "$RUNNER_TEMP/drift.json" --verdict-out "$RUNNER_TEMP/verdict.txt")
+          fi
+          node scripts/report-failure.mjs results/dynamodb.json "$RUN_URL" "${drift_args[@]}" > "$RUNNER_TEMP/issue-body.md"
+
+          gh label create scheduled-red       --color B60205 --description "Scheduled conformance run went red" 2>/dev/null || true
+          gh label create aws-drift-confirmed  --color 5319E7 --description "Scheduled red is confirmed AWS wording drift" 2>/dev/null || true
+          gh label create likely-flake         --color FBCA04 --description "Scheduled red shows no wording drift; likely transient" 2>/dev/null || true
+
+          labels="scheduled-red"
+          if [ -f "$RUNNER_TEMP/verdict.txt" ]; then
+            labels="$labels,$(cat "$RUNNER_TEMP/verdict.txt")"
+          fi
+
           existing=$(gh issue list --label scheduled-red --state open \
             --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
+            gh issue edit "$existing" --add-label "$labels" >/dev/null
             gh issue comment "$existing" --body-file "$RUNNER_TEMP/issue-body.md"
           else
-            gh issue create --label scheduled-red \
+            gh issue create --label "$labels" \
               --title "Scheduled conformance run went red ($(date -u +%Y-%m-%d))" \
               --body-file "$RUNNER_TEMP/issue-body.md"
           fi
 
-  test-dynamodb-cloud-only:
-    name: DynamoDB cloud-only (non-gating)
-    # The S3 export/import and Kinesis streaming-destination suites depend on slow
-    # async AWS control-plane operations and are skipped by every emulator (no
-    # emulator implements them), so they give zero comparative signal but carry
-    # real flake risk. They run here, off the gating path, so a slow import can
-    # never red the build. continue-on-error keeps the whole lane non-gating.
-    #
-    # The suite shares one AWS account and cleanup deletes every _conformance_
-    # table by prefix, so this lane must not run alongside the gating job or they
-    # delete each other's tables (this lane's import targets are exactly what the
-    # gating cleanup would nuke mid-import). `needs` orders it after the gating
-    # job *within a run* — explicit, not relying on same-run concurrency
-    # semantics — and `always()` keeps it running even when the gate goes red.
-    # The shared conformance-aws group below additionally serialises against
-    # *other* runs (an overlapping push or schedule), matching the gating job.
+  test-dynamodb-integrations:
+    name: DynamoDB service integrations (non-gating)
+    # DynamoDB's integrations with other AWS services (S3 export/import, Kinesis
+    # streaming destinations). No emulator implements them, so they can't be
+    # compared, and they lean on slow async calls - so they run off the gating
+    # path and continue-on-error, where a slow import can't red the build.
+    # `needs` plus the shared conformance-aws group serialise this against the
+    # gating job so the two don't race the by-prefix table cleanup; `always()`
+    # keeps it running even when the gate is red.
     needs: test-dynamodb
     if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     continue-on-error: true
@@ -152,12 +173,12 @@ jobs:
           aws-region: eu-west-2
           role-duration-seconds: 7200
 
-      - name: Run cloud-only conformance suite (S3 export/import, Kinesis)
+      - name: Run service-integration suite (S3 export/import, Kinesis)
         continue-on-error: true
         env:
           CONFORMANCE_TARGET: dynamodb
           AWS_REGION: eu-west-2
-        run: npm run test:cloud-only
+        run: npm run test:integrations
 
       - name: Sanitize account IDs
         if: always()
@@ -173,12 +194,76 @@ jobs:
 
       # Uploaded under a non `results-*` name so the Update Results Table overlay
       # (which globs results-*) never folds this into the published comparison.
-      - name: Upload cloud-only results
+      - name: Upload integration results
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: cloud-only-results
+          name: integration-results
           path: results/
+
+  capture-cross-region:
+    name: Cross-region drift capture (non-gating)
+    # Capture real AWS's negative-input wording in the candidate regions each
+    # week and commit it, so the paritysuite drift lens has fresh, versioned data
+    # (the site builds from committed files, not CI artefacts). Non-gating: a
+    # capture hiccup never touches the build. Only candidate regions are
+    # captured, never eu-west-2: the IAM role forces a _conformance_ table prefix
+    # that the gating job's cleanup deletes, so an eu-west-2 capture here would
+    # race that cleanup. The lens diffs these against the committed eu-west-2
+    # baseline; the scheduled-run drift verdict flags when the baseline itself
+    # needs refreshing.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    environment: conformance-testing
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+          role-duration-seconds: 7200
+
+      - name: Capture candidate regions
+        run: |
+          node scripts/capture-validation-messages.mjs us-east-1 ap-southeast-2 eu-central-1 \
+            > captures/cross-region-latest.json
+
+      - name: Commit the capture
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add captures/cross-region-latest.json
+          if git diff --staged --quiet; then
+            echo "Cross-region capture unchanged."
+          else
+            git commit -m "chore: update cross-region capture [skip ci]"
+            pushed=0
+            for i in 1 2 3; do
+              if git pull --rebase && git push; then pushed=1; break; fi
+              echo "push attempt $i failed; retrying"
+              sleep 5
+            done
+            if [ "$pushed" -ne 1 ]; then
+              echo "::warning title=Cross-region capture::push failed after 3 attempts; this week's capture was not persisted"
+              exit 1
+            fi
+          fi
 
   test-dynamodb-local:
     name: DynamoDB Local
