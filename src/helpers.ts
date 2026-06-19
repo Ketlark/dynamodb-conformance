@@ -375,6 +375,11 @@ function sleep(ms: number): Promise<void> {
 export const hashTableDef: TestTableDef = {
   name: uniqueTableName('hash'),
   hashKey: { name: 'pk', type: 'S' },
+  // On-demand, like hashNTableDef. The shared tables now live for the whole run
+  // (provisioned once), so a provisioned 5-WCU table runs out of burst capacity
+  // for the near-400KB writes in tests/tier3/limits/itemSize.test.ts and throttles.
+  // Nothing asserts this table is provisioned; createTable/config covers that mode.
+  billingMode: 'PAY_PER_REQUEST',
 }
 
 export const hashNTableDef: TestTableDef = {
