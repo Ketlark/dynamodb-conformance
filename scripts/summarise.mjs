@@ -25,6 +25,7 @@
 
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
+import { GROUND_TRUTH_SLUG, passRate, scoreResults } from './lib/score.mjs'
 
 const argv = process.argv.slice(2)
 const write = argv.includes('--write')
@@ -88,7 +89,7 @@ for (const file of files) {
     ? new Date(raw.startTime).toISOString().slice(0, 10)
     : '-'
 
-  if (slug === 'dynamodb') {
+  if (slug === GROUND_TRUTH_SLUG) {
     // Scores are synthesised below, but keep the date of the last successful
     // real-AWS run so the ground-truth row isn't dateless.
     groundTruthDate = runDate
@@ -99,34 +100,19 @@ for (const file of files) {
   const version =
     (existsSync(versionFile) && readFileSync(versionFile, 'utf8').trim()) || '-'
 
-  const tests =
-    raw.testResults?.flatMap(
-      (tr) => tr.assertionResults?.map((ar) => ({ file: tr.name, status: ar.status })) ?? [],
-    ) ?? []
+  const scored = scoreResults(raw)
+  // Files in results/ that aren't a target's Vitest output (e.g.
+  // tag-manifest.json) score nothing; skip them rather than emit an empty row.
+  if (!scored) continue
 
-  const tier = (filePath) => {
-    if (filePath.includes('/tier1/')) return 'tier1'
-    if (filePath.includes('/tier2/')) return 'tier2'
-    if (filePath.includes('/tier3/')) return 'tier3'
-    return 'other'
-  }
-
-  const summary = { tier1: { p: 0, f: 0, s: 0 }, tier2: { p: 0, f: 0, s: 0 }, tier3: { p: 0, f: 0, s: 0 } }
-  for (const t of tests) {
-    const tierKey = tier(t.file)
-    if (!(tierKey in summary)) continue
-    if (t.status === 'passed') summary[tierKey].p++
-    else if (t.status === 'failed') summary[tierKey].f++
-    else summary[tierKey].s++
-  }
-
-  const total = (s) => s.p + s.f + s.s
+  const { summary, passed: allP, failed: allF, skipped, count } = scored
   // Correctness over implemented operations: skips (operations the target does
   // not implement, where the feature-probe declined to run) are excluded from
   // the denominator. A skip is scope, not a failure.
-  const pct = (p, f) => (p + f === 0 ? '-' : `${((p / (p + f)) * 100).toFixed(1)}%`)
-  const allP = summary.tier1.p + summary.tier2.p + summary.tier3.p
-  const allF = summary.tier1.f + summary.tier2.f + summary.tier3.f
+  const pct = (p, f) => {
+    const rate = passRate(p, f)
+    return rate === null ? '-' : `${rate.toFixed(1)}%`
+  }
 
   rows.push({
     target: label(slug),
@@ -136,8 +122,8 @@ for (const file of files) {
     total: pct(allP, allF),
     passed: allP,
     failed: allF,
-    skipped: summary.tier1.s + summary.tier2.s + summary.tier3.s,
-    count: total(summary.tier1) + total(summary.tier2) + total(summary.tier3),
+    skipped,
+    count,
     version,
     runDate,
   })
@@ -151,7 +137,7 @@ const num = (t) => (t === '-' ? -1 : parseFloat(t))
 rows.sort((a, b) => num(b.total) - num(a.total) || a.target.localeCompare(b.target))
 
 const groundTruth = {
-  target: label('dynamodb'),
+  target: label(GROUND_TRUTH_SLUG),
   tier1: '100%',
   tier2: '100%',
   tier3: '100%',

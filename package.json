@@ -39,6 +39,7 @@
     "test:capture-ddb-local": "DYNAMODB_ENDPOINT=http://localhost:8000 vitest run --reporter=json --outputFile=results/dynamodb-local.json",
     "results:table": "node scripts/summarise.mjs",
     "results:tags": "node scripts/tag-manifest.mjs",
+    "results:badges": "node scripts/badges.mjs",
     "test:ui": "vitest --ui"
   },
   "dependencies": {
