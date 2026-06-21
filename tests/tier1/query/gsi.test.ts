@@ -133,6 +133,47 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
       }),
     )
   })
+
+  it('sparse composite GSI: an item with the GSI hash key but no range key is excluded', async () => {
+    // Has gsi2's hash key (lsi1sk) but not its range key (lsi2sk), so it belongs
+    // in the hash-only gsi1 yet must be excluded from the composite gsi2.
+    const noRangeItem = {
+      pk: { S: 'gsi-sparse-range' },
+      sk: { S: 'x' },
+      lsi1sk: { S: 'gsi-hash-sparse-range' },
+    }
+    await ddb.send(
+      new PutItemCommand({
+        TableName: compositeTableDef.name,
+        Item: noRangeItem,
+      }),
+    )
+    // Confirm it propagated into the hash-only GSI (so it was written and indexed there).
+    await waitForGsiConsistency({
+      tableName: compositeTableDef.name,
+      indexName: 'gsi1',
+      partitionKey: { name: 'lsi1sk', value: { S: 'gsi-hash-sparse-range' } },
+      expectedCount: 1,
+    })
+
+    const result = await ddb.send(
+      new QueryCommand({
+        TableName: compositeTableDef.name,
+        IndexName: 'gsi2',
+        KeyConditionExpression: 'lsi1sk = :v',
+        ExpressionAttributeValues: { ':v': { S: 'gsi-hash-sparse-range' } },
+      }),
+    )
+
+    expect(result.Items).toHaveLength(0)
+
+    await ddb.send(
+      new DeleteItemCommand({
+        TableName: compositeTableDef.name,
+        Key: { pk: noRangeItem.pk, sk: noRangeItem.sk },
+      }),
+    )
+  })
 })
 
 describe('Query — GSI pagination across tied sort keys', { tags: ['query', 'data-plane', 'gsi'] }, () => {
