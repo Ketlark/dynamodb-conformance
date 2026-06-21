@@ -123,4 +123,50 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
     expect(result.Items![0].pk?.S).toBe('scan-gsi-1')
     expect(result.ScannedCount!).toBeGreaterThanOrEqual(result.Count!)
   })
+
+  it('sparse composite GSI: an item missing the GSI range key is not scanned', async () => {
+    // Written to the base table and present in the hash-only gsi1, but absent
+    // from a scan of the composite gsi2 because it has no lsi2sk.
+    const noRangeItem = {
+      pk: { S: 'scan-gsi-sparse' },
+      sk: { S: 'x' },
+      lsi1sk: { S: 'scan-gsi-hash-sparse' },
+    }
+    await ddb.send(
+      new PutItemCommand({
+        TableName: compositeTableDef.name,
+        Item: noRangeItem,
+      }),
+    )
+    await waitForGsiConsistency({
+      tableName: compositeTableDef.name,
+      indexName: 'gsi1',
+      partitionKey: { name: 'lsi1sk', value: { S: 'scan-gsi-hash-sparse' } },
+      expectedCount: 1,
+    })
+
+    // Present in the hash-only GSI...
+    const gsi1Scan = await ddb.send(
+      new ScanCommand({
+        TableName: compositeTableDef.name,
+        IndexName: 'gsi1',
+        FilterExpression: 'lsi1sk = :v',
+        ExpressionAttributeValues: { ':v': { S: 'scan-gsi-hash-sparse' } },
+      }),
+    )
+    expect(gsi1Scan.Items!.map((i) => i.pk?.S)).toContain('scan-gsi-sparse')
+
+    // ...but never scanned from the composite GSI.
+    const gsi2Scan = await ddb.send(
+      new ScanCommand({
+        TableName: compositeTableDef.name,
+        IndexName: 'gsi2',
+      }),
+    )
+    expect(gsi2Scan.Items!.map((i) => i.pk?.S)).not.toContain('scan-gsi-sparse')
+
+    await cleanupItems(compositeTableDef.name, [
+      { pk: noRangeItem.pk, sk: noRangeItem.sk },
+    ])
+  })
 })

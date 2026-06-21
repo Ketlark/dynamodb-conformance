@@ -113,4 +113,40 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
       expect(item.data).toBeUndefined()
     }
   })
+
+  it('sparse LSI: an item missing the LSI sort key is not scanned', async () => {
+    // Has the base keys but not the LSI sort key (lsi1sk).
+    const noLsiSkItem = { pk: { S: 'scan-lsi-sparse' }, sk: { S: 'x' } }
+    await ddb.send(
+      new PutItemCommand({
+        TableName: compositeTableDef.name,
+        Item: noLsiSkItem,
+      }),
+    )
+
+    // Absent from an LSI scan...
+    const lsiScan = await ddb.send(
+      new ScanCommand({
+        TableName: compositeTableDef.name,
+        IndexName: 'lsi1',
+        ConsistentRead: true,
+      }),
+    )
+    expect(lsiScan.Items!.map((i) => i.pk?.S)).not.toContain('scan-lsi-sparse')
+
+    // ...but present in a base-table scan.
+    const baseScan = await ddb.send(
+      new ScanCommand({
+        TableName: compositeTableDef.name,
+        ConsistentRead: true,
+        FilterExpression: 'pk = :p',
+        ExpressionAttributeValues: { ':p': { S: 'scan-lsi-sparse' } },
+      }),
+    )
+    expect(baseScan.Items!.map((i) => i.pk?.S)).toContain('scan-lsi-sparse')
+
+    await cleanupItems(compositeTableDef.name, [
+      { pk: noLsiSkItem.pk, sk: noLsiSkItem.sk },
+    ])
+  })
 })

@@ -214,6 +214,44 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
     expect(result.Items).toHaveLength(0)
     expect(result.Count).toBe(0)
   })
+
+  it('sparse LSI: an item missing the LSI sort key is excluded but stays in the base table', async () => {
+    // Has the base keys but not the LSI sort key (lsi1sk).
+    const noLsiSkItem = { pk: { S: 'lsi-sparse-q' }, sk: { S: 'x' } }
+    await ddb.send(
+      new PutItemCommand({
+        TableName: compositeTableDef.name,
+        Item: noLsiSkItem,
+      }),
+    )
+
+    // Absent from the LSI...
+    const lsiResult = await ddb.send(
+      new QueryCommand({
+        TableName: compositeTableDef.name,
+        IndexName: 'lsi1',
+        KeyConditionExpression: 'pk = :p',
+        ExpressionAttributeValues: { ':p': { S: 'lsi-sparse-q' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(lsiResult.Items).toHaveLength(0)
+
+    // ...but present in the base table.
+    const baseResult = await ddb.send(
+      new QueryCommand({
+        TableName: compositeTableDef.name,
+        KeyConditionExpression: 'pk = :p',
+        ExpressionAttributeValues: { ':p': { S: 'lsi-sparse-q' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(baseResult.Items).toHaveLength(1)
+
+    await cleanupItems(compositeTableDef.name, [
+      { pk: noLsiSkItem.pk, sk: noLsiSkItem.sk },
+    ])
+  })
 })
 
 describe('Query — LSI pagination across tied sort keys', { tags: ['query', 'data-plane', 'lsi'] }, () => {
