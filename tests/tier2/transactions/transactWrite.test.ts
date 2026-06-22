@@ -55,6 +55,15 @@ const hashKeys = [
 
 const compositeKeys = [
   { pk: { S: 'tw-cross-comp' }, sk: { S: 'sk1' } },
+  // Defensive: the invalid-index-key cases below must all fail validation and
+  // write nothing. Clean up anyway so a too-lenient target that wrongly persists
+  // them does not leak rows into later tests.
+  { pk: { S: 'tw-idx-type' }, sk: { S: 'a' } },
+  { pk: { S: 'tw-idx-nonscalar' }, sk: { S: 'b' } },
+  { pk: { S: 'tw-idx-empty' }, sk: { S: 'c' } },
+  { pk: { S: 'tw-idx-upd-type' }, sk: { S: 'a' } },
+  { pk: { S: 'tw-idx-upd-nonscalar' }, sk: { S: 'b' } },
+  { pk: { S: 'tw-idx-upd-empty' }, sk: { S: 'c' } },
 ]
 
 afterAll(async () => {
@@ -688,6 +697,151 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
           }),
         ),
       'ResourceNotFoundException',
+    )
+  })
+
+  // An item carrying a malformed key value (table or index key) is rejected, but
+  // the error SHAPE depends on the fault, and the two halves are opposite traps:
+  //
+  //   - Wrong type / non-scalar: caught during transaction execution, so AWS
+  //     cancels with a TransactionCanceledException whose reason Code is
+  //     'ValidationError'. An engine that "validates up front" and returns a
+  //     top-level ValidationException here diverges from real DynamoDB.
+  //   - Empty string: caught by up-front input validation, so AWS returns a
+  //     top-level ValidationException even inside a transaction. An engine that
+  //     wraps this as a TransactionCanceledException diverges.
+  //
+  // Both directions are asserted below. Exact strings live in
+  // tests/tier3/error-messages/transactWriteItems.test.ts.
+
+  const expectCancelledForValidation = async (transactItems: unknown[]) => {
+    try {
+      await ddb.send(
+        new TransactWriteItemsCommand({ TransactItems: transactItems as never }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(TransactionCanceledException)
+      const txErr = err as TransactionCanceledException
+      // name is TransactionCanceledException, NOT a top-level ValidationException.
+      expect(txErr.name).toBe('TransactionCanceledException')
+      expect(txErr.CancellationReasons?.[0]?.Code).toBe('ValidationError')
+    }
+  }
+
+  it('Put with a wrong-typed table key cancels with a ValidationError reason', async () => {
+    await expectCancelledForValidation([
+      { Put: { TableName: hashTableDef.name, Item: { pk: { N: '5' } } } },
+    ])
+  })
+
+  it('Put with a non-scalar table key cancels with a ValidationError reason', async () => {
+    await expectCancelledForValidation([
+      { Put: { TableName: hashTableDef.name, Item: { pk: { L: [{ S: 'x' }] } } } },
+    ])
+  })
+
+  it('Put with a wrong-typed index key cancels with a ValidationError reason', async () => {
+    await expectCancelledForValidation([
+      {
+        Put: {
+          TableName: compositeTableDef.name,
+          Item: { pk: { S: 'tw-idx-type' }, sk: { S: 'a' }, lsi1sk: { N: '5' } },
+        },
+      },
+    ])
+  })
+
+  it('Put with a non-scalar index key cancels with a ValidationError reason', async () => {
+    await expectCancelledForValidation([
+      {
+        Put: {
+          TableName: compositeTableDef.name,
+          Item: { pk: { S: 'tw-idx-nonscalar' }, sk: { S: 'b' }, lsi1sk: { L: [{ S: 'x' }] } },
+        },
+      },
+    ])
+  })
+
+  it('Update setting a wrong-typed index key cancels with a ValidationError reason', async () => {
+    await expectCancelledForValidation([
+      {
+        Update: {
+          TableName: compositeTableDef.name,
+          Key: { pk: { S: 'tw-idx-upd-type' }, sk: { S: 'a' } },
+          UpdateExpression: 'SET lsi1sk = :v',
+          ExpressionAttributeValues: { ':v': { N: '5' } },
+        },
+      },
+    ])
+  })
+
+  it('Update setting a non-scalar index key cancels with a ValidationError reason', async () => {
+    await expectCancelledForValidation([
+      {
+        Update: {
+          TableName: compositeTableDef.name,
+          Key: { pk: { S: 'tw-idx-upd-nonscalar' }, sk: { S: 'b' } },
+          UpdateExpression: 'SET lsi1sk = :v',
+          ExpressionAttributeValues: { ':v': { L: [{ S: 'x' }] } },
+        },
+      },
+    ])
+  })
+
+  it('Put with an empty-string table key is a top-level ValidationException', async () => {
+    // Not a TransactionCanceledException — expectDynamoError asserts the name is
+    // ValidationException, which a cancellation wrapper would fail.
+    await expectDynamoError(
+      () => ddb.send(
+        new TransactWriteItemsCommand({
+          TransactItems: [
+            { Put: { TableName: hashTableDef.name, Item: { pk: { S: '' } } } },
+          ],
+        }),
+      ),
+      'ValidationException',
+      /empty string value/i,
+    )
+  })
+
+  it('Put with an empty-string index key is a top-level ValidationException', async () => {
+    await expectDynamoError(
+      () => ddb.send(
+        new TransactWriteItemsCommand({
+          TransactItems: [
+            {
+              Put: {
+                TableName: compositeTableDef.name,
+                Item: { pk: { S: 'tw-idx-empty' }, sk: { S: 'c' }, lsi1sk: { S: '' } },
+              },
+            },
+          ],
+        }),
+      ),
+      'ValidationException',
+      /secondary index key/i,
+    )
+  })
+
+  it('Update setting an empty-string index key is a top-level ValidationException', async () => {
+    await expectDynamoError(
+      () => ddb.send(
+        new TransactWriteItemsCommand({
+          TransactItems: [
+            {
+              Update: {
+                TableName: compositeTableDef.name,
+                Key: { pk: { S: 'tw-idx-upd-empty' }, sk: { S: 'c' } },
+                UpdateExpression: 'SET lsi1sk = :v',
+                ExpressionAttributeValues: { ':v': { S: '' } },
+              },
+            },
+          ],
+        }),
+      ),
+      'ValidationException',
+      /secondary index key/i,
     )
   })
 

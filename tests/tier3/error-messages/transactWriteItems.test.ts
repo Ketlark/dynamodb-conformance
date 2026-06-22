@@ -6,7 +6,11 @@ import {
   TransactionCanceledException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, cleanupItems } from '../../../src/helpers.js'
+import {
+  hashTableDef,
+  compositeTableDef,
+  cleanupItems,
+} from '../../../src/helpers.js'
 
 const keysToCleanup = [
   { pk: { S: 'em-twi-dup' } },
@@ -16,8 +20,20 @@ const keysToCleanup = [
   { pk: { S: 'em-twi-pos-new' } },
 ]
 
+// Defensive: the invalid-key-value cases below fail validation and write
+// nothing; clean up anyway in case a too-lenient target persists them.
+const compositeKeysToCleanup = [
+  { pk: { S: 'em-twi-idx-type' }, sk: { S: 'a' } },
+  { pk: { S: 'em-twi-idx-nonscalar' }, sk: { S: 'b' } },
+  { pk: { S: 'em-twi-idx-empty' }, sk: { S: 'c' } },
+  { pk: { S: 'em-twi-idx-upd-type' }, sk: { S: 'a' } },
+  { pk: { S: 'em-twi-idx-upd-nonscalar' }, sk: { S: 'b' } },
+  { pk: { S: 'em-twi-idx-upd-empty' }, sk: { S: 'c' } },
+]
+
 afterAll(async () => {
   await cleanupItems(hashTableDef.name, keysToCleanup)
+  await cleanupItems(compositeTableDef.name, compositeKeysToCleanup)
 })
 
 describe('TransactWriteItems — exact error messages', { tags: ['transactions', 'data-plane'] }, () => {
@@ -222,5 +238,175 @@ describe('TransactWriteItems — exact error messages', { tags: ['transactions',
         'The conditional request failed',
       )
     }
+  })
+
+  // Invalid key value (table or index) inside a transact Put/Update. The error
+  // shape splits by fault, captured from real AWS eu-west-2:
+  //   - wrong type / non-scalar: TransactionCanceledException, reason code
+  //     'ValidationError', reason Message carrying the PutItem-style string;
+  //   - empty string: top-level ValidationException (up-front input validation).
+  // Index-key messages name gsi1, the alphabetically-first index lsi1sk keys.
+  const expectCancelledReason = async (
+    command: TransactWriteItemsCommand,
+    reasonMessage: string,
+  ) => {
+    try {
+      await ddb.send(command)
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(TransactionCanceledException)
+      const txErr = err as TransactionCanceledException
+      const expectedReasons = ['ValidationError'] as const
+      expect(txErr.message).toBe(
+        `Transaction cancelled, please refer cancellation reasons for specific reasons [${expectedReasons.join(', ')}]`,
+      )
+      expect(txErr.CancellationReasons?.map((r) => r.Code)).toEqual([
+        ...expectedReasons,
+      ])
+      expect(txErr.CancellationReasons?.[0]?.Message).toBe(reasonMessage)
+    }
+  }
+
+  const expectTopLevelValidation = async (
+    command: TransactWriteItemsCommand,
+    message: string,
+  ) => {
+    try {
+      await ddb.send(command)
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(message)
+    }
+  }
+
+  it('Put wrong-typed table key: cancelled with full ValidationError reason', async () => {
+    await expectCancelledReason(
+      new TransactWriteItemsCommand({
+        TransactItems: [{ Put: { TableName: hashTableDef.name, Item: { pk: { N: '5' } } } }],
+      }),
+      'One or more parameter values were invalid: Type mismatch for key pk expected: S actual: N',
+    )
+  })
+
+  it('Put non-scalar table key: cancelled with full ValidationError reason', async () => {
+    await expectCancelledReason(
+      new TransactWriteItemsCommand({
+        TransactItems: [{ Put: { TableName: hashTableDef.name, Item: { pk: { L: [{ S: 'x' }] } } } }],
+      }),
+      'One or more parameter values were invalid: Type mismatch for key pk expected: S actual: L',
+    )
+  })
+
+  it('Put wrong-typed index key: cancelled with full ValidationError reason', async () => {
+    await expectCancelledReason(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: compositeTableDef.name,
+              Item: { pk: { S: 'em-twi-idx-type' }, sk: { S: 'a' }, lsi1sk: { N: '5' } },
+            },
+          },
+        ],
+      }),
+      'One or more parameter values were invalid: Type mismatch for Index Key lsi1sk Expected: S Actual: N IndexName: gsi1',
+    )
+  })
+
+  it('Put non-scalar index key: cancelled with full ValidationError reason', async () => {
+    await expectCancelledReason(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: compositeTableDef.name,
+              Item: { pk: { S: 'em-twi-idx-nonscalar' }, sk: { S: 'b' }, lsi1sk: { L: [{ S: 'x' }] } },
+            },
+          },
+        ],
+      }),
+      'One or more parameter values were invalid: Type mismatch for Index Key lsi1sk Expected: S Actual: L IndexName: gsi1',
+    )
+  })
+
+  it('Update wrong-typed index key: cancelled with full ValidationError reason', async () => {
+    await expectCancelledReason(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Update: {
+              TableName: compositeTableDef.name,
+              Key: { pk: { S: 'em-twi-idx-upd-type' }, sk: { S: 'a' } },
+              UpdateExpression: 'SET lsi1sk = :v',
+              ExpressionAttributeValues: { ':v': { N: '5' } },
+            },
+          },
+        ],
+      }),
+      'One or more parameter values were invalid: Type mismatch for Index Key lsi1sk Expected: S Actual: N IndexName: gsi1',
+    )
+  })
+
+  it('Update non-scalar index key: cancelled with full ValidationError reason', async () => {
+    await expectCancelledReason(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Update: {
+              TableName: compositeTableDef.name,
+              Key: { pk: { S: 'em-twi-idx-upd-nonscalar' }, sk: { S: 'b' } },
+              UpdateExpression: 'SET lsi1sk = :v',
+              ExpressionAttributeValues: { ':v': { L: [{ S: 'x' }] } },
+            },
+          },
+        ],
+      }),
+      'One or more parameter values were invalid: Type mismatch for Index Key lsi1sk Expected: S Actual: L IndexName: gsi1',
+    )
+  })
+
+  it('Put empty-string table key: top-level ValidationException', async () => {
+    await expectTopLevelValidation(
+      new TransactWriteItemsCommand({
+        TransactItems: [{ Put: { TableName: hashTableDef.name, Item: { pk: { S: '' } } } }],
+      }),
+      'One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk',
+    )
+  })
+
+  it('Put empty-string index key: top-level ValidationException', async () => {
+    await expectTopLevelValidation(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: compositeTableDef.name,
+              Item: { pk: { S: 'em-twi-idx-empty' }, sk: { S: 'c' }, lsi1sk: { S: '' } },
+            },
+          },
+        ],
+      }),
+      'One or more parameter values are not valid. A value specified for a secondary index key is not supported. The AttributeValue for a key attribute cannot contain an empty string value. IndexName: gsi1, IndexKey: lsi1sk',
+    )
+  })
+
+  it('Update empty-string index key: top-level ValidationException', async () => {
+    await expectTopLevelValidation(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Update: {
+              TableName: compositeTableDef.name,
+              Key: { pk: { S: 'em-twi-idx-upd-empty' }, sk: { S: 'c' } },
+              UpdateExpression: 'SET lsi1sk = :v',
+              ExpressionAttributeValues: { ':v': { S: '' } },
+            },
+          },
+        ],
+      }),
+      'One or more parameter values are not valid. The update expression attempted to update a secondary index key to a value that is not supported. The AttributeValue for a key attribute cannot contain an empty string value.',
+    )
   })
 })
