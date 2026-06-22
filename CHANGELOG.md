@@ -3,6 +3,32 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
+## 2026-06-22
+
+Grew to 736 tests, up 30, covering what TransactWriteItems and BatchWriteItem do
+with an item whose key value is malformed - the wrong type, non-scalar, or an
+empty string - across both table and index keys. PutItem already covered this;
+the transactional and batch paths covered none of it.
+
+Characterising it against real AWS turned up a split worth pinning. An
+empty-string key value is rejected by up-front input validation, so even inside a
+transaction it surfaces as a top-level ValidationException. A wrong-typed or
+non-scalar key value is caught while the transaction runs, so it comes back as a
+TransactionCanceledException carrying a ValidationError reason rather than a
+top-level error. BatchWriteItem has no cancellation path, so every variant there
+is a plain ValidationException. The tests pin both halves, which catches two
+opposite mistakes: an engine that wraps the empty-string case as a cancellation,
+and one that surfaces the type-mismatch case as a top-level error.
+
+## 2026-06-21
+
+Grew to 706 tests, up 7, tightening secondary-index behaviour in Tier 1. Query
+and Scan on a GSI or LSI now assert sparse membership: an item that omits the
+index key stays off the index but remains on the base table. And PutItem now
+rejects an item whose GSI or LSI key value is the wrong type, non-scalar, or an
+empty string while the base-table keys are valid, holding an index key to its
+declared scalar type the same way a table key is held.
+
 ## 2026-06-09
 
 Real DynamoDB in eu-west-2 reworded a chunk of its validation errors, and the
