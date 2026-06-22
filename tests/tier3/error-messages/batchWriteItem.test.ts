@@ -4,14 +4,27 @@ import {
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, cleanupItems } from '../../../src/helpers.js'
+import {
+  hashTableDef,
+  compositeTableDef,
+  cleanupItems,
+} from '../../../src/helpers.js'
 
 const keysToCleanup = [
   { pk: { S: 'em-bw-dup' } },
 ]
 
+// Defensive: the invalid-index-key cases below fail validation and write
+// nothing; clean up anyway in case a too-lenient target persists them.
+const compositeKeysToCleanup = [
+  { pk: { S: 'em-bw-idx-type' }, sk: { S: 'a' } },
+  { pk: { S: 'em-bw-idx-nonscalar' }, sk: { S: 'b' } },
+  { pk: { S: 'em-bw-idx-empty' }, sk: { S: 'c' } },
+]
+
 afterAll(async () => {
   await cleanupItems(hashTableDef.name, keysToCleanup)
+  await cleanupItems(compositeTableDef.name, compositeKeysToCleanup)
 })
 
 describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plane'] }, () => {
@@ -102,5 +115,90 @@ describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plan
         'Requested resource not found',
       )
     }
+  })
+
+  // Invalid key value inside a PutRequest item. BatchWriteItem validates up front,
+  // so every variant is a top-level ValidationException (no cancellation path).
+  // Strings captured from real AWS eu-west-2. The wrong-type and non-scalar table
+  // keys collapse to the generic schema-mismatch message; the index-key messages
+  // name gsi1, the alphabetically-first index lsi1sk keys on compositeTableDef.
+  const expectExactValidation = async (
+    command: BatchWriteItemCommand,
+    message: string,
+  ) => {
+    try {
+      await ddb.send(command)
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(message)
+    }
+  }
+
+  it('wrong-typed table key: full schema-mismatch message', async () => {
+    await expectExactValidation(
+      new BatchWriteItemCommand({
+        RequestItems: { [hashTableDef.name]: [{ PutRequest: { Item: { pk: { N: '5' } } } }] },
+      }),
+      'The provided key element does not match the schema',
+    )
+  })
+
+  it('non-scalar table key: full schema-mismatch message', async () => {
+    await expectExactValidation(
+      new BatchWriteItemCommand({
+        RequestItems: { [hashTableDef.name]: [{ PutRequest: { Item: { pk: { L: [{ S: 'x' }] } } } }] },
+      }),
+      'The provided key element does not match the schema',
+    )
+  })
+
+  it('empty-string table key: full empty-value message', async () => {
+    await expectExactValidation(
+      new BatchWriteItemCommand({
+        RequestItems: { [hashTableDef.name]: [{ PutRequest: { Item: { pk: { S: '' } } } }] },
+      }),
+      'One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk',
+    )
+  })
+
+  it('wrong-typed index key: full type-mismatch message', async () => {
+    await expectExactValidation(
+      new BatchWriteItemCommand({
+        RequestItems: {
+          [compositeTableDef.name]: [
+            { PutRequest: { Item: { pk: { S: 'em-bw-idx-type' }, sk: { S: 'a' }, lsi1sk: { N: '5' } } } },
+          ],
+        },
+      }),
+      'One or more parameter values were invalid: Type mismatch for Index Key lsi1sk Expected: S Actual: N IndexName: gsi1',
+    )
+  })
+
+  it('non-scalar index key: full type-mismatch message', async () => {
+    await expectExactValidation(
+      new BatchWriteItemCommand({
+        RequestItems: {
+          [compositeTableDef.name]: [
+            { PutRequest: { Item: { pk: { S: 'em-bw-idx-nonscalar' }, sk: { S: 'b' }, lsi1sk: { L: [{ S: 'x' }] } } } },
+          ],
+        },
+      }),
+      'One or more parameter values were invalid: Type mismatch for Index Key lsi1sk Expected: S Actual: L IndexName: gsi1',
+    )
+  })
+
+  it('empty-string index key: full secondary-index-key message', async () => {
+    await expectExactValidation(
+      new BatchWriteItemCommand({
+        RequestItems: {
+          [compositeTableDef.name]: [
+            { PutRequest: { Item: { pk: { S: 'em-bw-idx-empty' }, sk: { S: 'c' }, lsi1sk: { S: '' } } } },
+          ],
+        },
+      }),
+      'One or more parameter values are not valid. A value specified for a secondary index key is not supported. The AttributeValue for a key attribute cannot contain an empty string value. IndexName: gsi1, IndexKey: lsi1sk',
+    )
   })
 })
