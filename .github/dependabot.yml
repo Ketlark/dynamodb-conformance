@@ -3,17 +3,21 @@ updates:
   - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
     open-pull-requests-limit: 5
     groups:
+      # The AWS SDK ships ~daily; keep every @aws-sdk/* in one group, including
+      # the dev-only clients, so it lands as a single monthly PR.
       aws-sdk:
         patterns:
           - "@aws-sdk/*"
       dev-dependencies:
         dependency-type: development
+        exclude-patterns:
+          - "@aws-sdk/*"
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
     open-pull-requests-limit: 5
