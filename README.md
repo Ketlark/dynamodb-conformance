@@ -34,14 +34,14 @@ _Scored against real DynamoDB in `eu-west-2`; behaviour varies by region and ove
 
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|------|------|------|---------|------|
-| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 736 | 0 | 0 | live (AWS) | 2026-06-23 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) | 97.3% | 93.7% | 93.0% | 95.3% | 688 | 34 | 14 | 0.10.0 | 2026-06-23 |
-| [ExtendDB](https://github.com/ExtendDB/extenddb) | 95.6% | 91.9% | 94.3% | 94.7% | 657 | 37 | 42 | v0.1.1 | 2026-06-23 |
-| [Floci](https://github.com/floci-io/floci) | 96.4% | 82.6% | 90.0% | 91.9% | 668 | 59 | 9 | 78ee619e895a | 2026-06-23 |
-| [Ministack](https://github.com/ministackorg/ministack) | 91.0% | 87.9% | 93.0% | 91.0% | 670 | 66 | 0 | a64f3c3bebff | 2026-06-23 |
-| [LocalStack](https://github.com/localstack/localstack) | 97.8% | 91.0% | 65.5% | 86.4% | 629 | 99 | 8 | 2026.5.4 | 2026-06-23 |
-| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 96.4% | 87.5% | 65.9% | 85.2% | 616 | 107 | 13 | d89f8fcc6b1a | 2026-06-23 |
-| [Dynalite](https://github.com/architect/dynalite) | 95.1% | 14.9% | 76.9% | 80.0% | 535 | 134 | 67 | 4.0.0 | 2026-06-23 |
+| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 744 | 0 | 0 | live (AWS) | 2026-06-23 |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) | 95.2% | 93.7% | 93.0% | 94.2% | 688 | 42 | 14 | 0.10.0 | 2026-06-23 |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) | 93.6% | 91.9% | 94.3% | 93.6% | 657 | 45 | 42 | v0.1.1 | 2026-06-23 |
+| [Floci](https://github.com/floci-io/floci) | 94.4% | 83.3% | 90.0% | 91.0% | 669 | 66 | 9 | 78ee619e895a | 2026-06-23 |
+| [Ministack](https://github.com/ministackorg/ministack) | 89.0% | 87.9% | 93.0% | 90.1% | 670 | 74 | 0 | a64f3c3bebff | 2026-06-23 |
+| [LocalStack](https://github.com/localstack/localstack) | 97.9% | 91.0% | 65.5% | 86.5% | 637 | 99 | 8 | 2026.5.4 | 2026-06-23 |
+| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 96.5% | 87.5% | 65.9% | 85.4% | 624 | 107 | 13 | d89f8fcc6b1a | 2026-06-23 |
+| [Dynalite](https://github.com/architect/dynalite) | 93.0% | 14.9% | 76.9% | 79.0% | 535 | 142 | 67 | 4.0.0 | 2026-06-23 |
 <!-- results:end -->
 
 **Live results:** [paritysuite.org](https://paritysuite.org) - the full table for every target, tracked run over run.
