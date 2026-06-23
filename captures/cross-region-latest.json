@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-06-23T12:58:09.004Z",
+  "capturedAt": "2026-06-23T22:33:13.230Z",
   "regions": {
     "us-east-1": {
       "region": "us-east-1",
@@ -14,7 +14,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_empty",
@@ -26,7 +27,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_long",
@@ -38,7 +40,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_badchars",
@@ -50,7 +53,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_ct_table_short",
@@ -62,7 +66,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "c_bw_over25",
@@ -70,11 +75,12 @@
           "note": "BatchWrite 26 requests",
           "threw": true,
           "name": "ValidationException",
-          "message": "1 validation error detected: Value '{_conformance_capdrift_h_1782219489009787182=[WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-0, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-1, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-2, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-3, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-4, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-5, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-6, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-7, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-8, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-9, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-10, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-11, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-12, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-13, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-14, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-15, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-16, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-17, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-18, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-19, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-20, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-21, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-22, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-23, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-24, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-25, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null)]}' at 'requestItems' failed to satisfy constraint: Map value must satisfy constraint: [Member must have length less than or equal to 25, Member must have length greater than or equal to 1]",
+          "message": "1 validation error detected: Value '{_conformance_capdrift_h_1782253993233240622=[WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@483470e1}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@483474a2}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48347863}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48347c24}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48347fe5}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@483483a6}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48348767}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48348b28}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48348ee9}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@483492aa}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81beb00}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81beec1}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81bf282}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81bf643}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81bfa04}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81bfdc5}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c0186}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c0547}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c0908}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c0cc9}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c5f5f}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c6320}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c66e1}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c6aa2}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c6e63}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c7224}, workloadProfileName=null), deleteRequest=null)]}' at 'requestItems' failed to satisfy constraint: Map value must satisfy constraint: [Member must have length less than or equal to 25, Member must have length greater than or equal to 1]",
           "n": 1,
           "fields": [
             "requestItems"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "c_ct_3keys",
@@ -82,11 +88,12 @@
           "note": "CreateTable 3 keySchema",
           "threw": true,
           "name": "ValidationException",
-          "message": "1 validation error detected: Value '[KeySchemaElement(attributeName=pk, keyType=HASH), KeySchemaElement(attributeName=sk, keyType=RANGE), KeySchemaElement(attributeName=extra, keyType=RANGE)]' at 'keySchema' failed to satisfy constraint: Member must have length less than or equal to 2",
+          "message": "1 validation error detected: Value '[com.amazonaws.dynamodb.v20120810.KeySchemaElement@ad28eb1d, com.amazonaws.dynamodb.v20120810.KeySchemaElement@38b9654b, com.amazonaws.dynamodb.v20120810.KeySchemaElement@3e80eb03]' at 'keySchema' failed to satisfy constraint: Member must have length less than or equal to 2",
           "n": 1,
           "fields": [
             "keySchema"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_empty_ss",
@@ -96,7 +103,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: An string set  may not be empty",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_empty_ns",
@@ -106,7 +114,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: An number set  may not be empty",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_dup_ss",
@@ -116,7 +125,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: Input collection [a, a] contains duplicates.",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_mix_expr",
@@ -126,7 +136,8 @@
           "name": "ValidationException",
           "message": "Can not use both expression and non-expression parameters in the same request: Non-expression parameters: {Expected} Expression parameters: {ConditionExpression}",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_eav_no_expr",
@@ -136,7 +147,8 @@
           "name": "ValidationException",
           "message": "ExpressionAttributeValues can only be specified when using expressions: ConditionExpression is null",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_redundant_parens",
@@ -146,7 +158,8 @@
           "name": "ValidationException",
           "message": "Invalid ConditionExpression: The expression has redundant parentheses;",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_contains_dup",
@@ -156,7 +169,8 @@
           "name": "ValidationException",
           "message": "Invalid ConditionExpression: The first operand must be distinct from the remaining operands for this operator or function; operator: contains, first operand: [data]",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_hashkey",
@@ -166,7 +180,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: Cannot update attribute pk. This attribute is part of the key",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_syntax",
@@ -176,7 +191,8 @@
           "name": "ValidationException",
           "message": "Invalid UpdateExpression: Syntax error; token: \"INVALID\", near: \"INVALID SYNTAX\"",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_unused_ean",
@@ -186,7 +202,8 @@
           "name": "ValidationException",
           "message": "Value provided in ExpressionAttributeNames unused in expressions: keys: {#unused}",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_unused_eav",
@@ -196,7 +213,8 @@
           "name": "ValidationException",
           "message": "Value provided in ExpressionAttributeValues unused in expressions: keys: {:unused}",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_missing_eav",
@@ -206,7 +224,8 @@
           "name": "ValidationException",
           "message": "Invalid UpdateExpression: An expression attribute value used in expression is not defined; attribute value: :v",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_mix",
@@ -216,7 +235,8 @@
           "name": "ValidationException",
           "message": "Can not use both expression and non-expression parameters in the same request: Non-expression parameters: {AttributeUpdates} Expression parameters: {UpdateExpression}",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_empty",
@@ -226,7 +246,8 @@
           "name": "ValidationException",
           "message": "Invalid UpdateExpression: The expression can not be empty;",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_rangekey",
@@ -236,7 +257,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: Cannot update attribute sk. This attribute is part of the key",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_empty_table_empty_item",
@@ -248,7 +270,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_empty_table_bad_rv",
@@ -261,7 +284,8 @@
           "fields": [
             "returnValues",
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_three_bad_enums",
@@ -275,7 +299,8 @@
             "returnValues",
             "returnConsumedCapacity",
             "returnItemCollectionMetrics"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_del_empty_table",
@@ -287,7 +312,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_del_two_bad_enums",
@@ -300,7 +326,8 @@
           "fields": [
             "returnValues",
             "returnConsumedCapacity"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_upd_empty_table",
@@ -312,7 +339,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_upd_two_bad_enums",
@@ -325,6 +353,224 @@
           "fields": [
             "returnConsumedCapacity",
             "returnValues"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "bw_table_wrongtype",
+          "family": "batch-key",
+          "note": "BatchWrite PutRequest pk wrong type (N on S)",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "bw_table_nonscalar",
+          "family": "batch-key",
+          "note": "BatchWrite PutRequest pk non-scalar (L)",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_empty",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_empty",
+          "family": "lookup-key",
+          "note": "GetItem Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_wrongtype",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk wrongtype",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_wrongtype",
+          "family": "lookup-key",
+          "note": "GetItem Key pk wrongtype",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_nonscalar",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk nonscalar",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_nonscalar",
+          "family": "lookup-key",
+          "note": "GetItem Key pk nonscalar",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_upd_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_del_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_cc_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_upd_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_del_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_cc_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_upd_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_del_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_cc_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
           ]
         }
       ],
@@ -347,7 +593,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_empty",
@@ -359,7 +606,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_long",
@@ -371,7 +619,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_badchars",
@@ -383,7 +632,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_ct_table_short",
@@ -395,7 +645,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "c_bw_over25",
@@ -403,11 +654,12 @@
           "note": "BatchWrite 26 requests",
           "threw": true,
           "name": "ValidationException",
-          "message": "1 validation error detected: Value '{_conformance_capdrift_h_1782219498502155717=[WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-0, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-1, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-2, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-3, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-4, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-5, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-6, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-7, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-8, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-9, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-10, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-11, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-12, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-13, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-14, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-15, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-16, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-17, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-18, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-19, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-20, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-21, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-22, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-23, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-24, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-25, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null)]}' at 'requestItems' failed to satisfy constraint: Map value must satisfy constraint: [Member must have length less than or equal to 25, Member must have length greater than or equal to 1]",
+          "message": "1 validation error detected: Value '{_conformance_capdrift_h_1782254008600161973=[WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-0, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-1, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-2, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-3, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-4, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-5, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-6, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-7, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-8, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-9, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-10, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-11, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-12, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-13, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-14, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-15, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-16, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-17, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-18, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-19, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-20, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-21, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-22, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-23, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-24, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-25, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null)]}' at 'requestItems' failed to satisfy constraint: Map value must satisfy constraint: [Member must have length less than or equal to 25, Member must have length greater than or equal to 1]",
           "n": 1,
           "fields": [
             "requestItems"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "c_ct_3keys",
@@ -419,7 +671,8 @@
           "n": 1,
           "fields": [
             "keySchema"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_empty_ss",
@@ -429,7 +682,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: An string set  may not be empty",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_empty_ns",
@@ -439,7 +693,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: An number set  may not be empty",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_dup_ss",
@@ -449,7 +704,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: Input collection [a, a] contains duplicates.",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_mix_expr",
@@ -459,7 +715,8 @@
           "name": "ValidationException",
           "message": "Can not use both expression and non-expression parameters in the same request: Non-expression parameters: {Expected} Expression parameters: {ConditionExpression}",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_eav_no_expr",
@@ -469,7 +726,8 @@
           "name": "ValidationException",
           "message": "ExpressionAttributeValues can only be specified when using expressions: ConditionExpression is null",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_redundant_parens",
@@ -479,7 +737,8 @@
           "name": "ValidationException",
           "message": "Invalid ConditionExpression: The expression has redundant parentheses;",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_contains_dup",
@@ -489,7 +748,8 @@
           "name": "ValidationException",
           "message": "Invalid ConditionExpression: The first operand must be distinct from the remaining operands for this operator or function; operator: contains, first operand: [data]",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_hashkey",
@@ -499,7 +759,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: Cannot update attribute pk. This attribute is part of the key",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_syntax",
@@ -509,7 +770,8 @@
           "name": "ValidationException",
           "message": "Invalid UpdateExpression: Syntax error; token: \"INVALID\", near: \"INVALID SYNTAX\"",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_unused_ean",
@@ -519,7 +781,8 @@
           "name": "ValidationException",
           "message": "Value provided in ExpressionAttributeNames unused in expressions: keys: {#unused}",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_unused_eav",
@@ -529,7 +792,8 @@
           "name": "ValidationException",
           "message": "Value provided in ExpressionAttributeValues unused in expressions: keys: {:unused}",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_missing_eav",
@@ -539,7 +803,8 @@
           "name": "ValidationException",
           "message": "Invalid UpdateExpression: An expression attribute value used in expression is not defined; attribute value: :v",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_mix",
@@ -549,7 +814,8 @@
           "name": "ValidationException",
           "message": "Can not use both expression and non-expression parameters in the same request: Non-expression parameters: {AttributeUpdates} Expression parameters: {UpdateExpression}",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_empty",
@@ -559,7 +825,8 @@
           "name": "ValidationException",
           "message": "Invalid UpdateExpression: The expression can not be empty;",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_rangekey",
@@ -569,7 +836,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: Cannot update attribute sk. This attribute is part of the key",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_empty_table_empty_item",
@@ -581,7 +849,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_empty_table_bad_rv",
@@ -594,7 +863,8 @@
           "fields": [
             "returnValues",
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_three_bad_enums",
@@ -608,7 +878,8 @@
             "returnValues",
             "returnConsumedCapacity",
             "returnItemCollectionMetrics"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_del_empty_table",
@@ -620,7 +891,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_del_two_bad_enums",
@@ -633,7 +905,8 @@
           "fields": [
             "returnValues",
             "returnConsumedCapacity"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_upd_empty_table",
@@ -645,7 +918,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_upd_two_bad_enums",
@@ -658,6 +932,224 @@
           "fields": [
             "returnConsumedCapacity",
             "returnValues"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "bw_table_wrongtype",
+          "family": "batch-key",
+          "note": "BatchWrite PutRequest pk wrong type (N on S)",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "bw_table_nonscalar",
+          "family": "batch-key",
+          "note": "BatchWrite PutRequest pk non-scalar (L)",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_empty",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_empty",
+          "family": "lookup-key",
+          "note": "GetItem Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_wrongtype",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk wrongtype",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_wrongtype",
+          "family": "lookup-key",
+          "note": "GetItem Key pk wrongtype",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_nonscalar",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk nonscalar",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_nonscalar",
+          "family": "lookup-key",
+          "note": "GetItem Key pk nonscalar",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_upd_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_del_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_cc_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_upd_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_del_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_cc_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_upd_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_del_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_cc_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
           ]
         }
       ],
@@ -680,7 +1172,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_empty",
@@ -692,7 +1185,8 @@
           "n": 1,
           "fields": [
             "TableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_long",
@@ -704,7 +1198,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_put_table_badchars",
@@ -716,7 +1211,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "s_ct_table_short",
@@ -728,7 +1224,8 @@
           "n": 1,
           "fields": [
             "tableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "c_bw_over25",
@@ -736,11 +1233,12 @@
           "note": "BatchWrite 26 requests",
           "threw": true,
           "name": "ValidationException",
-          "message": "1 validation error detected: Value '{_conformance_capdrift_h_1782219512108900170=[WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@483470e1}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@483474a2}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48347863}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48347c24}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48347fe5}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@483483a6}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48348767}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48348b28}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@48348ee9}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@483492aa}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81beb00}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81beec1}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81bf282}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81bf643}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81bfa04}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81bfdc5}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c0186}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c0547}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c0908}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c0cc9}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c5f5f}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c6320}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c66e1}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c6aa2}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c6e63}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=com.amazonaws.dynamodb.v20120810.AttributeValue@a81c7224}, workloadProfileName=null), deleteRequest=null)]}' at 'requestItems' failed to satisfy constraint: Map value must satisfy constraint: [Member must have length less than or equal to 25, Member must have length greater than or equal to 1]",
+          "message": "1 validation error detected: Value '{_conformance_capdrift_h_1782254032459785839=[WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-0, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-1, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-2, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-3, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-4, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-5, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-6, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-7, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-8, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-9, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-10, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-11, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-12, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-13, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-14, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-15, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-16, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-17, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-18, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-19, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-20, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-21, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-22, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-23, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-24, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null), WriteRequest(putRequest=PutRequest(item={pk=AttributeValue(s=bw-25, n=null, b=null, iNT=null, dECIMAL=null, dOUBLE=null, sS=null, nS=null, bS=null, iNTSET=null, dECIMALSET=null, dOUBLESET=null, m=null, l=null, nULL=null, bOOL=null)}, workloadProfileName=null), deleteRequest=null)]}' at 'requestItems' failed to satisfy constraint: Map value must satisfy constraint: [Member must have length less than or equal to 25, Member must have length greater than or equal to 1]",
           "n": 1,
           "fields": [
             "requestItems"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "c_ct_3keys",
@@ -748,11 +1246,12 @@
           "note": "CreateTable 3 keySchema",
           "threw": true,
           "name": "ValidationException",
-          "message": "1 validation error detected: Value '[com.amazonaws.dynamodb.v20120810.KeySchemaElement@ad28eb1d, com.amazonaws.dynamodb.v20120810.KeySchemaElement@38b9654b, com.amazonaws.dynamodb.v20120810.KeySchemaElement@3e80eb03]' at 'keySchema' failed to satisfy constraint: Member must have length less than or equal to 2",
+          "message": "1 validation error detected: Value '[KeySchemaElement(attributeName=pk, keyType=HASH), KeySchemaElement(attributeName=sk, keyType=RANGE), KeySchemaElement(attributeName=extra, keyType=RANGE)]' at 'keySchema' failed to satisfy constraint: Member must have length less than or equal to 2",
           "n": 1,
           "fields": [
             "keySchema"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_empty_ss",
@@ -762,7 +1261,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: One or more parameter values were invalid: An string set  may not be empty",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_empty_ns",
@@ -772,7 +1272,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: One or more parameter values were invalid: An number set  may not be empty",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_dup_ss",
@@ -782,7 +1283,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: One or more parameter values were invalid: Input collection [\"a\", \"a\"] contains duplicates.",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_mix_expr",
@@ -792,7 +1294,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Can not use both expression and non-expression parameters in the same request: Non-expression parameters: {Expected} Expression parameters: {ConditionExpression}",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_eav_no_expr",
@@ -802,7 +1305,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: ExpressionAttributeValues can only be specified when using expressions",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_redundant_parens",
@@ -812,7 +1316,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Invalid ConditionExpression: The expression has redundant parentheses;",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "b_put_contains_dup",
@@ -822,7 +1327,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Invalid ConditionExpression: The first operand must be distinct from the remaining operands for this operator or function; operator: contains, first operand: [data]",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_hashkey",
@@ -832,7 +1338,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: Cannot update attribute pk. This attribute is part of the key",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_syntax",
@@ -842,7 +1349,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Invalid UpdateExpression: Syntax error; token: \"INVALID\", near: \"INVALID SYNTAX\"",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_unused_ean",
@@ -852,7 +1360,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Value provided in ExpressionAttributeNames unused in expressions: keys: {#unused}",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_unused_eav",
@@ -862,7 +1371,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Value provided in ExpressionAttributeValues unused in expressions: keys: {:unused}",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_missing_eav",
@@ -872,7 +1382,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Invalid UpdateExpression: An expression attribute value used in expression is not defined; attribute value: :v",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_mix",
@@ -882,7 +1393,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Can not use both expression and non-expression parameters in the same request: Non-expression parameters: {AttributeUpdates} Expression parameters: {UpdateExpression}",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_empty",
@@ -892,7 +1404,8 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Invalid UpdateExpression: The expression can not be empty;",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "u_upd_rangekey",
@@ -902,7 +1415,8 @@
           "name": "ValidationException",
           "message": "One or more parameter values were invalid: Cannot update attribute sk. This attribute is part of the key",
           "n": null,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_empty_table_empty_item",
@@ -914,7 +1428,8 @@
           "n": 1,
           "fields": [
             "TableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_empty_table_bad_rv",
@@ -926,7 +1441,8 @@
           "n": 1,
           "fields": [
             "TableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_put_three_bad_enums",
@@ -938,7 +1454,8 @@
           "n": 3,
           "fields": [
             "returnConsumedCapacity"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_del_empty_table",
@@ -950,7 +1467,8 @@
           "n": 1,
           "fields": [
             "TableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_del_two_bad_enums",
@@ -962,7 +1480,8 @@
           "n": 2,
           "fields": [
             "returnConsumedCapacity"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_upd_empty_table",
@@ -974,7 +1493,8 @@
           "n": 1,
           "fields": [
             "TableName"
-          ]
+          ],
+          "cancellationReasons": null
         },
         {
           "id": "o_upd_two_bad_enums",
@@ -984,7 +1504,225 @@
           "name": "ValidationException",
           "message": "1 validation error detected: Failed to satisfy constraint: Member must satisfy enum value set: [ALL_OLD, UPDATED_OLD, ALL_NEW, UPDATE_NEW, NONE]",
           "n": 1,
-          "fields": []
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "bw_table_wrongtype",
+          "family": "batch-key",
+          "note": "BatchWrite PutRequest pk wrong type (N on S)",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "bw_table_nonscalar",
+          "family": "batch-key",
+          "note": "BatchWrite PutRequest pk non-scalar (L)",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_empty",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_empty",
+          "family": "lookup-key",
+          "note": "GetItem Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_wrongtype",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk wrongtype",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_wrongtype",
+          "family": "lookup-key",
+          "note": "GetItem Key pk wrongtype",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "del_key_nonscalar",
+          "family": "lookup-key",
+          "note": "DeleteItem Key pk nonscalar",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "get_key_nonscalar",
+          "family": "lookup-key",
+          "note": "GetItem Key pk nonscalar",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The provided key element does not match the schema",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_upd_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_del_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_cc_key_empty",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk empty",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "twi_upd_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_del_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_cc_key_wrongtype",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk wrongtype",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_upd_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite Update Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_del_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite Delete Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
+        },
+        {
+          "id": "twi_cc_key_nonscalar",
+          "family": "transact-key",
+          "note": "TransactWrite ConditionCheck Key pk nonscalar",
+          "threw": true,
+          "name": "TransactionCanceledException",
+          "message": "Transaction cancelled, please refer cancellation reasons for specific reasons [ValidationError]",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": [
+            {
+              "Code": "ValidationError",
+              "Message": "The provided key element does not match the schema"
+            }
+          ]
         }
       ],
       "nullRoundTrip": {
