@@ -37,7 +37,7 @@ _Scored against real DynamoDB in `eu-west-2`; behaviour varies by region and ove
 | [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 744 | 0 | 0 | live (AWS) | 2026-06-23 |
 | [Dynoxide](https://github.com/nubo-db/dynoxide) | 95.2% | 93.7% | 93.0% | 94.2% | 688 | 42 | 14 | 0.10.0 | 2026-06-23 |
 | [ExtendDB](https://github.com/ExtendDB/extenddb) | 93.6% | 91.9% | 94.3% | 93.6% | 657 | 45 | 42 | v0.1.1 | 2026-06-23 |
-| [Floci](https://github.com/floci-io/floci) | 94.4% | 83.3% | 90.0% | 91.0% | 669 | 66 | 9 | 78ee619e895a | 2026-06-23 |
+| [Floci](https://github.com/floci-io/floci) | 94.4% | 82.6% | 90.0% | 90.9% | 668 | 67 | 9 | 78ee619e895a | 2026-06-23 |
 | [Ministack](https://github.com/ministackorg/ministack) | 89.0% | 87.9% | 93.0% | 90.1% | 670 | 74 | 0 | a64f3c3bebff | 2026-06-23 |
 | [LocalStack](https://github.com/localstack/localstack) | 97.9% | 91.0% | 65.5% | 86.5% | 637 | 99 | 8 | 2026.5.4 | 2026-06-23 |
 | [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 96.5% | 87.5% | 65.9% | 85.4% | 624 | 107 | 13 | d89f8fcc6b1a | 2026-06-23 |
