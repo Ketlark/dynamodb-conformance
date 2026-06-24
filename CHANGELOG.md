@@ -3,6 +3,18 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
+## 2026-06-24
+
+Grew to 762 tests, up 18, covering a malformed value in the lookup Key of a
+TransactWriteItems Update, Delete, or ConditionCheck - the path a Put item key does
+not take. Captured across four regions (eu-west-2, us-east-1, ap-southeast-2,
+eu-central-1), where every string was identical, so they pin exactly. An empty-string
+Key surfaces as a top-level ValidationException with the same message a Put item key
+gives; a wrong-typed or non-scalar Key cancels with a ValidationError reason carrying
+"The provided key element does not match the schema" - the key-only form, not the
+"Type mismatch for key" message the item-key path returns. The same run confirmed the
+BatchWriteItem table-key schema-mismatch message is region-invariant.
+
 ## 2026-06-23
 
 Grew to 744 tests, up 8, pinning the Select / ProjectionExpression rules on Query
