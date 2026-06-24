@@ -409,4 +409,36 @@ describe('TransactWriteItems — exact error messages', { tags: ['transactions',
       'One or more parameter values are not valid. The update expression attempted to update a secondary index key to a value that is not supported. The AttributeValue for a key attribute cannot contain an empty string value.',
     )
   })
+
+  // Exact messages for a malformed lookup Key on transact Update / Delete /
+  // ConditionCheck (the key-only validation path). Four-region capture (2026-06-23),
+  // all invariant, so rung 1 .toBe(). Empty string carries the same message as a Put
+  // item key; wrong-type and non-scalar cancel with the schema-mismatch reason, NOT
+  // the Put 'Type mismatch for key' form.
+  const emptyKeyMsg = 'One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk'
+  const schemaMismatchMsg = 'The provided key element does not match the schema'
+  const cmd = (item: unknown) => new TransactWriteItemsCommand({ TransactItems: [item] as never })
+  const updKey = (key: unknown) => ({ Update: { TableName: hashTableDef.name, Key: { pk: key }, UpdateExpression: 'SET attr1 = :v', ExpressionAttributeValues: { ':v': { S: 'x' } } } })
+  const delKey = (key: unknown) => ({ Delete: { TableName: hashTableDef.name, Key: { pk: key } } })
+  const ccKey = (key: unknown) => ({ ConditionCheck: { TableName: hashTableDef.name, Key: { pk: key }, ConditionExpression: 'attribute_not_exists(pk)' } })
+
+  it('Update empty-string Key: top-level empty-value message', () =>
+    expectTopLevelValidation(cmd(updKey({ S: '' })), emptyKeyMsg))
+  it('Delete empty-string Key: top-level empty-value message', () =>
+    expectTopLevelValidation(cmd(delKey({ S: '' })), emptyKeyMsg))
+  it('ConditionCheck empty-string Key: top-level empty-value message', () =>
+    expectTopLevelValidation(cmd(ccKey({ S: '' })), emptyKeyMsg))
+
+  it('Update wrong-typed Key: cancelled with schema-mismatch reason', () =>
+    expectCancelledReason(cmd(updKey({ N: '5' })), schemaMismatchMsg))
+  it('Update non-scalar Key: cancelled with schema-mismatch reason', () =>
+    expectCancelledReason(cmd(updKey({ L: [{ S: 'x' }] })), schemaMismatchMsg))
+  it('Delete wrong-typed Key: cancelled with schema-mismatch reason', () =>
+    expectCancelledReason(cmd(delKey({ N: '5' })), schemaMismatchMsg))
+  it('Delete non-scalar Key: cancelled with schema-mismatch reason', () =>
+    expectCancelledReason(cmd(delKey({ L: [{ S: 'x' }] })), schemaMismatchMsg))
+  it('ConditionCheck wrong-typed Key: cancelled with schema-mismatch reason', () =>
+    expectCancelledReason(cmd(ccKey({ N: '5' })), schemaMismatchMsg))
+  it('ConditionCheck non-scalar Key: cancelled with schema-mismatch reason', () =>
+    expectCancelledReason(cmd(ccKey({ L: [{ S: 'x' }] })), schemaMismatchMsg))
 })
