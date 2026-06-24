@@ -118,8 +118,8 @@ async function captureRegion(region) {
     await p('o_upd_empty_table', 'ordering', "UpdateItem TableName='' Key={}", () => ddb.send(new UpdateItemCommand({ TableName: '', Key: {} })))
     await p('o_upd_two_bad_enums', 'ordering', 'UpdateItem 2 invalid enums', () => ddb.send(new UpdateItemCommand({ TableName: '_conformance_valid_table_name', Key: { pk: { S: 'test' } }, ReturnValues: 'INVALID', ReturnConsumedCapacity: 'INVALID' })))
 
-    // Invalid key-VALUE coverage for the batch / lookup / transact paths (dynoxide #97, #98).
-    // batch-key (#97): real AWS collapses wrong-type and non-scalar table keys to the
+    // Invalid key-VALUE coverage for the batch / lookup / transact paths.
+    // batch-key: real AWS collapses wrong-type and non-scalar table keys to the
     // generic schema-mismatch message, not PutItem's 'Type mismatch for key' form.
     await p('bw_table_wrongtype', 'batch-key', 'BatchWrite PutRequest pk wrong type (N on S)', () => ddb.send(new BatchWriteItemCommand({ RequestItems: { [H]: [{ PutRequest: { Item: { pk: { N: '5' } } } }] } })))
     await p('bw_table_nonscalar', 'batch-key', 'BatchWrite PutRequest pk non-scalar (L)', () => ddb.send(new BatchWriteItemCommand({ RequestItems: { [H]: [{ PutRequest: { Item: { pk: { L: [{ S: 'x' }] } } } }] } })))
@@ -130,14 +130,14 @@ async function captureRegion(region) {
       ['nonscalar', { L: [{ S: 'x' }] }],
     ]
 
-    // lookup-key baseline: the non-transactional behaviour the #98 transact hypothesis
-    // mirrors, captured so the mirror is falsifiable. A read may return no item, not throw.
+    // lookup-key baseline: the non-transactional behaviour the transact lookup-key
+    // cases mirror, captured alongside them. A read may return no item, not throw.
     for (const [k, val] of badKeys) {
       await p(`del_key_${k}`, 'lookup-key', `DeleteItem Key pk ${k}`, () => ddb.send(new DeleteItemCommand({ TableName: H, Key: { pk: val } })))
       await p(`get_key_${k}`, 'lookup-key', `GetItem Key pk ${k}`, () => ddb.send(new GetItemCommand({ TableName: H, Key: { pk: val } })))
     }
 
-    // transact-key (#98): the validate_key_only path. ConditionCheck carries an extra
+    // transact-key: the key-only validation path. ConditionCheck carries an extra
     // condition stage, so its rows are verified independently of Update / Delete.
     for (const [k, val] of badKeys) {
       await p(`twi_upd_key_${k}`, 'transact-key', `TransactWrite Update Key pk ${k}`, () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [{ Update: { TableName: H, Key: { pk: val }, UpdateExpression: 'SET attr1 = :v', ExpressionAttributeValues: { ':v': { S: 'x' } } } }] })))
