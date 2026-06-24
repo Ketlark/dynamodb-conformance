@@ -34,12 +34,12 @@ _Scored against real DynamoDB in `eu-west-2`; behaviour varies by region and ove
 
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|------|------|------|---------|------|
-| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 762 | 0 | 0 | live (AWS) | 2026-06-23 |
-| [ExtendDB](https://github.com/ExtendDB/extenddb) | 93.6% | 91.9% | 94.3% | 93.6% | 657 | 45 | 42 | v0.1.1 | 2026-06-23 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) | 95.2% | 89.7% | 90.8% | 92.8% | 694 | 54 | 14 | 0.10.0 | 2026-06-24 |
+| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 762 | 0 | 0 | live (AWS) | 2026-06-24 |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 100.0% | 99.2% | 99.7% | 746 | 2 | 14 | 0.11.0 | 2026-06-24 |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) | 93.6% | 89.8% | 90.8% | 92.1% | 663 | 57 | 42 | v0.1.1 | 2026-06-24 |
 | [Ministack](https://github.com/ministackorg/ministack) | 93.3% | 82.7% | 89.5% | 90.0% | 686 | 76 | 0 | 45cc7b1398e0 | 2026-06-24 |
 | [Floci](https://github.com/floci-io/floci) | 94.4% | 79.4% | 86.6% | 89.1% | 671 | 82 | 9 | 78ee619e895a | 2026-06-24 |
-| [LocalStack](https://github.com/localstack/localstack) | 97.9% | 89.4% | 64.3% | 85.7% | 646 | 108 | 8 | 2026.5.4 | 2026-06-24 |
+| [LocalStack](https://github.com/localstack/localstack) | 97.9% | 89.4% | 64.7% | 85.8% | 647 | 107 | 8 | 2026.6.0 | 2026-06-24 |
 | [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 96.5% | 86.1% | 64.7% | 84.5% | 633 | 116 | 13 | d89f8fcc6b1a | 2026-06-24 |
 | [Dynalite](https://github.com/architect/dynalite) | 93.0% | 13.3% | 73.9% | 77.0% | 535 | 160 | 67 | 4.0.0 | 2026-06-24 |
 <!-- results:end -->
