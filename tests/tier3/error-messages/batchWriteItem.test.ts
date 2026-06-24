@@ -119,9 +119,11 @@ describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plan
 
   // Invalid key value inside a PutRequest item. BatchWriteItem validates up front,
   // so every variant is a top-level ValidationException (no cancellation path).
-  // Strings captured from real AWS eu-west-2. The wrong-type and non-scalar table
-  // keys collapse to the generic schema-mismatch message; the index-key messages
-  // name gsi1, the alphabetically-first index lsi1sk keys on compositeTableDef.
+  // Strings captured from real AWS, invariant across four regions (eu-west-2,
+  // us-east-1, ap-southeast-2, eu-central-1; 2026-06-23) — so the table-key
+  // schema-mismatch message is the contract, not a region-local wording.
+  // Index-key messages name gsi1, the alphabetically-first index lsi1sk keys on
+  // compositeTableDef.
   const expectExactValidation = async (
     command: BatchWriteItemCommand,
     message: string,
