@@ -29,6 +29,7 @@ import {
   UpdateItemCommand,
   DeleteItemCommand,
   BatchWriteItemCommand,
+  TransactWriteItemsCommand,
 } from '@aws-sdk/client-dynamodb'
 
 const DEFAULT_REGIONS = ['eu-west-2', 'eu-central-1', 'us-east-1', 'ap-southeast-2']
@@ -57,7 +58,12 @@ async function probe(id, family, note, fn) {
     return { id, family, note, threw: false, name: null, message: null, n: null, fields: [] }
   } catch (e) {
     const message = e?.message ?? null
-    return { id, family, note, threw: true, name: e?.name ?? null, message, ...parse(message) }
+    // The reason Message is what the Tier 3 transact tests pin; the top-level
+    // message is only the static cancellation wrapper.
+    const cancellationReasons = Array.isArray(e?.CancellationReasons)
+      ? e.CancellationReasons.map((r) => ({ Code: r?.Code ?? null, Message: r?.Message ?? null }))
+      : null
+    return { id, family, note, threw: true, name: e?.name ?? null, message, ...parse(message), cancellationReasons }
   }
 }
 
@@ -111,6 +117,33 @@ async function captureRegion(region) {
     await p('o_del_two_bad_enums', 'ordering', 'DeleteItem 2 invalid enums', () => ddb.send(new DeleteItemCommand({ TableName: '_conformance_valid_table_name', Key: { pk: { S: 'test' } }, ReturnValues: 'INVALID', ReturnConsumedCapacity: 'INVALID' })))
     await p('o_upd_empty_table', 'ordering', "UpdateItem TableName='' Key={}", () => ddb.send(new UpdateItemCommand({ TableName: '', Key: {} })))
     await p('o_upd_two_bad_enums', 'ordering', 'UpdateItem 2 invalid enums', () => ddb.send(new UpdateItemCommand({ TableName: '_conformance_valid_table_name', Key: { pk: { S: 'test' } }, ReturnValues: 'INVALID', ReturnConsumedCapacity: 'INVALID' })))
+
+    // Invalid key-VALUE coverage for the batch / lookup / transact paths.
+    // batch-key: real AWS collapses wrong-type and non-scalar table keys to the
+    // generic schema-mismatch message, not PutItem's 'Type mismatch for key' form.
+    await p('bw_table_wrongtype', 'batch-key', 'BatchWrite PutRequest pk wrong type (N on S)', () => ddb.send(new BatchWriteItemCommand({ RequestItems: { [H]: [{ PutRequest: { Item: { pk: { N: '5' } } } }] } })))
+    await p('bw_table_nonscalar', 'batch-key', 'BatchWrite PutRequest pk non-scalar (L)', () => ddb.send(new BatchWriteItemCommand({ RequestItems: { [H]: [{ PutRequest: { Item: { pk: { L: [{ S: 'x' }] } } } }] } })))
+
+    const badKeys = [
+      ['empty', { S: '' }],
+      ['wrongtype', { N: '5' }],
+      ['nonscalar', { L: [{ S: 'x' }] }],
+    ]
+
+    // lookup-key baseline: the non-transactional behaviour the transact lookup-key
+    // cases mirror, captured alongside them. A read may return no item, not throw.
+    for (const [k, val] of badKeys) {
+      await p(`del_key_${k}`, 'lookup-key', `DeleteItem Key pk ${k}`, () => ddb.send(new DeleteItemCommand({ TableName: H, Key: { pk: val } })))
+      await p(`get_key_${k}`, 'lookup-key', `GetItem Key pk ${k}`, () => ddb.send(new GetItemCommand({ TableName: H, Key: { pk: val } })))
+    }
+
+    // transact-key: the key-only validation path. ConditionCheck carries an extra
+    // condition stage, so its rows are verified independently of Update / Delete.
+    for (const [k, val] of badKeys) {
+      await p(`twi_upd_key_${k}`, 'transact-key', `TransactWrite Update Key pk ${k}`, () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [{ Update: { TableName: H, Key: { pk: val }, UpdateExpression: 'SET attr1 = :v', ExpressionAttributeValues: { ':v': { S: 'x' } } } }] })))
+      await p(`twi_del_key_${k}`, 'transact-key', `TransactWrite Delete Key pk ${k}`, () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [{ Delete: { TableName: H, Key: { pk: val } } }] })))
+      await p(`twi_cc_key_${k}`, 'transact-key', `TransactWrite ConditionCheck Key pk ${k}`, () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [{ ConditionCheck: { TableName: H, Key: { pk: val }, ConditionExpression: 'attribute_not_exists(pk)' } }] })))
+    }
 
     // { NULL: false } round-trip
     let nullRoundTrip

@@ -845,6 +845,45 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
     )
   })
 
+  // A malformed VALUE in the lookup Key of an Update / Delete / ConditionCheck
+  // (the key-only validation path, distinct from a Put item key). Four-region
+  // capture (2026-06-23): empty string -> top-level ValidationException; wrong-type
+  // / non-scalar -> cancelled with a ValidationError reason. The two helpers are
+  // opposite guards — expectDynamoError fails an engine that wraps the empty-string
+  // case as a cancellation, expectCancelledForValidation fails one that surfaces the
+  // type cases as a top-level error. ConditionCheck behaves like the others. Exact
+  // strings: tests/tier3/error-messages/transactWriteItems.test.ts.
+  const updKey = (key: unknown) => ({ Update: { TableName: hashTableDef.name, Key: { pk: key }, UpdateExpression: 'SET attr1 = :v', ExpressionAttributeValues: { ':v': { S: 'x' } } } })
+  const delKey = (key: unknown) => ({ Delete: { TableName: hashTableDef.name, Key: { pk: key } } })
+  const ccKey = (key: unknown) => ({ ConditionCheck: { TableName: hashTableDef.name, Key: { pk: key }, ConditionExpression: 'attribute_not_exists(pk)' } })
+
+  const expectKeyTopLevelValidation = (transactItem: unknown) =>
+    expectDynamoError(
+      () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [transactItem] as never })),
+      'ValidationException',
+      /empty string value/i,
+    )
+
+  it('Update with an empty-string Key is a top-level ValidationException', () =>
+    expectKeyTopLevelValidation(updKey({ S: '' })))
+  it('Delete with an empty-string Key is a top-level ValidationException', () =>
+    expectKeyTopLevelValidation(delKey({ S: '' })))
+  it('ConditionCheck with an empty-string Key is a top-level ValidationException', () =>
+    expectKeyTopLevelValidation(ccKey({ S: '' })))
+
+  it('Update with a wrong-typed Key cancels with a ValidationError reason', () =>
+    expectCancelledForValidation([updKey({ N: '5' })]))
+  it('Update with a non-scalar Key cancels with a ValidationError reason', () =>
+    expectCancelledForValidation([updKey({ L: [{ S: 'x' }] })]))
+  it('Delete with a wrong-typed Key cancels with a ValidationError reason', () =>
+    expectCancelledForValidation([delKey({ N: '5' })]))
+  it('Delete with a non-scalar Key cancels with a ValidationError reason', () =>
+    expectCancelledForValidation([delKey({ L: [{ S: 'x' }] })]))
+  it('ConditionCheck with a wrong-typed Key cancels with a ValidationError reason', () =>
+    expectCancelledForValidation([ccKey({ N: '5' })]))
+  it('ConditionCheck with a non-scalar Key cancels with a ValidationError reason', () =>
+    expectCancelledForValidation([ccKey({ L: [{ S: 'x' }] })]))
+
   it('Update with attribute_exists rejects non-existent item', async () => {
     // TransactWriteItems Update with attribute_exists(pk) on a key that does
     // not exist must cancel the transaction — not silently create the item.
