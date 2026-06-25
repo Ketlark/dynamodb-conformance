@@ -126,12 +126,6 @@ Commits-style prefix (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`,
 `ci:`) is preferred when one fits but is not a gate. Bodies are
 welcome for anything non-obvious.
 
-## AI-assisted contributions
-
-AI tools are welcome. If an AI tool drafted or materially shaped the
-change, say so in the PR description. A single line is enough. This
-helps calibrate review; it is not a gate.
-
 ## Licensing
 
 The conformance suite is licensed under the Apache License 2.0. By submitting a contribution, you agree that your contribution is licensed under the same terms.

@@ -12,6 +12,8 @@ where direction was agreed. -->
 - [ ] New or modified tests run against at least one emulator target
   and behave as expected
 - [ ] Linked issue or a short note explaining the motivation
+- [ ] I agree my contribution is licensed under the project's terms
+  (Apache License, Version 2.0)
 
 ## Tier and scope (delete if not applicable)
 

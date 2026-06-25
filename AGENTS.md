@@ -27,15 +27,6 @@ DynamoDB does.
    issue before a PR that adds a new tier, changes how a tier is
    defined, or touches the results pipeline. Small test additions and
    fixes are fine without a prior issue.
-4. **Disclose AI assistance.** If an AI tool drafted or materially
-   shaped the change, note it in the PR description. A single line
-   is enough; the bar is "tell us, any level", not "match a specific
-   phrasing". Examples:
-   - "Drafted by Cursor; I reviewed and ran the tests."
-   - "Copilot autocomplete on the glue code, otherwise hand-written."
-   - "Hand-written; Claude Code reviewed it and flagged two edits I
-     took."
-   This keeps maintainer review calibrated; it is not a gate.
 
 ## TypeScript conventions
 
