@@ -178,4 +178,24 @@ describe('Scan — exact error messages', { tags: ['scan', 'data-plane', 'negati
       )
     }
   })
+
+  // Parity with Query: SPECIFIC_ATTRIBUTES needs a ProjectionExpression (or legacy
+  // AttributesToGet); with neither, real DynamoDB rejects before reading.
+  it('Select SPECIFIC_ATTRIBUTES without ProjectionExpression: full required-projection message', async () => {
+    try {
+      await ddb.send(
+        new ScanCommand({
+          TableName: hashTableDef.name,
+          Select: 'SPECIFIC_ATTRIBUTES',
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Must specify the AttributesToGet or ProjectionExpression when choosing to get SPECIFIC_ATTRIBUTES',
+      )
+    }
+  })
 })
