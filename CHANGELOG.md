@@ -3,6 +3,17 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
+## 2026-06-26
+
+Grew to 767 tests, up 5, covering DynamoDB's 32-level document nesting limit and
+number-set equality precision. The nesting cases pin the boundary on both paths - a
+stored item via PutItem and an ExpressionAttributeValue in a ConditionExpression -
+accepting 31 levels of map nesting and rejecting 32 with the same ValidationException,
+captured against real DynamoDB in eu-west-2. The expression-value error comes back
+bare, before the condition is evaluated, not wrapped as an invalid-value message. The
+precision case pins that two number sets differing only in the last of 18 digits are
+distinct, where an f64 comparison would collapse them and report a match.
+
 ## 2026-06-24
 
 Grew to 762 tests, up 18, covering a malformed value in the lookup Key of a
