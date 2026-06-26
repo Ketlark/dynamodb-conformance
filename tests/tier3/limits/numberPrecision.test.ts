@@ -12,6 +12,7 @@ import {
   expectDynamoError,
 } from '../../../src/helpers.js'
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Number precision — DynamoDB number limits and edge cases', { tags: ['put-item', 'get-item', 'update-item', 'query', 'data-plane'] }, () => {
   const hashKeys = [
     { pk: { S: 'np-38digits' } },

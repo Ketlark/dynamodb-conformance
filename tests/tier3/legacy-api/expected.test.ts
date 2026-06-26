@@ -6,6 +6,7 @@ import {
 import { ddb } from '../../../src/client.js'
 import { hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Legacy API — Expected (legacy ConditionExpression)', { tags: ['put-item', 'delete-item', 'legacy', 'data-plane'] }, () => {
   const keys = [
     { pk: { S: 'expected-1' } },

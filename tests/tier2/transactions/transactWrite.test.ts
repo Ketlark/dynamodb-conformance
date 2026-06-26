@@ -643,6 +643,7 @@ describe('TransactWriteItems - multiple items', { tags: ['transactions', 'data-p
   })
 })
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane'] }, () => {
   it('rejects duplicate target items in same transaction', async () => {
     await expectDynamoError(

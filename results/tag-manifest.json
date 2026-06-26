@@ -22,7 +22,8 @@
     "tests/tier1/batchGetItem/validation.test.ts": {
       "BatchGetItem — validation": [
         "batch",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/batchWriteItem/basic.test.ts": {
@@ -38,7 +39,8 @@
     "tests/tier1/batchWriteItem/validation.test.ts": {
       "BatchWriteItem — validation": [
         "batch",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/createTable/basic.test.ts": {
@@ -52,7 +54,8 @@
       ],
       "CreateTable — validation": [
         "create-table",
-        "control-plane"
+        "control-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/createTable/config.test.ts": {
@@ -98,7 +101,8 @@
     "tests/tier1/deleteItem/validation.test.ts": {
       "DeleteItem — validation": [
         "delete-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/deleteTable/basic.test.ts": {
@@ -108,7 +112,8 @@
       ],
       "DeleteTable — validation": [
         "delete-table",
-        "control-plane"
+        "control-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/describeTable/basic.test.ts": {
@@ -122,7 +127,8 @@
       ],
       "DescribeTable — validation": [
         "describe-table",
-        "control-plane"
+        "control-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/getItem/basic.test.ts": {
@@ -158,7 +164,8 @@
     "tests/tier1/getItem/validation.test.ts": {
       "GetItem — validation": [
         "get-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/listTables/basic.test.ts": {
@@ -238,7 +245,8 @@
     "tests/tier1/putItem/validation.test.ts": {
       "PutItem — validation": [
         "put-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/query/basic.test.ts": {
@@ -344,13 +352,15 @@
       ],
       "Query — Select / ProjectionExpression rejections": [
         "query",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/query/validation.test.ts": {
       "Query — validation": [
         "query",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/scan/basic.test.ts": {
@@ -396,7 +406,8 @@
       ],
       "Scan — filter expression validation": [
         "scan",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/scan/gsi.test.ts": {
@@ -445,13 +456,15 @@
       ],
       "Scan — Select / ProjectionExpression rejections": [
         "scan",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/scan/validation.test.ts": {
       "Scan — validation": [
         "scan",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/updateItem/basic.test.ts": {
@@ -503,7 +516,8 @@
     "tests/tier1/updateItem/validation.test.ts": {
       "UpdateItem — validation": [
         "update-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/updateTable/basic.test.ts": {
@@ -513,7 +527,8 @@
       ],
       "UpdateTable — validation": [
         "update-table",
-        "control-plane"
+        "control-plane",
+        "negative-path"
       ]
     },
     "tests/tier1/updateTable/config.test.ts": {
@@ -608,7 +623,8 @@
       ],
       "Tags — validation": [
         "resource-tags",
-        "control-plane"
+        "control-plane",
+        "negative-path"
       ]
     },
     "tests/tier2/transactions/transactGet.test.ts": {
@@ -618,7 +634,8 @@
       ],
       "TransactGetItems - validation": [
         "transactions",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ],
       "TransactGetItems — ConsumedCapacity": [
         "transactions",
@@ -658,7 +675,8 @@
       ],
       "TTL — validation": [
         "ttl",
-        "control-plane"
+        "control-plane",
+        "negative-path"
       ]
     },
     "tests/tier2/updateTable/gsi.test.ts": {
@@ -678,19 +696,22 @@
         "update-table",
         "control-plane",
         "slow",
-        "gsi"
+        "gsi",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/batchGetItem.test.ts": {
       "BatchGetItem — exact error messages": [
         "batch",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/batchWriteItem.test.ts": {
       "BatchWriteItem — exact error messages": [
         "batch",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/conditionalCheck.test.ts": {
@@ -699,25 +720,29 @@
         "update-item",
         "delete-item",
         "transactions",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/createTable.test.ts": {
       "CreateTable — exact error messages": [
         "create-table",
-        "control-plane"
+        "control-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/deleteItem.test.ts": {
       "DeleteItem — exact error messages": [
         "delete-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/getItem.test.ts": {
       "GetItem — exact error messages": [
         "get-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/putItem.test.ts": {
@@ -729,31 +754,36 @@
     "tests/tier3/error-messages/query.test.ts": {
       "Query — exact error messages": [
         "query",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/scan.test.ts": {
       "Scan — exact error messages": [
         "scan",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/transactGetItems.test.ts": {
       "TransactGetItems — exact error messages": [
         "transactions",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/transactWriteItems.test.ts": {
       "TransactWriteItems — exact error messages": [
         "transactions",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/updateItem.test.ts": {
       "UpdateItem — exact error messages": [
         "update-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/legacy-api/attributeUpdates.test.ts": {
@@ -867,50 +897,58 @@
     "tests/tier3/validation-ordering/batchOperations.test.ts": {
       "Batch operations — validation ordering": [
         "batch",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/validation-ordering/createTable.test.ts": {
       "CreateTable — validation ordering": [
         "create-table",
-        "control-plane"
+        "control-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/validation-ordering/deleteItem.test.ts": {
       "DeleteItem — validation ordering": [
         "delete-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/validation-ordering/index.test.ts": {
       "Non-existent index — error surface": [
         "query",
         "scan",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/validation-ordering/putItem.test.ts": {
       "PutItem — validation ordering": [
         "put-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/validation-ordering/query.test.ts": {
       "Query — validation ordering": [
         "query",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/validation-ordering/scan.test.ts": {
       "Scan — validation ordering": [
         "scan",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/validation-ordering/updateItem.test.ts": {
       "UpdateItem — validation ordering": [
         "update-item",
-        "data-plane"
+        "data-plane",
+        "negative-path"
       ]
     }
   }
