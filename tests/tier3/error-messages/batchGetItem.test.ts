@@ -6,7 +6,7 @@ import {
 import { ddb } from '../../../src/client.js'
 import { hashTableDef } from '../../../src/helpers.js'
 
-describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'] }, () => {
+describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
   it('empty RequestItems: full required-parameter error', async () => {
     try {
       await ddb.send(new BatchGetItemCommand({ RequestItems: {} }))

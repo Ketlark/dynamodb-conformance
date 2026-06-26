@@ -6,7 +6,7 @@ import {
   expectDynamoError,
 } from '../../../src/helpers.js'
 
-describe('BatchWriteItem — validation', { tags: ['batch', 'data-plane'] }, () => {
+describe('BatchWriteItem — validation', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
   it('rejects more than 25 items', async () => {
     const items = Array.from({ length: 26 }, (_, i) => ({
       PutRequest: {

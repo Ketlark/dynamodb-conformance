@@ -6,7 +6,7 @@ import {
   expectDynamoError,
 } from '../../../src/helpers.js'
 
-describe('PutItem — validation', { tags: ['put-item', 'data-plane'] }, () => {
+describe('PutItem — validation', { tags: ['put-item', 'data-plane', 'negative-path'] }, () => {
   it('rejects PutItem to a non-existent table', async () => {
     await expectDynamoError(
       () => ddb.send(
