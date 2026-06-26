@@ -150,6 +150,7 @@ The vocabulary lives in one place, `src/tags.ts`, and stays honest two ways: `st
 | `lsi` | Exercises Local Secondary Indexes |
 | `legacy` | Deprecated request parameters (AttributeUpdates, QueryFilter, ScanFilter, Expected, AttributesToGet) |
 | `slow` | Long-running against real AWS; the set `test:gating` excludes |
+| `negative-path` | Asserts only rejections: every case expects a validation error, conditional-check failure, or transaction cancellation |
 <!-- tags:end -->
 
 ## Running against targets
