@@ -5,15 +5,29 @@ broadened, and targets brought into the run. Newest first.
 
 ## 2026-06-26
 
-Grew to 806 tests, up 44, covering DynamoDB's 32-level document nesting limit,
-number-set equality precision, and Number format on PutItem. The nesting cases pin
-the boundary on both paths - a stored item via PutItem and an ExpressionAttributeValue
+Grew to 816 tests, up 54, covering DynamoDB's 32-level document nesting limit,
+number-set equality precision, Number format on PutItem, and a sweep of
+parameter-combination rejections behind a new negative-path filter. The nesting cases
+pin the boundary on both paths - a stored item via PutItem and an ExpressionAttributeValue
 in a ConditionExpression - accepting 31 levels of map nesting and rejecting 32 with the
 same ValidationException, captured against real DynamoDB in eu-west-2. The
 expression-value error comes back bare, before the condition is evaluated, not wrapped
 as an invalid-value message. The precision case pins that two number sets differing
 only in the last of 18 digits are distinct, where an f64 comparison would collapse them
 and report a match.
+
+A negative-path tag now marks every wholly-rejection describe across all three tiers, so
+a run can select or exclude the rejection class with `--tags-filter` - something
+directory filtering cannot do, because the negative describes are not all under tier3/.
+The new rejection cases it makes filterable pin parameter combinations that are each
+well-formed but illegal together, caught before any read: Scan parity for the
+Select/ProjectionExpression and consistent-read-on-a-GSI rules already held on Query;
+DeleteItem and BatchGetItem rejecting a legacy non-expression parameter mixed with its
+modern expression equivalent; and three CreateTable contradictions - PAY_PER_REQUEST
+with a ProvisionedThroughput, a GSI INCLUDE projection with no NonKeyAttributes, and a
+stream left disabled while a StreamViewType is set. Each was characterised against real
+DynamoDB in eu-west-2 and asserts the contractual phrase, floating the region-varying
+envelope.
 
 The Number format cases pin which N strings DynamoDB accepts, how it normalises them on
 read-back, and which it rejects. A leading '+' on the mantissa is accepted and dropped
