@@ -230,7 +230,7 @@ describe('Query — Select SPECIFIC_ATTRIBUTES', { tags: ['query', 'data-plane']
 })
 
 // ProjectionExpression requires SPECIFIC_ATTRIBUTES; ALL_PROJECTED_ATTRIBUTES requires an IndexName.
-describe('Query — Select / ProjectionExpression rejections', { tags: ['query', 'data-plane'] }, () => {
+describe('Query — Select / ProjectionExpression rejections', { tags: ['query', 'data-plane', 'negative-path'] }, () => {
   it('Select ALL_ATTRIBUTES with ProjectionExpression is rejected', async () => {
     await expectDynamoError(
       () =>

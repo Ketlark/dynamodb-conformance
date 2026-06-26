@@ -164,7 +164,7 @@ describe('Tags — basic', { tags: ['resource-tags', 'control-plane'] }, () => {
   })
 })
 
-describe('Tags — validation', { tags: ['resource-tags', 'control-plane'] }, () => {
+describe('Tags — validation', { tags: ['resource-tags', 'control-plane', 'negative-path'] }, () => {
   it('rejects TagResource with an invalid ARN format', async () => {
     await expectDynamoError(
       () =>

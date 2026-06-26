@@ -115,7 +115,7 @@ describe('TTL — basic', { tags: ['ttl', 'control-plane'] }, () => {
   })
 })
 
-describe('TTL — validation', { tags: ['ttl', 'control-plane'] }, () => {
+describe('TTL — validation', { tags: ['ttl', 'control-plane', 'negative-path'] }, () => {
   const tablesToCleanup: string[] = []
 
   afterAll(async () => {
