@@ -125,4 +125,19 @@ describe('Scan — Select / ProjectionExpression rejections', { tags: ['scan', '
       'Cannot specify the ProjectionExpression when choosing to get ALL_PROJECTED_ATTRIBUTES',
     )
   })
+
+  // Parity with Query: SPECIFIC_ATTRIBUTES requires a ProjectionExpression (or legacy
+  // AttributesToGet). With neither, real DynamoDB rejects before reading.
+  it('Select SPECIFIC_ATTRIBUTES without ProjectionExpression is rejected', async () => {
+    await expectDynamoError(
+      () =>
+        ddb.send(
+          new ScanCommand({
+            TableName: hashTableDef.name,
+            Select: 'SPECIFIC_ATTRIBUTES',
+          }),
+        ),
+      'ValidationException',
+    )
+  })
 })
