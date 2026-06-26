@@ -18,10 +18,12 @@ function deepMap(depth: number): AttributeValue {
   return v
 }
 
-// Region wording varies; pin the invariant. AWS returns:
+// Region wording varies; pin the invariant. AWS returns (eu-west-2):
 //   "Nesting Levels have exceeded supported limits: Attributes in the item have
 //    nested levels beyond supported limit"
-const NEST_MSG = /nested levels|nesting levels/i
+// Require both the "nest(ing|ed) levels" and "supported limit" phrases together, so an
+// unrelated ValidationException that merely mentions nesting cannot pass the assertion.
+const NEST_MSG = /nest(?:ing|ed) levels[\s\S]*supported limit/i
 
 // no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Nesting depth — 32-level document limit', { tags: ['put-item', 'update-item', 'data-plane'] }, () => {

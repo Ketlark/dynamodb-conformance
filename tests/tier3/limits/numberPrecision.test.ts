@@ -39,6 +39,12 @@ describe('Number precision — DynamoDB number limits and edge cases', { tags: [
 
   afterAll(async () => {
     await cleanupItems(hashTableDef.name, hashKeys)
+    // np-overflow and np-ns-precision are created mid-test; clean them here too so a
+    // failed assertion before their inline cleanup cannot leak them into the shared table.
+    await cleanupItems(hashTableDef.name, [
+      { pk: { S: 'np-overflow' } },
+      { pk: { S: 'np-ns-precision' } },
+    ])
     await cleanupItems(compositeNTableDef.name, compositeKeys)
   })
 
