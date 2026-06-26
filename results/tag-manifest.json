@@ -223,6 +223,12 @@
         "data-plane"
       ]
     },
+    "tests/tier1/putItem/numberFormat.test.ts": {
+      "PutItem — number format": [
+        "put-item",
+        "data-plane"
+      ]
+    },
     "tests/tier1/putItem/numericKeys.test.ts": {
       "PutItem — numeric hash key": [
         "put-item",
@@ -812,6 +818,13 @@
       ],
       "Item size limit — number sizing": [
         "put-item",
+        "data-plane"
+      ]
+    },
+    "tests/tier3/limits/nestingDepth.test.ts": {
+      "Nesting depth — 32-level document limit": [
+        "put-item",
+        "update-item",
         "data-plane"
       ]
     },
