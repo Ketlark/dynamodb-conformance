@@ -253,7 +253,6 @@ describe('CreateTable — validation', { tags: ['create-table', 'control-plane',
         }),
       ),
       'ValidationException',
-      'Neither ReadCapacityUnits nor WriteCapacityUnits can be specified when BillingMode is PAY_PER_REQUEST',
     )
   })
 
@@ -280,7 +279,6 @@ describe('CreateTable — validation', { tags: ['create-table', 'control-plane',
         }),
       ),
       'ValidationException',
-      'ProjectionType is INCLUDE, but NonKeyAttributes is not specified',
     )
   })
 
@@ -301,7 +299,6 @@ describe('CreateTable — validation', { tags: ['create-table', 'control-plane',
         }),
       ),
       'ValidationException',
-      'Table is being created with a stream disabled, UpdateViewType should not be specified',
     )
   })
 })

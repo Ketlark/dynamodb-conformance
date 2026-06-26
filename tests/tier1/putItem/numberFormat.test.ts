@@ -58,6 +58,7 @@ const REJECTED = [
   '1 5',
 ]
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('PutItem — number format', { tags: ['put-item', 'data-plane'] }, () => {
   afterAll(async () => {
     await cleanupItems(
