@@ -5,14 +5,22 @@ broadened, and targets brought into the run. Newest first.
 
 ## 2026-06-26
 
-Grew to 767 tests, up 5, covering DynamoDB's 32-level document nesting limit and
-number-set equality precision. The nesting cases pin the boundary on both paths - a
-stored item via PutItem and an ExpressionAttributeValue in a ConditionExpression -
-accepting 31 levels of map nesting and rejecting 32 with the same ValidationException,
-captured against real DynamoDB in eu-west-2. The expression-value error comes back
-bare, before the condition is evaluated, not wrapped as an invalid-value message. The
-precision case pins that two number sets differing only in the last of 18 digits are
-distinct, where an f64 comparison would collapse them and report a match.
+Grew to 806 tests, up 44, covering DynamoDB's 32-level document nesting limit,
+number-set equality precision, and Number format on PutItem. The nesting cases pin
+the boundary on both paths - a stored item via PutItem and an ExpressionAttributeValue
+in a ConditionExpression - accepting 31 levels of map nesting and rejecting 32 with the
+same ValidationException, captured against real DynamoDB in eu-west-2. The
+expression-value error comes back bare, before the condition is evaluated, not wrapped
+as an invalid-value message. The precision case pins that two number sets differing
+only in the last of 18 digits are distinct, where an f64 comparison would collapse them
+and report a match.
+
+The Number format cases pin which N strings DynamoDB accepts, how it normalises them on
+read-back, and which it rejects. A leading '+' on the mantissa is accepted and dropped
+(+5 stored as 5), along with the bare-decimal and trailing-dot forms (.5, 5., 1.e5);
+1+2, 1.2.3, +e2, a digitless exponent, and any surrounding or internal whitespace are
+rejected with a ValidationException. A '+'-prefixed numeric sort key normalises to the
+same key as its bare form. Captured against real DynamoDB in us-east-1.
 
 ## 2026-06-24
 
