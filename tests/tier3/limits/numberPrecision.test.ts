@@ -412,4 +412,43 @@ describe('Number precision — DynamoDB number limits and edge cases', { tags: [
     )
     await cleanupItems(hashTableDef.name, [{ pk: { S: 'np-overflow' } }])
   })
+
+  it('number set equality distinguishes values differing beyond f64 precision', async () => {
+    // 100000000000000001 and ...002 are distinct at DynamoDB's 38-digit precision but
+    // collapse to the same f64. AWS compares number sets at full precision: an exact
+    // condition matches, an off-by-one in the last digit does not.
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: 'np-ns-precision' }, ns: { NS: ['100000000000000001'] } },
+      }),
+    )
+    // Exact match succeeds.
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'np-ns-precision' } },
+        UpdateExpression: 'SET touched = :t',
+        ConditionExpression: '#n = :p',
+        ExpressionAttributeNames: { '#n': 'ns' },
+        ExpressionAttributeValues: { ':t': { S: 'y' }, ':p': { NS: ['100000000000000001'] } },
+      }),
+    )
+    // Off-by-one in the last digit must not match.
+    await expectDynamoError(
+      () =>
+        ddb.send(
+          new UpdateItemCommand({
+            TableName: hashTableDef.name,
+            Key: { pk: { S: 'np-ns-precision' } },
+            UpdateExpression: 'SET touched = :t',
+            ConditionExpression: '#n = :p',
+            ExpressionAttributeNames: { '#n': 'ns' },
+            ExpressionAttributeValues: { ':t': { S: 'y' }, ':p': { NS: ['100000000000000002'] } },
+          }),
+        ),
+      'ConditionalCheckFailedException',
+    )
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'np-ns-precision' } }])
+  })
 })
