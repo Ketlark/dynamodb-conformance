@@ -12,6 +12,7 @@ import {
   expectDynamoError,
 } from '../../../src/helpers.js'
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Reserved words — ExpressionAttributeNames handling', { tags: ['put-item', 'get-item', 'update-item', 'query', 'scan', 'data-plane'] }, () => {
   const keys = [
     { pk: { S: 'rw-status' } },

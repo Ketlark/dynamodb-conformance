@@ -26,6 +26,7 @@ afterAll(async () => {
   await deleteTable(tableDef.name)
 })
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('BatchWriteItem limits', { tags: ['batch', 'data-plane'] }, () => {
   it('BatchWriteItem with exactly 25 items succeeds', async () => {
     const requests = Array.from({ length: 25 }, (_, i) => ({
@@ -85,6 +86,7 @@ describe('BatchWriteItem limits', { tags: ['batch', 'data-plane'] }, () => {
   })
 })
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('BatchGetItem limits', { tags: ['batch', 'data-plane'] }, () => {
   // Seed 101 items for BatchGetItem tests
   beforeAll(async () => {

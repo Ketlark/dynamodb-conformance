@@ -5,6 +5,7 @@ import {
 import { ddb } from '../../../src/client.js'
 import { compositeTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Legacy API — KeyConditions and QueryFilter', { tags: ['query', 'legacy', 'data-plane'] }, () => {
   const pk = 'legacy-query'
   const items = [

@@ -318,7 +318,7 @@ describe('Scan — set equality', { tags: ['scan', 'data-plane'] }, () => {
 
 // Structural validation of FilterExpression. The operator tests above only send
 // well-formed filters; these assert the rejection path a lenient target skips.
-describe('Scan — filter expression validation', { tags: ['scan', 'data-plane'] }, () => {
+describe('Scan — filter expression validation', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('rejects begins_with with a non-string/binary operand', async () => {
     await expectDynamoError(
       () =>

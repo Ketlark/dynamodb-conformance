@@ -65,7 +65,7 @@ describe('Scan — Select COUNT', { tags: ['scan', 'data-plane'] }, () => {
 
 // ProjectionExpression requires SPECIFIC_ATTRIBUTES; ALL_PROJECTED_ATTRIBUTES requires an IndexName.
 // AWS keeps the word "Querying" in the second message even on a Scan.
-describe('Scan — Select / ProjectionExpression rejections', { tags: ['scan', 'data-plane'] }, () => {
+describe('Scan — Select / ProjectionExpression rejections', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('Select ALL_ATTRIBUTES with ProjectionExpression is rejected', async () => {
     await expectDynamoError(
       () =>

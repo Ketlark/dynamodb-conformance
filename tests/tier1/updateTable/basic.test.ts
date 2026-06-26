@@ -194,7 +194,7 @@ describe('UpdateTable — basic', { tags: ['update-table', 'control-plane'] }, (
   })
 })
 
-describe('UpdateTable — validation', { tags: ['update-table', 'control-plane'] }, () => {
+describe('UpdateTable — validation', { tags: ['update-table', 'control-plane', 'negative-path'] }, () => {
   it('rejects UpdateTable on a non-existent table', async () => {
     await expectDynamoError(
       () =>

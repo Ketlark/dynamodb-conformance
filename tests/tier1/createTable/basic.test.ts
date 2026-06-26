@@ -151,7 +151,7 @@ describe('CreateTable — TableId', { tags: ['create-table', 'control-plane'] },
   })
 })
 
-describe('CreateTable — validation', { tags: ['create-table', 'control-plane'] }, () => {
+describe('CreateTable — validation', { tags: ['create-table', 'control-plane', 'negative-path'] }, () => {
   it('rejects a table name shorter than 3 characters', async () => {
     await expectDynamoError(
       () => ddb.send(

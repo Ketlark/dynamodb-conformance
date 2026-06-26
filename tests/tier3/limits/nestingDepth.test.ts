@@ -23,6 +23,7 @@ function deepMap(depth: number): AttributeValue {
 //    nested levels beyond supported limit"
 const NEST_MSG = /nested levels|nesting levels/i
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Nesting depth — 32-level document limit', { tags: ['put-item', 'update-item', 'data-plane'] }, () => {
   const keys = [{ pk: { S: 'nest-stored-31' } }, { pk: { S: 'nest-cond-eav' } }]
 

@@ -17,6 +17,7 @@ afterAll(async () => {
   await cleanupItems(hashTableDef.name, keysToCleanup)
 })
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] }, () => {
   it('missing table name: full validation error string', async () => {
     try {

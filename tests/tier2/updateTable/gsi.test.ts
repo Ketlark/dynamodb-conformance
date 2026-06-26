@@ -448,7 +448,7 @@ describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane',
   })
 })
 
-describe('UpdateTable — GSI validation', { tags: ['update-table', 'control-plane', 'slow', 'gsi'] }, () => {
+describe('UpdateTable — GSI validation', { tags: ['update-table', 'control-plane', 'slow', 'gsi', 'negative-path'] }, () => {
   const tablesToCleanup: string[] = []
 
   afterAll(async () => {

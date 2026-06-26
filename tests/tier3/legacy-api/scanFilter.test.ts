@@ -5,6 +5,7 @@ import {
 import { ddb } from '../../../src/client.js'
 import { hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Legacy API — ScanFilter (legacy FilterExpression)', { tags: ['scan', 'legacy', 'data-plane'] }, () => {
   const prefix = 'scanfilt'
   const items = [

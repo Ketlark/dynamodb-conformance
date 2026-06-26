@@ -81,7 +81,7 @@ describe('DeleteTable — basic', { tags: ['delete-table', 'control-plane'] }, (
   })
 })
 
-describe('DeleteTable — validation', { tags: ['delete-table', 'control-plane'] }, () => {
+describe('DeleteTable — validation', { tags: ['delete-table', 'control-plane', 'negative-path'] }, () => {
   it('rejects deleting a non-existent table', async () => {
     await expectDynamoError(
       () => ddb.send(
