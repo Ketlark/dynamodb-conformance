@@ -5,7 +5,7 @@ broadened, and targets brought into the run. Newest first.
 
 ## 2026-06-26
 
-Grew to 816 tests, up 54, covering DynamoDB's 32-level document nesting limit,
+Grew to 817 tests, up 55, covering DynamoDB's 32-level document nesting limit,
 number-set equality precision, Number format on PutItem, and a sweep of
 parameter-combination rejections behind a new negative-path filter. The nesting cases
 pin the boundary on both paths - a stored item via PutItem and an ExpressionAttributeValue
