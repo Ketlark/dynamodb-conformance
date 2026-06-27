@@ -193,7 +193,7 @@ describe('TransactGetItems - basic', { tags: ['transactions', 'data-plane'] }, (
   })
 })
 
-describe('TransactGetItems - validation', { tags: ['transactions', 'data-plane'] }, () => {
+describe('TransactGetItems - validation', { tags: ['transactions', 'data-plane', 'negative-path'] }, () => {
   it('rejects empty TransactItems', async () => {
     await expectDynamoError(
       () =>

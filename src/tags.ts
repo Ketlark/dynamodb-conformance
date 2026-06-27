@@ -72,6 +72,11 @@ const CROSS_CUTTING: readonly TagDef[] = [
     description:
       'Long-running against real AWS; the set test:gating excludes (GSI lifecycle, export/import, Kinesis)',
   },
+  {
+    name: 'negative-path',
+    description:
+      'Asserts only rejections: every case expects a validation error, conditional-check failure, or transaction cancellation, with no accepted operation as its outcome',
+  },
 ]
 
 // The full registry, in declaration order.

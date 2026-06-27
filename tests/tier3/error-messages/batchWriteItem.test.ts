@@ -27,7 +27,7 @@ afterAll(async () => {
   await cleanupItems(compositeTableDef.name, compositeKeysToCleanup)
 })
 
-describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plane'] }, () => {
+describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
   it('empty RequestItems: full required-parameter error', async () => {
     try {
       await ddb.send(new BatchWriteItemCommand({ RequestItems: {} }))

@@ -65,7 +65,7 @@ describe('Scan — Select COUNT', { tags: ['scan', 'data-plane'] }, () => {
 
 // ProjectionExpression requires SPECIFIC_ATTRIBUTES; ALL_PROJECTED_ATTRIBUTES requires an IndexName.
 // AWS keeps the word "Querying" in the second message even on a Scan.
-describe('Scan — Select / ProjectionExpression rejections', { tags: ['scan', 'data-plane'] }, () => {
+describe('Scan — Select / ProjectionExpression rejections', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('Select ALL_ATTRIBUTES with ProjectionExpression is rejected', async () => {
     await expectDynamoError(
       () =>
@@ -123,6 +123,21 @@ describe('Scan — Select / ProjectionExpression rejections', { tags: ['scan', '
         ),
       'ValidationException',
       'Cannot specify the ProjectionExpression when choosing to get ALL_PROJECTED_ATTRIBUTES',
+    )
+  })
+
+  // Parity with Query: SPECIFIC_ATTRIBUTES requires a ProjectionExpression (or legacy
+  // AttributesToGet). With neither, real DynamoDB rejects before reading.
+  it('Select SPECIFIC_ATTRIBUTES without ProjectionExpression is rejected', async () => {
+    await expectDynamoError(
+      () =>
+        ddb.send(
+          new ScanCommand({
+            TableName: hashTableDef.name,
+            Select: 'SPECIFIC_ATTRIBUTES',
+          }),
+        ),
+      'ValidationException',
     )
   })
 })

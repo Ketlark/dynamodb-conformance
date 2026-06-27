@@ -36,7 +36,7 @@ afterAll(async () => {
   await cleanupItems(compositeTableDef.name, compositeKeysToCleanup)
 })
 
-describe('TransactWriteItems — exact error messages', { tags: ['transactions', 'data-plane'] }, () => {
+describe('TransactWriteItems — exact error messages', { tags: ['transactions', 'data-plane', 'negative-path'] }, () => {
   it('empty TransactItems: full minimum-length error', async () => {
     try {
       await ddb.send(new TransactWriteItemsCommand({ TransactItems: [] }))

@@ -6,7 +6,7 @@ import {
 import { ddb } from '../../../src/client.js'
 import { hashTableDef } from '../../../src/helpers.js'
 
-describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'] }, () => {
+describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
   it('empty RequestItems: full required-parameter error', async () => {
     try {
       await ddb.send(new BatchGetItemCommand({ RequestItems: {} }))
@@ -83,6 +83,32 @@ describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toBe(
         'Provided list of item keys contains duplicates',
+      )
+    }
+  })
+
+  // A KeysAndAttributes block accepts both the legacy AttributesToGet and a modern
+  // ProjectionExpression; supplying both is the expression/non-expression conflict,
+  // rejected before any read.
+  it('AttributesToGet with ProjectionExpression in a KeysAndAttributes block: full conflict error', async () => {
+    try {
+      await ddb.send(
+        new BatchGetItemCommand({
+          RequestItems: {
+            [hashTableDef.name]: {
+              Keys: [{ pk: { S: 'em-bg-mix' } }],
+              AttributesToGet: ['pk'],
+              ProjectionExpression: 'pk',
+            },
+          },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toContain(
+        'Can not use both expression and non-expression parameters in the same request: Non-expression parameters: {AttributesToGet} Expression parameters: {ProjectionExpression}',
       )
     }
   })

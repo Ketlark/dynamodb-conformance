@@ -4,12 +4,12 @@ import {
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeTableDef } from '../../../src/helpers.js'
+import { compositeTableDef, hashTableDef } from '../../../src/helpers.js'
 
 // Conditional-check failures for DeleteItem live in conditionalCheck.test.ts —
 // that file owns the conditional-check error family across operations.
 
-describe('DeleteItem — exact error messages', { tags: ['delete-item', 'data-plane'] }, () => {
+describe('DeleteItem — exact error messages', { tags: ['delete-item', 'data-plane', 'negative-path'] }, () => {
   it('non-existent table: full ResourceNotFoundException message', async () => {
     try {
       await ddb.send(
@@ -44,6 +44,29 @@ describe('DeleteItem — exact error messages', { tags: ['delete-item', 'data-pl
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toBe(
         'The provided key element does not match the schema',
+      )
+    }
+  })
+
+  // Completes the expression/non-expression mutual-exclusion family for the item
+  // writes (PutItem and UpdateItem already pin it). DeleteItem takes legacy Expected
+  // and a modern ConditionExpression; supplying both is rejected up front.
+  it('mixing Expected with ConditionExpression: full conflict error', async () => {
+    try {
+      await ddb.send(
+        new DeleteItemCommand({
+          TableName: hashTableDef.name,
+          Key: { pk: { S: 'em-del-mix' } },
+          Expected: { pk: { Exists: false } },
+          ConditionExpression: 'attribute_not_exists(pk)',
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toContain(
+        'Can not use both expression and non-expression parameters in the same request: Non-expression parameters: {Expected} Expression parameters: {ConditionExpression}',
       )
     }
   })

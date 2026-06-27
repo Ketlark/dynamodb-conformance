@@ -2,7 +2,7 @@ import { QueryCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { compositeTableDef, expectDynamoError } from '../../../src/helpers.js'
 
-describe('Query — validation', { tags: ['query', 'data-plane'] }, () => {
+describe('Query — validation', { tags: ['query', 'data-plane', 'negative-path'] }, () => {
   it('rejects query on non-existent table', async () => {
     await expectDynamoError(
       () =>

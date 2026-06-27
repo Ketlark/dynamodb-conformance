@@ -71,7 +71,7 @@ describe('DescribeTable — TableId', { tags: ['describe-table', 'control-plane'
   })
 })
 
-describe('DescribeTable — validation', { tags: ['describe-table', 'control-plane'] }, () => {
+describe('DescribeTable — validation', { tags: ['describe-table', 'control-plane', 'negative-path'] }, () => {
   it('returns ResourceNotFoundException for non-existent table', async () => {
     await expectDynamoError(
       () => ddb.send(

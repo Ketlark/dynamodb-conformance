@@ -151,7 +151,7 @@ describe('CreateTable — TableId', { tags: ['create-table', 'control-plane'] },
   })
 })
 
-describe('CreateTable — validation', { tags: ['create-table', 'control-plane'] }, () => {
+describe('CreateTable — validation', { tags: ['create-table', 'control-plane', 'negative-path'] }, () => {
   it('rejects a table name shorter than 3 characters', async () => {
     await expectDynamoError(
       () => ddb.send(
@@ -233,6 +233,69 @@ describe('CreateTable — validation', { tags: ['create-table', 'control-plane']
           ],
           KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
           BillingMode: 'PAY_PER_REQUEST',
+        }),
+      ),
+      'ValidationException',
+    )
+  })
+
+  // PAY_PER_REQUEST tables have no provisioned capacity; supplying ProvisionedThroughput
+  // alongside it is contradictory. Parity with the UpdateTable rule already pinned.
+  it('rejects PAY_PER_REQUEST with ProvisionedThroughput specified', async () => {
+    await expectDynamoError(
+      () => ddb.send(
+        new CreateTableCommand({
+          TableName: uniqueTableName('ct_ppr_with_tp'),
+          AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+          KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+          BillingMode: 'PAY_PER_REQUEST',
+          ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
+        }),
+      ),
+      'ValidationException',
+    )
+  })
+
+  // ProjectionType INCLUDE means "key attributes plus this explicit list"; the list is
+  // mandatory, so INCLUDE without NonKeyAttributes is rejected.
+  it('rejects a GSI INCLUDE projection without NonKeyAttributes', async () => {
+    await expectDynamoError(
+      () => ddb.send(
+        new CreateTableCommand({
+          TableName: uniqueTableName('ct_gsi_include_nonk'),
+          AttributeDefinitions: [
+            { AttributeName: 'pk', AttributeType: 'S' },
+            { AttributeName: 'gsipk', AttributeType: 'S' },
+          ],
+          KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+          BillingMode: 'PAY_PER_REQUEST',
+          GlobalSecondaryIndexes: [
+            {
+              IndexName: 'gsi_inc',
+              KeySchema: [{ AttributeName: 'gsipk', KeyType: 'HASH' }],
+              Projection: { ProjectionType: 'INCLUDE' },
+            },
+          ],
+        }),
+      ),
+      'ValidationException',
+    )
+  })
+
+  // StreamViewType only has meaning when streams are enabled; pairing it with
+  // StreamEnabled:false is contradictory and rejected.
+  it('rejects StreamSpecification with StreamEnabled false plus a StreamViewType', async () => {
+    await expectDynamoError(
+      () => ddb.send(
+        new CreateTableCommand({
+          TableName: uniqueTableName('ct_stream_false_vt'),
+          AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+          KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+          BillingMode: 'PAY_PER_REQUEST',
+          StreamSpecification: {
+            StreamEnabled: false,
+            StreamViewType: 'NEW_AND_OLD_IMAGES',
+          },
         }),
       ),
       'ValidationException',

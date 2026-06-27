@@ -12,6 +12,7 @@ import {
   expectDynamoError,
 } from '../../../src/helpers.js'
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Number precision — DynamoDB number limits and edge cases', { tags: ['put-item', 'get-item', 'update-item', 'query', 'data-plane'] }, () => {
   const hashKeys = [
     { pk: { S: 'np-38digits' } },
@@ -38,6 +39,12 @@ describe('Number precision — DynamoDB number limits and edge cases', { tags: [
 
   afterAll(async () => {
     await cleanupItems(hashTableDef.name, hashKeys)
+    // np-overflow and np-ns-precision are created mid-test; clean them here too so a
+    // failed assertion before their inline cleanup cannot leak them into the shared table.
+    await cleanupItems(hashTableDef.name, [
+      { pk: { S: 'np-overflow' } },
+      { pk: { S: 'np-ns-precision' } },
+    ])
     await cleanupItems(compositeNTableDef.name, compositeKeys)
   })
 
@@ -411,5 +418,44 @@ describe('Number precision — DynamoDB number limits and edge cases', { tags: [
       'Number overflow',
     )
     await cleanupItems(hashTableDef.name, [{ pk: { S: 'np-overflow' } }])
+  })
+
+  it('number set equality distinguishes values differing beyond f64 precision', async () => {
+    // 100000000000000001 and ...002 are distinct at DynamoDB's 38-digit precision but
+    // collapse to the same f64. AWS compares number sets at full precision: an exact
+    // condition matches, an off-by-one in the last digit does not.
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: 'np-ns-precision' }, ns: { NS: ['100000000000000001'] } },
+      }),
+    )
+    // Exact match succeeds.
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'np-ns-precision' } },
+        UpdateExpression: 'SET touched = :t',
+        ConditionExpression: '#n = :p',
+        ExpressionAttributeNames: { '#n': 'ns' },
+        ExpressionAttributeValues: { ':t': { S: 'y' }, ':p': { NS: ['100000000000000001'] } },
+      }),
+    )
+    // Off-by-one in the last digit must not match.
+    await expectDynamoError(
+      () =>
+        ddb.send(
+          new UpdateItemCommand({
+            TableName: hashTableDef.name,
+            Key: { pk: { S: 'np-ns-precision' } },
+            UpdateExpression: 'SET touched = :t',
+            ConditionExpression: '#n = :p',
+            ExpressionAttributeNames: { '#n': 'ns' },
+            ExpressionAttributeValues: { ':t': { S: 'y' }, ':p': { NS: ['100000000000000002'] } },
+          }),
+        ),
+      'ConditionalCheckFailedException',
+    )
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'np-ns-precision' } }])
   })
 })

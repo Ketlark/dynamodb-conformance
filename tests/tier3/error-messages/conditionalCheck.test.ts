@@ -25,7 +25,7 @@ afterAll(async () => {
   await cleanupItems(hashTableDef.name, keysToCleanup)
 })
 
-describe('Conditional check — exact error messages', { tags: ['put-item', 'update-item', 'delete-item', 'transactions', 'data-plane'] }, () => {
+describe('Conditional check — exact error messages', { tags: ['put-item', 'update-item', 'delete-item', 'transactions', 'data-plane', 'negative-path'] }, () => {
   it('ConditionalCheckFailedException has message "The conditional request failed"', async () => {
     // Seed an item so the condition fails
     await ddb.send(

@@ -4,9 +4,9 @@ import {
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef } from '../../../src/helpers.js'
+import { hashTableDef, compositeTableDef } from '../../../src/helpers.js'
 
-describe('Scan — exact error messages', { tags: ['scan', 'data-plane'] }, () => {
+describe('Scan — exact error messages', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('Segment without TotalSegments: full required-parameter error', async () => {
     try {
       await ddb.send(
@@ -155,6 +155,46 @@ describe('Scan — exact error messages', { tags: ['scan', 'data-plane'] }, () =
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toBe(
         'The provided starting key is invalid: The provided key element does not match the schema',
+      )
+    }
+  })
+
+  // Parity with Query: a Scan on a GSI cannot ask for a strongly consistent read.
+  it('ConsistentRead on a GSI: full consistent-reads-unsupported message', async () => {
+    try {
+      await ddb.send(
+        new ScanCommand({
+          TableName: compositeTableDef.name,
+          IndexName: 'gsi1',
+          ConsistentRead: true,
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Consistent reads are not supported on global secondary indexes',
+      )
+    }
+  })
+
+  // Parity with Query: SPECIFIC_ATTRIBUTES needs a ProjectionExpression (or legacy
+  // AttributesToGet); with neither, real DynamoDB rejects before reading.
+  it('Select SPECIFIC_ATTRIBUTES without ProjectionExpression: full required-projection message', async () => {
+    try {
+      await ddb.send(
+        new ScanCommand({
+          TableName: hashTableDef.name,
+          Select: 'SPECIFIC_ATTRIBUTES',
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Must specify the AttributesToGet or ProjectionExpression when choosing to get SPECIFIC_ATTRIBUTES',
       )
     }
   })

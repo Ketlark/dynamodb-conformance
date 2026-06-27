@@ -13,6 +13,7 @@ import {
   expectDynamoError,
 } from '../../../src/helpers.js'
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Legacy API — AttributesToGet (legacy ProjectionExpression)', { tags: ['get-item', 'query', 'scan', 'legacy', 'data-plane'] }, () => {
   const hashKeys = [
     { pk: { S: 'a2g-1' } },

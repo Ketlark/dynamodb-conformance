@@ -27,6 +27,7 @@ afterAll(async () => {
   await deleteTable(tableDef.name)
 })
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('TransactWriteItems limits', { tags: ['transactions', 'data-plane'] }, () => {
   it('TransactWriteItems with exactly 100 Put actions succeeds', async () => {
     const items = Array.from({ length: 100 }, (_, i) => ({
@@ -100,6 +101,7 @@ describe('TransactWriteItems limits', { tags: ['transactions', 'data-plane'] }, 
   })
 })
 
+// no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('TransactGetItems limits', { tags: ['transactions', 'data-plane'] }, () => {
   // Seed 101 items for TransactGetItems tests
   beforeAll(async () => {

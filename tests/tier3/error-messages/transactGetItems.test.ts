@@ -7,7 +7,7 @@ import {
 import { ddb } from '../../../src/client.js'
 import { hashTableDef } from '../../../src/helpers.js'
 
-describe('TransactGetItems — exact error messages', { tags: ['transactions', 'data-plane'] }, () => {
+describe('TransactGetItems — exact error messages', { tags: ['transactions', 'data-plane', 'negative-path'] }, () => {
   it('empty TransactItems: full minimum-length error', async () => {
     try {
       await ddb.send(new TransactGetItemsCommand({ TransactItems: [] }))

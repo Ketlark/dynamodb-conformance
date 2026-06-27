@@ -8,7 +8,7 @@ import {
   deleteTable,
 } from '../../../src/helpers.js'
 
-describe('CreateTable — exact error messages', { tags: ['create-table', 'control-plane'] }, () => {
+describe('CreateTable — exact error messages', { tags: ['create-table', 'control-plane', 'negative-path'] }, () => {
   const tablesToCleanup: string[] = []
 
   afterAll(async () => {
@@ -232,6 +232,81 @@ describe('CreateTable — exact error messages', { tags: ['create-table', 'contr
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toBe(
         'One or more parameter values were invalid: Duplicate index name: sameIndex',
+      )
+    }
+  })
+
+  it('PAY_PER_REQUEST with ProvisionedThroughput: full conflict message', async () => {
+    try {
+      await ddb.send(
+        new CreateTableCommand({
+          TableName: uniqueTableName('em_ct_ppr_tp'),
+          AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+          KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+          BillingMode: 'PAY_PER_REQUEST',
+          ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'One or more parameter values were invalid: Neither ReadCapacityUnits nor WriteCapacityUnits can be specified when BillingMode is PAY_PER_REQUEST',
+      )
+    }
+  })
+
+  it('GSI INCLUDE projection without NonKeyAttributes: full missing-attributes message', async () => {
+    try {
+      await ddb.send(
+        new CreateTableCommand({
+          TableName: uniqueTableName('em_ct_include_nonk'),
+          AttributeDefinitions: [
+            { AttributeName: 'pk', AttributeType: 'S' },
+            { AttributeName: 'gsipk', AttributeType: 'S' },
+          ],
+          KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+          BillingMode: 'PAY_PER_REQUEST',
+          GlobalSecondaryIndexes: [
+            {
+              IndexName: 'gsi_inc',
+              KeySchema: [{ AttributeName: 'gsipk', KeyType: 'HASH' }],
+              Projection: { ProjectionType: 'INCLUDE' },
+            },
+          ],
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'One or more parameter values were invalid: ProjectionType is INCLUDE, but NonKeyAttributes is not specified',
+      )
+    }
+  })
+
+  it('StreamSpecification StreamEnabled:false with a StreamViewType: full conflict message', async () => {
+    try {
+      await ddb.send(
+        new CreateTableCommand({
+          TableName: uniqueTableName('em_ct_stream_false_vt'),
+          AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
+          KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+          BillingMode: 'PAY_PER_REQUEST',
+          StreamSpecification: {
+            StreamEnabled: false,
+            StreamViewType: 'NEW_AND_OLD_IMAGES',
+          },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'One or more parameter values were invalid: Table is being created with a stream disabled, UpdateViewType should not be specified',
       )
     }
   })

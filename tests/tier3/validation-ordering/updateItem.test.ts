@@ -4,7 +4,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 
-describe('UpdateItem — validation ordering', { tags: ['update-item', 'data-plane'] }, () => {
+describe('UpdateItem — validation ordering', { tags: ['update-item', 'data-plane', 'negative-path'] }, () => {
   it('empty TableName reports only tableName constraint', async () => {
     try {
       await ddb.send(
