@@ -97,6 +97,29 @@ If a test is flaky against real DynamoDB (for example GSI
 propagation), use the existing wait/retry helpers rather than adding
 sleeps.
 
+## Citing a suite finding elsewhere
+
+When a finding from this suite is referenced in another project's
+issue tracker, say an engine's own bug report about a divergence
+the suite caught, cite it as an independent source by its public
+identity:
+
+> the Parity Suite ([paritysuite.org](https://paritysuite.org)), an
+> independent DynamoDB conformance suite that scores multiple
+> engines against live AWS DynamoDB
+
+Link to the specific public test, pinned to a commit SHA or tag
+(`.../blob/<sha>/...`, never `.../blob/main/...`, which rots when
+the lines move), not a bare in-repo path. A pinned test link is the
+durable evidence for a specific finding; the target's row on
+paritysuite.org is a live score that moves with every run, so cite
+it only for a general "how this engine scores" claim, never as
+evidence for a fixed bug. Don't frame the suite as the engine's own
+test harness: it is a separate party that scores that engine
+alongside others, and the reference only carries weight if it reads
+that way. The fuller convention, with a copyable block, is "Citing
+a finding" in the README.
+
 ## Commit style
 
 Short subject, lower-case, imperative where possible. A Conventional
