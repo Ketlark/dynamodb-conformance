@@ -209,4 +209,28 @@ describe('Query — exact error messages', { tags: ['query', 'data-plane', 'nega
       )
     }
   })
+
+  // SPECIFIC_ATTRIBUTES needs a ProjectionExpression (or legacy AttributesToGet);
+  // with neither, real DynamoDB rejects before reading. Query and Scan apply the
+  // same rule but word it differently: Query wraps the phrase in the
+  // "1 validation error detected:" envelope, Scan returns it bare (see scan.test.ts).
+  it('Select SPECIFIC_ATTRIBUTES without ProjectionExpression: full required-projection message', async () => {
+    try {
+      await ddb.send(
+        new QueryCommand({
+          TableName: compositeTableDef.name,
+          KeyConditionExpression: 'pk = :v',
+          ExpressionAttributeValues: { ':v': { S: 'val' } },
+          Select: 'SPECIFIC_ATTRIBUTES',
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        '1 validation error detected: Must specify the AttributesToGet or ProjectionExpression when choosing to get SPECIFIC_ATTRIBUTES',
+      )
+    }
+  })
 })

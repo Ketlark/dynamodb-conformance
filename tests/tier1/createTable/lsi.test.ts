@@ -112,4 +112,35 @@ describe('CreateTable — LSI', { tags: ['create-table', 'control-plane', 'lsi']
       'ValidationException',
     )
   })
+
+  it('rejects an LSI INCLUDE projection without NonKeyAttributes', async () => {
+    await expectDynamoError(
+      () => ddb.send(
+        new CreateTableCommand({
+          TableName: uniqueTableName('ct_lsi_include_nonk'),
+          AttributeDefinitions: [
+            { AttributeName: 'pk', AttributeType: 'S' },
+            { AttributeName: 'sk', AttributeType: 'S' },
+            { AttributeName: 'lsiSk', AttributeType: 'N' },
+          ],
+          KeySchema: [
+            { AttributeName: 'pk', KeyType: 'HASH' },
+            { AttributeName: 'sk', KeyType: 'RANGE' },
+          ],
+          LocalSecondaryIndexes: [
+            {
+              IndexName: 'lsi1',
+              KeySchema: [
+                { AttributeName: 'pk', KeyType: 'HASH' },
+                { AttributeName: 'lsiSk', KeyType: 'RANGE' },
+              ],
+              Projection: { ProjectionType: 'INCLUDE' },
+            },
+          ],
+          BillingMode: 'PAY_PER_REQUEST',
+        }),
+      ),
+      'ValidationException',
+    )
+  })
 })

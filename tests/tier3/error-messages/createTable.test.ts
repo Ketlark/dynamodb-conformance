@@ -287,6 +287,45 @@ describe('CreateTable — exact error messages', { tags: ['create-table', 'contr
     }
   })
 
+  // LSI uses the same Projection model as GSI, so the missing-attributes rejection
+  // is identical. Sibling of the GSI case above.
+  it('LSI INCLUDE projection without NonKeyAttributes: full missing-attributes message', async () => {
+    try {
+      await ddb.send(
+        new CreateTableCommand({
+          TableName: uniqueTableName('em_ct_lsi_include_nonk'),
+          AttributeDefinitions: [
+            { AttributeName: 'pk', AttributeType: 'S' },
+            { AttributeName: 'sk', AttributeType: 'S' },
+            { AttributeName: 'lsiSk', AttributeType: 'N' },
+          ],
+          KeySchema: [
+            { AttributeName: 'pk', KeyType: 'HASH' },
+            { AttributeName: 'sk', KeyType: 'RANGE' },
+          ],
+          BillingMode: 'PAY_PER_REQUEST',
+          LocalSecondaryIndexes: [
+            {
+              IndexName: 'lsi_inc',
+              KeySchema: [
+                { AttributeName: 'pk', KeyType: 'HASH' },
+                { AttributeName: 'lsiSk', KeyType: 'RANGE' },
+              ],
+              Projection: { ProjectionType: 'INCLUDE' },
+            },
+          ],
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'One or more parameter values were invalid: ProjectionType is INCLUDE, but NonKeyAttributes is not specified',
+      )
+    }
+  })
+
   it('StreamSpecification StreamEnabled:false with a StreamViewType: full conflict message', async () => {
     try {
       await ddb.send(
