@@ -3,6 +3,22 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
+## 2026-06-30
+
+Grew to 820 tests, up 3, completing two sibling-parity gaps where one half of a
+rule was pinned and the other was not. Both were characterised against real
+DynamoDB in eu-west-2.
+
+The first covers the LSI side of the INCLUDE-projection-without-NonKeyAttributes
+rejection; the GSI side already had it. An LSI declared with ProjectionType
+INCLUDE and no NonKeyAttributes is rejected as a ValidationException in tier1 and
+pinned to the exact message in tier3, the same wording the GSI case returns.
+
+The second pins the Query message for Select SPECIFIC_ATTRIBUTES with no
+ProjectionExpression, which Scan already had. Query and Scan enforce the same rule
+but word it differently: Query wraps the phrase in the "1 validation error
+detected:" envelope, Scan returns it bare.
+
 ## 2026-06-26
 
 Grew to 817 tests, up 55, covering DynamoDB's 32-level document nesting limit,
