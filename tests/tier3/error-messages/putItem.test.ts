@@ -6,6 +6,8 @@ import {
 import { ddb } from '../../../src/client.js'
 import {
   hashTableDef,
+  hashBTableDef,
+  gsiBTableDef,
   cleanupItems,
 } from '../../../src/helpers.js'
 
@@ -252,6 +254,46 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toContain(
         'Invalid ConditionExpression: The first operand must be distinct from the remaining operands for this operator or function; operator: contains, first operand: [data]',
+      )
+    }
+  })
+
+  it('empty-binary item key value: full ValidationException message', async () => {
+    // Real AWS rejects a zero-length binary key value with a top-level
+    // ValidationException, the binary analogue of the empty-string key rejection.
+    try {
+      await ddb.send(
+        new PutItemCommand({
+          TableName: hashBTableDef.name,
+          Item: { pk: { B: new Uint8Array([]) } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty binary value. Key: pk',
+      )
+    }
+  })
+
+  it('empty-binary index key value: full secondary-index-key message', async () => {
+    // Real AWS rejects a zero-length binary value on a secondary index key with
+    // the put-form secondary-index message, naming the index and key.
+    try {
+      await ddb.send(
+        new PutItemCommand({
+          TableName: gsiBTableDef.name,
+          Item: { pk: { S: 'eb-idx' }, bidx: { B: new Uint8Array([]) } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'One or more parameter values are not valid. A value specified for a secondary index key is not supported. The AttributeValue for a key attribute cannot contain an empty binary value. IndexName: gsib, IndexKey: bidx',
       )
     }
   })
