@@ -3,6 +3,7 @@ import {
   GetItemCommand,
   QueryCommand,
   BatchGetItemCommand,
+  type AttributeValue,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { hashTableDef, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
@@ -240,7 +241,7 @@ describe('Same list-index projection merge', { tags: ['get-item', 'data-plane'] 
   // probed at depth.
   const hashPk = 'proj-list-merge'
   const compositePk = 'proj-list-merge-q'
-  const listAttr = {
+  const listAttr: Record<string, AttributeValue> = {
     l: {
       L: [
         {
