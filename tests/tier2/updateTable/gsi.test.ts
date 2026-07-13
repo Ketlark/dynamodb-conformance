@@ -394,6 +394,77 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     expect(got.Item).toBeDefined()
   })
 
+  it('accepts a conflicting redeclaration of an existing key attribute and keeps the stored type', { timeout: 2_460_000 }, async () => {
+    const name = uniqueTableName('ut_gsi_redecl')
+    tablesToCleanup.push(name)
+    await createBaseTable(name)
+
+    // Redeclares the table's hash key pk (stored as S) with a conflicting N
+    // alongside the new index attribute. Real DynamoDB accepts the call and
+    // the stored type does not move — no rejection, no overwrite. Codifies
+    // observed AWS behaviour (eu-west-2, 2026-07-12) that AWS has never
+    // documented; do not "fix" this to expect a ValidationException.
+    const updateRes = await ddb.send(
+      new UpdateTableCommand({
+        TableName: name,
+        AttributeDefinitions: [
+          { AttributeName: 'pk', AttributeType: 'N' },
+          { AttributeName: 'gsiPk', AttributeType: 'S' },
+        ],
+        GlobalSecondaryIndexUpdates: [
+          {
+            Create: {
+              IndexName: 'gsiRedecl',
+              KeySchema: [{ AttributeName: 'gsiPk', KeyType: 'HASH' }],
+              Projection: { ProjectionType: 'KEYS_ONLY' },
+            },
+          },
+        ],
+      }),
+    )
+
+    // Reconciliation is synchronous: the response already carries the merged
+    // set with pk untouched, before any backfill starts.
+    expect(sortedAttrDefs(updateRes.TableDescription!)).toEqual([
+      { AttributeName: 'gsiPk', AttributeType: 'S' },
+      { AttributeName: 'pk', AttributeType: 'S' },
+      { AttributeName: 'sk', AttributeType: 'S' },
+    ])
+
+    // The wait is cleanup enablement, not assertion staging: DeleteTable is
+    // rejected with ResourceInUseException while an index is CREATING
+    // (observed eu-west-2, 2026-07-12), so afterAll needs the table settled.
+    await waitUntilActive(name, 2_400_000)
+
+    const desc = await ddb.send(new DescribeTableCommand({ TableName: name }))
+    const defs = sortedAttrDefs(desc.Table!)
+    // Assert the absence of a duplicate explicitly: a target that appends
+    // {pk,N} alongside {pk,S} should fail with a message naming the
+    // duplication, not a generic set mismatch.
+    expect(defs.filter((d) => d.AttributeName === 'pk')).toHaveLength(1)
+    expect(defs).toEqual([
+      { AttributeName: 'gsiPk', AttributeType: 'S' },
+      { AttributeName: 'pk', AttributeType: 'S' },
+      { AttributeName: 'sk', AttributeType: 'S' },
+    ])
+
+    // The key type genuinely did not move: a string-keyed write round-trips.
+    await ddb.send(
+      new PutItemCommand({
+        TableName: name,
+        Item: { pk: { S: 'redecl' }, sk: { S: '1' } },
+      }),
+    )
+    const got = await ddb.send(
+      new GetItemCommand({
+        TableName: name,
+        Key: { pk: { S: 'redecl' }, sk: { S: '1' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(got.Item).toBeDefined()
+  })
+
 })
 
 describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane', 'slow', 'gsi'] }, () => {
