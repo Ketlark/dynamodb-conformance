@@ -5,6 +5,8 @@ import {
   PutItemCommand,
   QueryCommand,
   GetItemCommand,
+  type AttributeDefinition,
+  type TableDescription,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {
@@ -64,6 +66,13 @@ async function createTableWithGsi(name: string): Promise<void> {
     }),
   )
   await waitUntilActive(name)
+}
+
+/** AttributeDefinitions sorted by name: assertions compare the full set, not the order */
+function sortedAttrDefs(table: TableDescription): AttributeDefinition[] {
+  return [...(table.AttributeDefinitions ?? [])].sort((a, b) =>
+    a.AttributeName!.localeCompare(b.AttributeName!),
+  )
 }
 
 describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 'slow', 'gsi'] }, () => {
@@ -355,7 +364,36 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     const names = gsis.map((g) => g.IndexName).sort()
     expect(names).toEqual(['gsi1', 'gsi2'])
     expect(gsis.every((g) => g.IndexStatus === 'ACTIVE')).toBe(true)
+
+    // Each add above declared only its own attribute, yet the reconciled set
+    // is the full union of table and index key attributes — merge, not
+    // replace. Codifies observed AWS behaviour (eu-west-2, 2026-07-12); the
+    // docs state only what a caller must send, not what happens to the rest.
+    expect(sortedAttrDefs(desc.Table!)).toEqual([
+      { AttributeName: 'g1', AttributeType: 'S' },
+      { AttributeName: 'g2', AttributeType: 'N' },
+      { AttributeName: 'pk', AttributeType: 'S' },
+      { AttributeName: 'sk', AttributeType: 'S' },
+    ])
+
+    // A base-table write keyed only on pk/sk (GSI attributes are sparse)
+    // still round-trips after the delta-fed adds.
+    await ddb.send(
+      new PutItemCommand({
+        TableName: name,
+        Item: { pk: { S: 'base' }, sk: { S: '1' } },
+      }),
+    )
+    const got = await ddb.send(
+      new GetItemCommand({
+        TableName: name,
+        Key: { pk: { S: 'base' }, sk: { S: '1' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(got.Item).toBeDefined()
   })
+
 })
 
 describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane', 'slow', 'gsi'] }, () => {
@@ -505,6 +543,41 @@ describe('UpdateTable — GSI validation', { tags: ['update-table', 'control-pla
                   IndexName: 'gsiBadAttr',
                   KeySchema: [{ AttributeName: 'unknownAttr', KeyType: 'HASH' }],
                   Projection: { ProjectionType: 'ALL' },
+                },
+              },
+            ],
+          }),
+        ),
+      'ValidationException',
+    )
+  })
+
+  it('rejects a GSI keyed on a table attribute omitted from the request AttributeDefinitions', async () => {
+    const name = uniqueTableName('ut_gsi_stored_attr')
+    tablesToCleanup.push(name)
+    await createBaseTable(name)
+
+    // pk is defined on the table, but a new index's key attributes must all
+    // appear in the request's own AttributeDefinitions — the stored
+    // definitions do not satisfy the validation. The API reference's "must
+    // include the key element(s) of the new index" is literal. Codifies
+    // observed AWS behaviour (eu-west-2, 2026-07-12): a target that resolves
+    // index keys from its stored definitions is too lenient and fails here.
+    await expectDynamoError(
+      () =>
+        ddb.send(
+          new UpdateTableCommand({
+            TableName: name,
+            AttributeDefinitions: [{ AttributeName: 'g3', AttributeType: 'S' }],
+            GlobalSecondaryIndexUpdates: [
+              {
+                Create: {
+                  IndexName: 'gsiSharedPk',
+                  KeySchema: [
+                    { AttributeName: 'pk', KeyType: 'HASH' },
+                    { AttributeName: 'g3', KeyType: 'RANGE' },
+                  ],
+                  Projection: { ProjectionType: 'KEYS_ONLY' },
                 },
               },
             ],
