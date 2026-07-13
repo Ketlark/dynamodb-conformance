@@ -170,6 +170,10 @@
       "GetItem — projection matching nothing": [
         "get-item",
         "data-plane"
+      ],
+      "Same list-index projection merge": [
+        "get-item",
+        "data-plane"
       ]
     },
     "tests/tier1/getItem/projectionValidation.test.ts": {

@@ -244,9 +244,9 @@ npm test
 | Target | `npm test` | `npm run test:quick` |
 |--------|-----------|---------------------|
 | Local emulators | ~2-5 seconds | ~2-5 seconds |
-| Real DynamoDB | ~60-90 minutes | ~20-25 minutes |
+| Real DynamoDB | ~1-3.5 hours | ~20-25 minutes |
 
-The full suite includes 11 UpdateTable GSI lifecycle tests that add and remove Global Secondary Indexes from existing tables. On real DynamoDB, each GSI creation triggers a backfill that takes 5-15 minutes even on empty tables. These tests are important for conformance but they dominate runtime against real AWS.
+The full suite includes 14 UpdateTable GSI lifecycle tests that add and remove Global Secondary Indexes from existing tables. On real DynamoDB, each GSI creation triggers a backfill that usually takes 5-15 minutes even on empty tables, and has been observed taking 25+ on a slow night. These tests are important for conformance but they dominate runtime against real AWS.
 
 `test:quick` excludes the GSI lifecycle tests for faster local iteration. CI's gating real-DynamoDB job runs `test:gating`, which drops the GSI lifecycle tests *and* the S3 and Kinesis integration suites (see "Operations no emulator implements" below), so a slow async import can't redden the build. Those integration suites still run against real AWS in a separate non-gating job via `npm run test:integrations`. Emulator targets run the full `npm test` since GSI creation is instant locally. If you're modifying GSI-related code, run the full suite against real DynamoDB manually before merging.
 
