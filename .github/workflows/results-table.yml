@@ -80,9 +80,18 @@ jobs:
             for f in "$d$target.json" "$d$target.version"; do
               [ -f "$f" ] && cp -f "$f" results/
             done
+            # The indeterminate sidecar qualifies the results file it sits
+            # beside: carry it when the run wrote one, and clear a stale
+            # committed one when it didn't - a clean run must leave no sidecar.
+            rm -f "results/$target.indeterminate.json"
+            if [ -f "$d$target.indeterminate.json" ]; then
+              cp -f "$d$target.indeterminate.json" results/
+            fi
           done
 
-      - name: Regenerate results table
+      # Rewrites the README block between the results markers and refreshes
+      # results/summary.json, the versioned per-region artefact the site reads.
+      - name: Regenerate results table and summary
         run: node scripts/summarise.mjs --write
 
       - name: Regenerate per-target badges

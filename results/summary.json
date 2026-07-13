@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "regions": {
+    "observed": [
+      "eu-west-2"
+    ],
+    "unresolved": [],
+    "dropped": [],
+    "detail": {
+      "eu-west-2": {
+        "lastResolved": "2026-07-06",
+        "consecutiveUnresolved": 0
+      }
+    }
+  },
+  "groundTruth": {
+    "slug": "dynamodb",
+    "rate": 100,
+    "runDate": "2026-07-06"
+  },
+  "targets": {
+    "dynalite": {
+      "headline": {
+        "region": "eu-west-2",
+        "rate": 75.2
+      },
+      "regions": {
+        "eu-west-2": {
+          "rate": 75.2,
+          "passed": 605,
+          "failed": 200,
+          "skipped": 68,
+          "indeterminate": 0,
+          "count": 873,
+          "tiers": {
+            "tier1": {
+              "p": 407,
+              "f": 39,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 11,
+              "f": 76,
+              "s": 68,
+              "i": 0
+            },
+            "tier3": {
+              "p": 187,
+              "f": 85,
+              "s": 0,
+              "i": 0
+            }
+          }
+        }
+      },
+      "version": "4.0.0",
+      "runDate": "2026-07-06"
+    },
+    "dynamodb-local": {
+      "headline": {
+        "region": "eu-west-2",
+        "rate": 82.7
+      },
+      "regions": {
+        "eu-west-2": {
+          "rate": 82.7,
+          "passed": 711,
+          "failed": 149,
+          "skipped": 13,
+          "indeterminate": 0,
+          "count": 873,
+          "tiers": {
+            "tier1": {
+              "p": 409,
+              "f": 37,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 120,
+              "f": 22,
+              "s": 13,
+              "i": 0
+            },
+            "tier3": {
+              "p": 182,
+              "f": 90,
+              "s": 0,
+              "i": 0
+            }
+          }
+        }
+      },
+      "version": "d89f8fcc6b1a",
+      "runDate": "2026-07-06"
+    },
+    "dynoxide": {
+      "headline": {
+        "region": "eu-west-2",
+        "rate": 100
+      },
+      "regions": {
+        "eu-west-2": {
+          "rate": 100,
+          "passed": 859,
+          "failed": 0,
+          "skipped": 14,
+          "indeterminate": 0,
+          "count": 873,
+          "tiers": {
+            "tier1": {
+              "p": 446,
+              "f": 0,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 141,
+              "f": 0,
+              "s": 14,
+              "i": 0
+            },
+            "tier3": {
+              "p": 272,
+              "f": 0,
+              "s": 0,
+              "i": 0
+            }
+          }
+        }
+      },
+      "version": "0.11.3",
+      "runDate": "2026-07-06"
+    },
+    "extenddb": {
+      "headline": {
+        "region": "eu-west-2",
+        "rate": 86
+      },
+      "regions": {
+        "eu-west-2": {
+          "rate": 86,
+          "passed": 714,
+          "failed": 116,
+          "skipped": 43,
+          "indeterminate": 0,
+          "count": 873,
+          "tiers": {
+            "tier1": {
+              "p": 379,
+              "f": 67,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 100,
+              "f": 12,
+              "s": 43,
+              "i": 0
+            },
+            "tier3": {
+              "p": 235,
+              "f": 37,
+              "s": 0,
+              "i": 0
+            }
+          }
+        }
+      },
+      "version": "v0.1.1",
+      "runDate": "2026-07-06"
+    },
+    "floci": {
+      "headline": {
+        "region": "eu-west-2",
+        "rate": 84.7
+      },
+      "regions": {
+        "eu-west-2": {
+          "rate": 84.7,
+          "passed": 732,
+          "failed": 132,
+          "skipped": 9,
+          "indeterminate": 0,
+          "count": 873,
+          "tiers": {
+            "tier1": {
+              "p": 409,
+              "f": 37,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 113,
+              "f": 33,
+              "s": 9,
+              "i": 0
+            },
+            "tier3": {
+              "p": 210,
+              "f": 62,
+              "s": 0,
+              "i": 0
+            }
+          }
+        }
+      },
+      "version": "51c2a38d394f",
+      "runDate": "2026-07-06"
+    },
+    "localstack": {
+      "headline": {
+        "region": "eu-west-2",
+        "rate": 84
+      },
+      "regions": {
+        "eu-west-2": {
+          "rate": 84,
+          "passed": 727,
+          "failed": 138,
+          "skipped": 8,
+          "indeterminate": 0,
+          "count": 873,
+          "tiers": {
+            "tier1": {
+              "p": 415,
+              "f": 31,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 129,
+              "f": 18,
+              "s": 8,
+              "i": 0
+            },
+            "tier3": {
+              "p": 183,
+              "f": 89,
+              "s": 0,
+              "i": 0
+            }
+          }
+        }
+      },
+      "version": "2026.6.1",
+      "runDate": "2026-07-06"
+    },
+    "ministack": {
+      "headline": {
+        "region": "eu-west-2",
+        "rate": 86.5
+      },
+      "regions": {
+        "eu-west-2": {
+          "rate": 86.5,
+          "passed": 755,
+          "failed": 118,
+          "skipped": 0,
+          "indeterminate": 0,
+          "count": 873,
+          "tiers": {
+            "tier1": {
+              "p": 406,
+              "f": 40,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 127,
+              "f": 28,
+              "s": 0,
+              "i": 0
+            },
+            "tier3": {
+              "p": 222,
+              "f": 50,
+              "s": 0,
+              "i": 0
+            }
+          }
+        }
+      },
+      "version": "e99876293803",
+      "runDate": "2026-07-06"
+    }
+  }
+}
