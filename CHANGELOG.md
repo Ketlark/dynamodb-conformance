@@ -3,6 +3,87 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
+## 2026-07-13 (2.0.0)
+
+The scores barely move in this release, but what they mean has changed.
+
+Until now the suite pinned one region, eu-west-2, as ground truth. That was
+quietly unfair: real DynamoDB disagrees with itself in a handful of places,
+and a one-region baseline takes a side without saying so. The clearest case
+is the `{ NULL: false }` attribute value - accepted and normalised to
+`{ NULL: true }` in eu-west-2 and eu-central-1, rejected with a
+ValidationException in us-east-1 and ap-southeast-2. An engine matching
+us-east-1 on that behaviour was marked non-conformant for doing exactly what
+real DynamoDB does in Virginia. From 2.0.0, ground truth is per region.
+
+What changed:
+
+- A weekly sweep runs the full suite against real DynamoDB in every
+  commercial region and publishes per-region ground truth
+  (`.github/workflows/sweep.yml`, `ground-truth/`). It gates nothing: PR
+  scoring stays offline and deterministic.
+- Confirmed regional splits live in a checked-in registry
+  (`registry/splits.json`), each row carrying what every named region
+  actually returned, when, and who admitted it. Detection is automatic;
+  admission is not. The sweep files an issue with the evidence, and only a
+  human commits a row. The registry ships seeded with the `{ NULL: false }`
+  split.
+- Each target is scored against every observed region's expectations, and
+  its published number is its best-matching region - named in the results
+  table's new Region column, with the full per-region view in
+  `results/summary.json` (a versioned, additive artefact; the per-target
+  `results/<slug>.json` files are unchanged in shape).
+- A third result state, indeterminate, for a failed observation: a timeout,
+  an exhausted throttle, a transport fault. It is excluded from both sides
+  of the score and cannot become a split, a registry row, or a fail. An
+  absent answer is not a different answer.
+- Region health is tracked in `registry/regions.json`. A region that cannot
+  complete a sweep is published as unresolved rather than silently omitted;
+  two consecutive misses drop it from the scored set and page a maintainer
+  in the same act.
+
+One deliberate departure from the RFC that proposed this (#75): the RFC
+suggested a behaviour conforms if it matches *any* real region. 2.0.0
+scores each target against one region at a time and headlines the best
+match, so a target only passes a behaviour when at least one real region
+does what it did, and its headline reflects one coherent region rather than
+a mix. Match-any scoring would have accepted an engine that combines
+eu-west-2's answer on one behaviour with us-east-1's on another - a
+deployment that exists nowhere. That is stricter than the RFC asked for,
+and it is deliberate.
+
+No score moves at release: the one admitted split pins eu-west-2, which is
+the only region in the health record until the first sweep runs. Per-target
+deltas will be published once the sweep admits more regions; the expected
+movement is roughly a tenth of a percent for the six engines that match
+us-east-1 on the `{ NULL: false }` split.
+
+The suite also grew to 954 tests, up 81, all characterised against real
+DynamoDB - the control-plane pins in eu-west-2, everything else across four
+regions (eu-west-2, eu-central-1, us-east-1, ap-southeast-2):
+
+- UpdateTable AttributeDefinitions reconciliation (#77, #78, #79):
+  delta-fed GSI adds merge into the stored union rather than replacing it, a
+  conflicting redeclaration of an existing key keeps the stored type, and
+  deleting a GSI prunes only its orphaned key attributes. An unused
+  definition on an add is silently dropped where CreateTable rejects the
+  same shape.
+- ProjectionExpression validation (#81): duplicate paths, alias collisions
+  and parent/child overlaps rejected identically on GetItem, Query, Scan and
+  BatchGetItem, pinned with exact messages; legal shared-prefix projections
+  guarded as accepted; GetItem's misfiled validation tests rehomed into
+  Tier 3.
+- Expression-size limit (#80): every expression parameter caps at 4096
+  bytes, measured on the raw string before ExpressionAttributeNames
+  substitution - 4096 accepted, 4097 rejected, on all five expression
+  surfaces. No tracked target enforces this limit today, so the Tier 3
+  movement it causes is new coverage, not a regression.
+- Empty set members (#82): empty strings in an SS and zero-length members
+  in a BS are accepted and round-trip intact through every write path,
+  and contains() can find them; an empty NS member and duplicate empty
+  members are rejected, with messages pinned. One existing assertion got
+  stricter: the empty-binary round-trip now asserts byte length zero.
+
 ## 2026-07-01
 
 Grew to 873 tests, up 49, all characterised against real DynamoDB in eu-west-2.
