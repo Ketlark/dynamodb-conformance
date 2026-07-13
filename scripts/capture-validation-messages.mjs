@@ -3,8 +3,11 @@
 // Fires the validation/error inputs the Tier 3 error-message and
 // validation-ordering tests care about against real AWS in one or more regions,
 // and records the raw err.name / err.message, the "N validation error detected"
-// count, the named field list, and the { NULL: false } round-trip. Output is a
-// combined JSON document on stdout, one block per region.
+// count, the named field list, and the { NULL: false } round-trip. Accepted
+// requests record the response body (minus $metadata, binary values normalised
+// to { b64, byteLength }), so acceptances carry evidence of the returned shape,
+// not just the absence of a throw. Output is a combined JSON document on
+// stdout, one block per region.
 //
 //   AWS_PROFILE=conformance-test node scripts/capture-validation-messages.mjs > capture.json
 //   AWS_PROFILE=conformance-test node scripts/capture-validation-messages.mjs eu-west-2 us-east-1 > capture.json
@@ -30,6 +33,9 @@ import {
   DeleteItemCommand,
   BatchWriteItemCommand,
   TransactWriteItemsCommand,
+  QueryCommand,
+  ScanCommand,
+  BatchGetItemCommand,
 } from '@aws-sdk/client-dynamodb'
 
 const DEFAULT_REGIONS = ['eu-west-2', 'eu-central-1', 'us-east-1', 'ap-southeast-2']
@@ -46,16 +52,46 @@ async function waitActive(ddb, name) {
   const start = Date.now()
   for (;;) {
     const res = await ddb.send(new DescribeTableCommand({ TableName: name }))
-    if (res.Table?.TableStatus === 'ACTIVE') return
+    const gsisActive =
+      !res.Table?.GlobalSecondaryIndexes ||
+      res.Table.GlobalSecondaryIndexes.every((i) => i.IndexStatus === 'ACTIVE')
+    if (res.Table?.TableStatus === 'ACTIVE' && gsisActive) return
     if (Date.now() - start > 120_000) throw new Error(`timeout waiting ACTIVE: ${name}`)
     await sleep(1000)
   }
 }
 
+// Everything except $metadata. An acceptance without its response body is only
+// half an observation: assertions about the returned shape need the payload.
+function stripMetadata(res) {
+  if (res == null || typeof res !== 'object') return null
+  const { $metadata, ...rest } = res
+  return rest
+}
+
+// The SDK hands binary (B/BS) values back as Uint8Array, which JSON.stringify
+// renders as {} for a zero-length value and {"0":1} for a one-byte one - so a
+// raw recording could not distinguish a surviving zero-length member from a
+// dropped one. Normalise every Uint8Array in a recorded response to
+// { b64, byteLength } so the capture keeps the observation intact. Identity
+// for everything else, so responses that carry no binary are unchanged.
+function normalizeBinary(v) {
+  if (v instanceof Uint8Array) {
+    return { b64: Buffer.from(v).toString('base64'), byteLength: v.byteLength }
+  }
+  if (Array.isArray(v)) return v.map(normalizeBinary)
+  if (v !== null && typeof v === 'object') {
+    const out = {}
+    for (const [k, val] of Object.entries(v)) out[k] = normalizeBinary(val)
+    return out
+  }
+  return v
+}
+
 async function probe(id, family, note, fn) {
   try {
-    await fn()
-    return { id, family, note, threw: false, name: null, message: null, n: null, fields: [] }
+    const res = await fn()
+    return { id, family, note, threw: false, name: null, message: null, n: null, fields: [], response: normalizeBinary(stripMetadata(res)) }
   } catch (e) {
     const message = e?.message ?? null
     // The reason Message is what the Tier 3 transact tests pin; the top-level
@@ -75,10 +111,48 @@ async function captureRegion(region) {
   const CT3 = `_conformance_capdrift_ct3_${suffix}`
   const pt = { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
 
-  await ddb.send(new CreateTableCommand({ TableName: H, BillingMode: 'PAY_PER_REQUEST', AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }], KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }] }))
+  // H carries a KEYS_ONLY GSI so the projection family can probe reads that ask
+  // an index for an attribute the index does not project.
+  await ddb.send(new CreateTableCommand({
+    TableName: H,
+    BillingMode: 'PAY_PER_REQUEST',
+    AttributeDefinitions: [
+      { AttributeName: 'pk', AttributeType: 'S' },
+      { AttributeName: 'gpk', AttributeType: 'S' },
+    ],
+    KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: 'gidx',
+        KeySchema: [{ AttributeName: 'gpk', KeyType: 'HASH' }],
+        Projection: { ProjectionType: 'KEYS_ONLY' },
+      },
+    ],
+  }))
   await ddb.send(new CreateTableCommand({ TableName: C, BillingMode: 'PAY_PER_REQUEST', AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }, { AttributeName: 'sk', AttributeType: 'S' }], KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }, { AttributeName: 'sk', KeyType: 'RANGE' }] }))
   await waitActive(ddb, H)
   await waitActive(ddb, C)
+
+  // Canonical seed for the projection family: sibling scalars and a nested map
+  // under one top-level attribute, plus a list of maps whose elements carry
+  // sibling scalars. Accepted projections resolve against this item, so their
+  // recorded response bodies show the returned shape, not an empty result.
+  const PROJ_PK = 'proj-val'
+  const PROJ_GPK = 'proj-val-g'
+  await ddb.send(new PutItemCommand({
+    TableName: H,
+    Item: {
+      pk: { S: PROJ_PK },
+      gpk: { S: PROJ_GPK },
+      a: { M: { b: { S: 'bb' }, c: { S: 'cc' }, d: { M: { e: { S: 'ee' } } } } },
+      l: {
+        L: [
+          { M: { x: { S: 'x0' }, y: { S: 'y0' } } },
+          { M: { x: { S: 'x1' }, y: { S: 'y1' } } },
+        ],
+      },
+    },
+  }))
 
   const probes = []
   const p = (id, family, note, fn) => probe(id, family, note, fn).then((r) => probes.push(r))
@@ -144,6 +218,157 @@ async function captureRegion(region) {
       await p(`twi_del_key_${k}`, 'transact-key', `TransactWrite Delete Key pk ${k}`, () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [{ Delete: { TableName: H, Key: { pk: val } } }] })))
       await p(`twi_cc_key_${k}`, 'transact-key', `TransactWrite ConditionCheck Key pk ${k}`, () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [{ ConditionCheck: { TableName: H, Key: { pk: val }, ConditionExpression: 'attribute_not_exists(pk)' } }] })))
     }
+
+    // ProjectionExpression validation matrix, fired identically at GetItem,
+    // Query, Scan and BatchGetItem. Duplicate paths, overlapping parent/child
+    // paths, alias collisions, and the shared-prefix shapes that are legal.
+    // Query and Scan run against the seeded item (matching partition/filter),
+    // so an acceptance records the projected shape; the projection-eager cells
+    // below re-fire selected cases against zero-match requests. No outcome is
+    // assumed: an acceptance and a rejection are both findings.
+    const projCases = [
+      ['d1', "raw duplicate 'a, a'", 'a, a', null],
+      ['d2', "same alias twice '#a, #a'", '#a, #a', { '#a': 'a' }],
+      ['d3', "distinct aliases, one attribute '#a, #b' (both -> a)", '#a, #b', { '#a': 'a', '#b': 'a' }],
+      ['d4', "raw plus alias 'a, #a'", 'a, #a', { '#a': 'a' }],
+      ['d5', "aliased nested duplicate '#a.#b, #x.#y' (both -> a.b)", '#a.#b, #x.#y', { '#a': 'a', '#b': 'b', '#x': 'a', '#y': 'b' }],
+      ['o1', "raw parent/child 'a, a.b'", 'a, a.b', null],
+      ['o2', "aliased parent/child '#a, #a.#b'", '#a, #a.#b', { '#a': 'a', '#b': 'b' }],
+      ['o3', "child before parent 'a.b, a'", 'a.b, a', null],
+      ['o4', "cross-alias overlap '#x, #y.#b' (#x, #y -> a)", '#x, #y.#b', { '#x': 'a', '#y': 'a', '#b': 'b' }],
+      ['o5', "list parent and index 'l, l[0]'", 'l, l[0]', null],
+      ['o6', "deep overlap 'a, a.b.c'", 'a, a.b.c', null],
+      ['a1', "sibling map paths 'a.b, a.c'", 'a.b, a.c', null],
+      ['a2', "same-index list siblings 'l[0].x, l[0].y'", 'l[0].x, l[0].y', null],
+      ['a3', "distinct list indices 'l[0], l[1]'", 'l[0], l[1]', null],
+      ['a4', "unrelated top-level attrs 'a, l'", 'a, l', null],
+      ['undef', "undefined alias '#undef'", '#undef', null],
+    ]
+    for (const [cid, note, expr, names] of projCases) {
+      const ean = names ? { ExpressionAttributeNames: names } : {}
+      await p(`proj_get_${cid}`, 'projection', `GetItem ${note}`, () => ddb.send(new GetItemCommand({ TableName: H, Key: { pk: { S: PROJ_PK } }, ConsistentRead: true, ProjectionExpression: expr, ...ean })))
+      await p(`proj_query_${cid}`, 'projection', `Query (matching partition) ${note}`, () => ddb.send(new QueryCommand({ TableName: H, KeyConditionExpression: 'pk = :pk', ExpressionAttributeValues: { ':pk': { S: PROJ_PK } }, ConsistentRead: true, ProjectionExpression: expr, ...ean })))
+      await p(`proj_scan_${cid}`, 'projection', `Scan (matching filter) ${note}`, () => ddb.send(new ScanCommand({ TableName: H, FilterExpression: 'pk = :scope', ExpressionAttributeValues: { ':scope': { S: PROJ_PK } }, ConsistentRead: true, ProjectionExpression: expr, ...ean })))
+      await p(`proj_bg_${cid}`, 'projection', `BatchGetItem ${note}`, () => ddb.send(new BatchGetItemCommand({ RequestItems: { [H]: { Keys: [{ pk: { S: PROJ_PK } }], ConsistentRead: true, ProjectionExpression: expr, ...ean } } })))
+    }
+
+    // projection-eager: the same rejection classes against requests that match
+    // nothing. A validator that only checks the projection per emitted row
+    // returns an empty result here instead of throwing; the matching-row cells
+    // above are the controls proving any rejection is not an artefact of the
+    // empty result.
+    await p('proj_query_zero_d1', 'projection-eager', "Query matching no partition, raw duplicate 'a, a'", () => ddb.send(new QueryCommand({ TableName: H, KeyConditionExpression: 'pk = :pk', ExpressionAttributeValues: { ':pk': { S: 'no-such-partition-proj' } }, ConsistentRead: true, ProjectionExpression: 'a, a' })))
+    await p('proj_query_zero_o1', 'projection-eager', "Query matching no partition, overlap 'a, a.b'", () => ddb.send(new QueryCommand({ TableName: H, KeyConditionExpression: 'pk = :pk', ExpressionAttributeValues: { ':pk': { S: 'no-such-partition-proj' } }, ConsistentRead: true, ProjectionExpression: 'a, a.b' })))
+    await p('proj_scan_zero_d1', 'projection-eager', "Scan filter matching nothing, raw duplicate 'a, a'", () => ddb.send(new ScanCommand({ TableName: H, FilterExpression: 'pk = :never', ExpressionAttributeValues: { ':never': { S: 'no-such-pk-proj' } }, ConsistentRead: true, ProjectionExpression: 'a, a' })))
+    await p('proj_scan_zero_o1', 'projection-eager', "Scan filter matching nothing, overlap 'a, a.b'", () => ddb.send(new ScanCommand({ TableName: H, FilterExpression: 'pk = :never', ExpressionAttributeValues: { ':never': { S: 'no-such-pk-proj' } }, ConsistentRead: true, ProjectionExpression: 'a, a.b' })))
+    await p('proj_bg_nomatch_d1', 'projection-eager', "BatchGetItem key matching no item, raw duplicate 'a, a'", () => ddb.send(new BatchGetItemCommand({ RequestItems: { [H]: { Keys: [{ pk: { S: 'no-such-item-proj' } }], ConsistentRead: true, ProjectionExpression: 'a, a' } } })))
+
+    // Cross-entry: a bad projection on one table entry alongside a clean one on
+    // another, probing whether the whole batch rejects.
+    await p('proj_bg_b1_crossentry', 'projection', "BatchGetItem bad projection ('a, a') on one entry, clean ('a') on another", () => ddb.send(new BatchGetItemCommand({ RequestItems: {
+      [H]: { Keys: [{ pk: { S: PROJ_PK } }], ConsistentRead: true, ProjectionExpression: 'a, a' },
+      [C]: { Keys: [{ pk: { S: 'proj-val-c' }, sk: { S: 's' } }], ConsistentRead: true, ProjectionExpression: 'a' },
+    } })))
+
+    // projection-gsi: a read asking a KEYS_ONLY index for an attribute it does
+    // not project. Wait (bounded, best-effort) for the seeded item to appear in
+    // the eventually-consistent index so an acceptance reflects index content
+    // rather than an empty read.
+    const gsiDeadline = Date.now() + 30_000
+    for (;;) {
+      const res = await ddb.send(new QueryCommand({ TableName: H, IndexName: 'gidx', KeyConditionExpression: 'gpk = :g', ExpressionAttributeValues: { ':g': { S: PROJ_GPK } } })).catch(() => null)
+      if ((res?.Count ?? 0) >= 1 || Date.now() > gsiDeadline) break
+      await sleep(1000)
+    }
+    await p('proj_gsi_query_nonprojected', 'projection-gsi', "Query on KEYS_ONLY GSI projecting non-projected attribute 'a'", () => ddb.send(new QueryCommand({ TableName: H, IndexName: 'gidx', KeyConditionExpression: 'gpk = :g', ExpressionAttributeValues: { ':g': { S: PROJ_GPK } }, ProjectionExpression: 'a' })))
+    await p('proj_gsi_scan_nonprojected', 'projection-gsi', "Scan on KEYS_ONLY GSI projecting non-projected attribute 'a'", () => ddb.send(new ScanCommand({ TableName: H, IndexName: 'gidx', ProjectionExpression: 'a' })))
+
+    // Empty members inside a non-empty set (SS/BS/NS). The AWS docs state both
+    // halves in one sentence - "DynamoDB does not support empty sets, however,
+    // empty string and binary values are allowed within a set" - and until this
+    // family only the first half had probes. Acceptance probes seed their own
+    // state inside the probe function (so a rejection anywhere in the chain is
+    // recorded rather than crashing the region sweep), write under their own
+    // esm-* partition key so no two probes clobber each other, and resolve to a
+    // ConsistentRead GetItem on that key: the record shows not just "accepted"
+    // but exactly what came back. Rejection probes record name/message as usual.
+    const EMPTY_BIN = new Uint8Array(0)
+    const esmPutThenGet = async (pk, attrs) => {
+      await ddb.send(new PutItemCommand({ TableName: H, Item: { pk: { S: pk }, ...attrs } }))
+      const got = await ddb.send(new GetItemCommand({ TableName: H, Key: { pk: { S: pk } }, ConsistentRead: true }))
+      return { Item: got.Item ?? null }
+    }
+    const esmUpdThenGet = async (pk, seedAttrs, update) => {
+      await ddb.send(new PutItemCommand({ TableName: H, Item: { pk: { S: pk }, ...seedAttrs } }))
+      await ddb.send(new UpdateItemCommand({ TableName: H, Key: { pk: { S: pk } }, ...update }))
+      const got = await ddb.send(new GetItemCommand({ TableName: H, Key: { pk: { S: pk } }, ConsistentRead: true }))
+      return { Item: got.Item ?? null }
+    }
+
+    // PutItem acceptance cells: sole empty member, mixed, binary, and nested.
+    await p('esm_put_ss_only', 'empty-set-member', "PutItem SS [''] (sole member empty)", () => esmPutThenGet('esm-put-ss-only', { attr: { SS: [''] } }))
+    await p('esm_put_ss_mixed', 'empty-set-member', "PutItem SS ['', 'a']", () => esmPutThenGet('esm-put-ss-mixed', { attr: { SS: ['', 'a'] } }))
+    await p('esm_put_bs_only', 'empty-set-member', 'PutItem BS [zero-length]', () => esmPutThenGet('esm-put-bs-only', { attr: { BS: [EMPTY_BIN] } }))
+    await p('esm_put_bs_mixed', 'empty-set-member', 'PutItem BS [zero-length, 0x01]', () => esmPutThenGet('esm-put-bs-mixed', { attr: { BS: [EMPTY_BIN, new Uint8Array([1])] } }))
+    await p('esm_put_map_ss', 'empty-set-member', "PutItem M { inner: SS [''] }", () => esmPutThenGet('esm-put-map-ss', { outer: { M: { inner: { SS: [''] } } } }))
+    await p('esm_put_list_ss', 'empty-set-member', "PutItem L [ SS [''] ]", () => esmPutThenGet('esm-put-list-ss', { items: { L: [{ SS: [''] }] } }))
+
+    // UpdateItem cells: SET builds the set, a document-path SET revalidates
+    // through the expression engine, ADD/DELETE mutate membership. The
+    // delete-to-empty-member cell produces a set whose only member is the empty
+    // string as the *output* of a server-side mutation.
+    await p('esm_upd_set', 'empty-set-member', "UpdateItem SET tags = SS ['']", () => esmUpdThenGet('esm-upd-set', {}, { UpdateExpression: 'SET tags = :v', ExpressionAttributeValues: { ':v': { SS: [''] } } }))
+    // 'outer' and 'inner' are both reserved words, so the document path is aliased.
+    await p('esm_upd_set_nested', 'empty-set-member', "UpdateItem SET outer.inner = SS [''] on an existing map", () => esmUpdThenGet('esm-upd-set-nested', { outer: { M: {} } }, { UpdateExpression: 'SET #o.#i = :v', ExpressionAttributeNames: { '#o': 'outer', '#i': 'inner' }, ExpressionAttributeValues: { ':v': { SS: [''] } } }))
+    await p('esm_upd_add_existing', 'empty-set-member', "UpdateItem ADD tags SS [''] onto SS ['a']", () => esmUpdThenGet('esm-upd-add-existing', { tags: { SS: ['a'] } }, { UpdateExpression: 'ADD tags :v', ExpressionAttributeValues: { ':v': { SS: [''] } } }))
+    await p('esm_upd_add_new', 'empty-set-member', "UpdateItem ADD tags SS [''] onto a missing attribute", () => esmUpdThenGet('esm-upd-add-new', {}, { UpdateExpression: 'ADD tags :v', ExpressionAttributeValues: { ':v': { SS: [''] } } }))
+    await p('esm_upd_add_dup', 'empty-set-member', "UpdateItem ADD tags SS [''] onto SS [''] (already present)", () => esmUpdThenGet('esm-upd-add-dup', { tags: { SS: [''] } }, { UpdateExpression: 'ADD tags :v', ExpressionAttributeValues: { ':v': { SS: [''] } } }))
+    await p('esm_upd_add_bs_existing', 'empty-set-member', 'UpdateItem ADD bins BS [zero-length] onto BS [0x01]', () => esmUpdThenGet('esm-upd-add-bs-existing', { bins: { BS: [new Uint8Array([1])] } }, { UpdateExpression: 'ADD bins :v', ExpressionAttributeValues: { ':v': { BS: [EMPTY_BIN] } } }))
+    await p('esm_upd_del_member', 'empty-set-member', "UpdateItem DELETE tags SS [''] from SS ['', 'a']", () => esmUpdThenGet('esm-upd-del-member', { tags: { SS: ['', 'a'] } }, { UpdateExpression: 'DELETE tags :v', ExpressionAttributeValues: { ':v': { SS: [''] } } }))
+    await p('esm_upd_del_last', 'empty-set-member', "UpdateItem DELETE tags SS [''] from SS [''] (last member)", () => esmUpdThenGet('esm-upd-del-last', { tags: { SS: [''] } }, { UpdateExpression: 'DELETE tags :v', ExpressionAttributeValues: { ':v': { SS: [''] } } }))
+    await p('esm_upd_del_to_empty_member', 'empty-set-member', "UpdateItem DELETE tags SS ['a'] from SS ['', 'a'] (leaves only the empty member)", () => esmUpdThenGet('esm-upd-del-to-empty-member', { tags: { SS: ['', 'a'] } }, { UpdateExpression: 'DELETE tags :v', ExpressionAttributeValues: { ':v': { SS: ['a'] } } }))
+
+    // Multi-item write paths, which may revalidate the item separately from the
+    // single-item PutItem path.
+    await p('esm_bw_put', 'empty-set-member', "BatchWriteItem PutRequest SS ['']", async () => {
+      const bw = await ddb.send(new BatchWriteItemCommand({ RequestItems: { [H]: [{ PutRequest: { Item: { pk: { S: 'esm-bw-put' }, attr: { SS: [''] } } } }] } }))
+      const got = await ddb.send(new GetItemCommand({ TableName: H, Key: { pk: { S: 'esm-bw-put' } }, ConsistentRead: true }))
+      return { UnprocessedItems: bw.UnprocessedItems ?? null, Item: got.Item ?? null }
+    })
+    await p('esm_twi_put', 'empty-set-member', "TransactWriteItems Put SS ['']", async () => {
+      await ddb.send(new TransactWriteItemsCommand({ TransactItems: [{ Put: { TableName: H, Item: { pk: { S: 'esm-twi-put' }, attr: { SS: [''] } } } }] }))
+      const got = await ddb.send(new GetItemCommand({ TableName: H, Key: { pk: { S: 'esm-twi-put' } }, ConsistentRead: true }))
+      return { Item: got.Item ?? null }
+    })
+
+    // contains(set, '') membership, with the control that gives the hit meaning.
+    // Runs as a Query on the composite table scoped to a dedicated pk and the
+    // probe's own sk, never a Scan on H - a Scan would sweep the esm_put_* /
+    // esm_upd_* items just written above, several of which hold an empty member,
+    // so the negative control could never return zero matches.
+    const esmContainsQuery = async (sk, tags) => {
+      await ddb.send(new PutItemCommand({ TableName: C, Item: { pk: { S: 'esm-contains' }, sk: { S: sk }, tags: { SS: tags } } }))
+      const res = await ddb.send(new QueryCommand({
+        TableName: C,
+        KeyConditionExpression: 'pk = :pk AND sk = :sk',
+        FilterExpression: 'contains(tags, :e)',
+        ExpressionAttributeValues: { ':pk': { S: 'esm-contains' }, ':sk': { S: sk }, ':e': { S: '' } },
+        ConsistentRead: true,
+      }))
+      return { Count: res.Count ?? null, ScannedCount: res.ScannedCount ?? null, Items: res.Items ?? null }
+    }
+    await p('esm_query_contains_hit', 'empty-set-member', "Query contains(tags, '') against SS ['', 'a']", () => esmContainsQuery('with-empty', ['', 'a']))
+    await p('esm_query_contains_miss', 'empty-set-member', "Query contains(tags, '') against SS ['a'] (negative control)", () => esmContainsQuery('without', ['a']))
+
+    // Rejection cells: an empty string is not a number, duplicate empty members
+    // are still duplicates, and the empty-set controls - the message an
+    // over-strict target wrongly returns for [''] , including the never-before
+    // probed empty binary set.
+    await p('esm_put_ns_empty', 'empty-set-member', "PutItem NS ['']", () => ddb.send(new PutItemCommand({ TableName: H, Item: { pk: { S: 'esm-rej-ns-empty' }, attr: { NS: [''] } } })))
+    await p('esm_put_ss_dup_empty', 'empty-set-member', "PutItem SS ['', ''] (duplicate empty members)", () => ddb.send(new PutItemCommand({ TableName: H, Item: { pk: { S: 'esm-rej-ss-dup' }, attr: { SS: ['', ''] } } })))
+    await p('esm_put_bs_dup_empty', 'empty-set-member', 'PutItem BS [zero-length, zero-length] (duplicate empty members)', () => ddb.send(new PutItemCommand({ TableName: H, Item: { pk: { S: 'esm-rej-bs-dup' }, attr: { BS: [EMPTY_BIN, EMPTY_BIN] } } })))
+    await p('esm_put_ss_empty_set', 'empty-set-member', 'PutItem SS [] (empty-set control)', () => ddb.send(new PutItemCommand({ TableName: H, Item: { pk: { S: 'esm-rej-ss-empty-set' }, attr: { SS: [] } } })))
+    await p('esm_put_bs_empty_set', 'empty-set-member', 'PutItem BS [] (empty-set control)', () => ddb.send(new PutItemCommand({ TableName: H, Item: { pk: { S: 'esm-rej-bs-empty-set' }, attr: { BS: [] } } })))
 
     // { NULL: false } round-trip
     let nullRoundTrip

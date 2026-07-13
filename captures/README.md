@@ -27,6 +27,33 @@ baseline lives in the dated snapshot below instead, and the scheduled-run drift
 verdict flags when it needs refreshing. Currently seeded from the 2026-06-09
 capture until the first scheduled run overwrites it.
 
+## 2026-07-13-empty-set-member.json
+
+The current drift baseline (the `Compute the drift verdict` step in
+`.github/workflows/conformance.yml` diffs scheduled captures against it). It
+re-captures everything the 2026-07-12 snapshot covered and adds the
+empty-set-member matrix: empty string and zero-length binary members inside
+non-empty SS/BS sets, across PutItem (top-level, map-nested, list-nested),
+UpdateItem SET (including a document-path SET), ADD and DELETE (including
+deleting the last remaining member), BatchWriteItem, TransactWriteItems, and
+`contains(set, '')` membership with a negative control - plus the rejection
+side (`NS [""]`, duplicate empty members, and the empty-set controls, including
+the first capture of the empty-binary-set message). Acceptance probes write
+items under their own keys in the harness's temporary tables and record the
+round-tripped item from a consistent read; binary values in recorded responses
+are normalised to `{ b64, byteLength }` so a surviving zero-length member is
+distinguishable from a dropped one.
+
+## 2026-07-12-validation-and-projection.json
+
+Re-captures everything the June snapshot covered and adds the
+ProjectionExpression validation matrix - duplicate paths, overlapping
+parent/child paths, alias collisions, legal shared-prefix shapes, zero-match
+eager-validation cells and KEYS_ONLY-GSI cells - fired identically at GetItem,
+Query, Scan and BatchGetItem. From this capture on, accepted requests record
+their response body (minus `$metadata`), so acceptances carry the returned
+shape rather than a bare `threw: false`.
+
 ## 2026-06-09-validation-rewording.json
 
 Real DynamoDB reworded a chunk of its validation errors. Four regions captured:
