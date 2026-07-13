@@ -80,6 +80,22 @@ describe('Nested attribute projection', { tags: ['get-item', 'data-plane'] }, ()
     expect(result.Item!.mylist.L![0].S).toBe('zero')
   })
 
+  it('GetItem projects multiple list indices compacted and index-ordered', async () => {
+    // Real AWS returns both requested elements as a compacted list, in index
+    // order, regardless of the order they were requested.
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: hashPk } },
+        ProjectionExpression: '#l[2], #l[0]',
+        ExpressionAttributeNames: { '#l': 'mylist' },
+        ConsistentRead: true,
+      }),
+    )
+
+    expect(result.Item!.mylist.L).toEqual([{ S: 'zero' }, { S: 'two' }])
+  })
+
   it('Query ProjectionExpression with nested path and list index', async () => {
     const result = await ddb.send(
       new QueryCommand({

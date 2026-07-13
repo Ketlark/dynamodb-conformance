@@ -1,10 +1,15 @@
 import {
+  PutItemCommand,
   ScanCommand,
   DynamoDBServiceException,
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, compositeTableDef } from '../../../src/helpers.js'
+import {
+  hashTableDef,
+  compositeTableDef,
+  cleanupItems,
+} from '../../../src/helpers.js'
 
 describe('Scan — exact error messages', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('Segment without TotalSegments: full required-parameter error', async () => {
@@ -196,6 +201,108 @@ describe('Scan — exact error messages', { tags: ['scan', 'data-plane', 'negati
       expect((err as DynamoDBServiceException).message).toBe(
         'Must specify the AttributesToGet or ProjectionExpression when choosing to get SPECIFIC_ATTRIBUTES',
       )
+    }
+  })
+})
+
+describe('Scan — ProjectionExpression rejection messages', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
+  // The rejections run under a filter matching nothing. A Scan reads every row
+  // and filters afterwards, so an empty-result rejection proves the projection
+  // check precedes emission (the Query variant is what proves it precedes row
+  // evaluation). The matching-filter control at the end proves the rejection is
+  // not an artefact of the empty result.
+  const scanWithProjection = (
+    pk: string,
+    expr: string,
+    names?: Record<string, string>,
+  ) =>
+    ddb.send(
+      new ScanCommand({
+        TableName: hashTableDef.name,
+        FilterExpression: 'pk = :pk',
+        ExpressionAttributeValues: { ':pk': { S: pk } },
+        ProjectionExpression: expr,
+        ...(names ? { ExpressionAttributeNames: names } : {}),
+      }),
+    )
+  const noMatch = 'em-scan-proj-no-such-pk'
+
+  it('duplicate paths (a, a) reject even when the filter matches nothing', async () => {
+    try {
+      await scanWithProjection(noMatch, 'a, a')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    }
+  })
+
+  it('two distinct aliases resolving to one attribute (#a, #b -> a): rejected on the resolved names', async () => {
+    try {
+      await scanWithProjection(noMatch, '#a, #b', { '#a': 'a', '#b': 'a' })
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    }
+  })
+
+  it('overlapping parent and child paths (a, a.b) reject even when the filter matches nothing', async () => {
+    try {
+      await scanWithProjection(noMatch, 'a, a.b')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a, b]',
+      )
+    }
+  })
+
+  it('rejects an undefined projection name even when the scan matches nothing', async () => {
+    // The undefined-name check fires before row evaluation, so a scan that
+    // matches no rows still rejects rather than returning an empty result.
+    try {
+      await scanWithProjection(noMatch, '#undef')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: An expression attribute name used in the document path is not defined; attribute name: #undef',
+      )
+    }
+  })
+
+  it('duplicate paths still reject when the filter matches a row (control)', async () => {
+    // The control proving the empty-result rejections above are not an
+    // artefact of the empty result: with a row the filter genuinely matches,
+    // the same request still rejects rather than returning the row.
+    const pk = 'em-scan-proj-ctl'
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, a: { S: 'alpha' } },
+      }),
+    )
+    try {
+      await scanWithProjection(pk, 'a, a')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    } finally {
+      await cleanupItems(hashTableDef.name, [{ pk: { S: pk } }])
     }
   })
 })
