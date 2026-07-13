@@ -1,21 +1,40 @@
 // Shared tier scoring for the results table and the per-target badges, so the
 // badge percentage can never drift from the published table.
 //
-// The percentage is correctness over implemented operations: passed /
-// (passed + failed). Skips are operations the target does not implement (the
-// feature-probe declined to run them) and are excluded from the denominator.
+// Scoring consumes the classifier's verdicts (scripts/lib/classify.mjs), never
+// raw Vitest statuses: a raw status cannot tell a failed observation from a
+// real failure, and only the classifier can. The percentage is correctness
+// over implemented, observed operations: passed / (passed + failed). Two kinds
+// of test are excluded from the denominator, for two different reasons that
+// must not be blurred:
+//
+// - skips: honest scope. The feature probe declined to run the operation
+//   because the target does not implement it.
+// - indeterminates: failed observations. A timeout, an exhausted throttle or a
+//   transport fault means nobody knows what the answer was, so it can count
+//   neither for nor against a target.
+
+import { classifyResults } from './classify.mjs'
+import { loadRegistry, sameObservation, splitFor } from './registry.mjs'
+import { loadRegionHealth, observedRegions } from './observed.mjs'
 
 // The conformance ground truth. Real DynamoDB defines correctness, so its row
-// is pinned to 100% rather than scored from a results file. Shared by the
-// results table and the badges so the two can't disagree on which slug it is.
+// is pinned to 100% rather than scored from a results file. Under per-region
+// ground truth the pin is earned rather than assumed: each real region scores
+// 100% against its own recorded behaviour by construction, so the max over any
+// observed set is 100% too. Shared by the results table and the badges so
+// the two can't disagree on which slug it is.
 export const GROUND_TRUTH_SLUG = 'dynamodb'
 
 // Result-file slugs that are never a published target. `local` is the default
 // output of an ad-hoc local run (DYNAMODB_ENDPOINT set with no
 // CONFORMANCE_TARGET - see vitest.config.ts), a scratch file that must not be
-// scored, badged, or listed in the results table. Kept here so the table and
-// the badges agree on what to skip, the same way they share GROUND_TRUTH_SLUG.
-export const RESERVED_SLUGS = new Set(['local'])
+// scored, badged, or listed in the results table. `summary` is the versioned
+// per-region artefact this scoring layer emits (results/summary.json), a
+// product of the pipeline rather than a target's run output. Kept here so the
+// table and the badges agree on what to skip, the same way they share
+// GROUND_TRUTH_SLUG.
+export const RESERVED_SLUGS = new Set(['local', 'summary'])
 
 // Whether a result-file slug is a published conformance target. False for the
 // reserved scratch slugs above.
@@ -30,39 +49,171 @@ export function tierOf(filePath) {
   return 'other'
 }
 
-// Score a Vitest JSON result into per-tier and overall pass/fail/skip counts.
-// Returns null only for a file that is not a target's Vitest output at all (no
-// testResults array, e.g. results/tag-manifest.json), so callers can skip it.
-// A real result file with no scored tests returns zeroed counts rather than
-// null, so a genuinely empty run still renders as "-" instead of vanishing.
-export function scoreResults(raw) {
-  if (!Array.isArray(raw?.testResults)) return null
-
-  const tests = raw.testResults.flatMap(
-    (tr) => tr.assertionResults?.map((ar) => ({ file: tr.name, status: ar.status })) ?? [],
-  )
-
+// Score classified verdicts into per-tier and overall counts. p/f/s/i are
+// pass, fail, skip and indeterminate; `count` is every classified test, so a
+// full-suite run reports its true size whatever mix of verdicts it produced.
+export function scoreVerdicts(verdicts) {
   const summary = {
-    tier1: { p: 0, f: 0, s: 0 },
-    tier2: { p: 0, f: 0, s: 0 },
-    tier3: { p: 0, f: 0, s: 0 },
+    tier1: { p: 0, f: 0, s: 0, i: 0 },
+    tier2: { p: 0, f: 0, s: 0, i: 0 },
+    tier3: { p: 0, f: 0, s: 0, i: 0 },
   }
-  for (const t of tests) {
-    const key = tierOf(t.file)
-    if (!(key in summary)) continue
-    if (t.status === 'passed') summary[key].p++
-    else if (t.status === 'failed') summary[key].f++
-    else summary[key].s++
+  const bucket = { pass: 'p', fail: 'f', skip: 's', indeterminate: 'i' }
+  for (const v of verdicts) {
+    const tier = summary[tierOf(v.file)]
+    if (!tier) continue
+    tier[bucket[v.verdict]]++
   }
 
-  const passed = summary.tier1.p + summary.tier2.p + summary.tier3.p
-  const failed = summary.tier1.f + summary.tier2.f + summary.tier3.f
-  const skipped = summary.tier1.s + summary.tier2.s + summary.tier3.s
-  return { summary, passed, failed, skipped, count: passed + failed + skipped }
+  const total = (k) => summary.tier1[k] + summary.tier2[k] + summary.tier3[k]
+  const passed = total('p')
+  const failed = total('f')
+  const skipped = total('s')
+  const indeterminate = total('i')
+  return {
+    summary,
+    passed,
+    failed,
+    skipped,
+    indeterminate,
+    count: passed + failed + skipped + indeterminate,
+  }
+}
+
+// Score a Vitest JSON result, plus its indeterminate sidecar when the run
+// wrote one, by classifying it first. Returns null only for a file that is not
+// a target's Vitest output at all (no testResults array, e.g.
+// results/tag-manifest.json), so callers can skip it. A real result file with
+// no scored tests returns zeroed counts rather than null, so a genuinely empty
+// run still renders as "-" instead of vanishing.
+export function scoreResults(raw, sidecar = null) {
+  if (!Array.isArray(raw?.testResults)) return null
+  return scoreVerdicts(classifyResults(raw, sidecar))
 }
 
 // Correctness over implemented operations: passed / (passed + failed), as a
 // percentage. Null when nothing ran, so callers render "-".
 export function passRate(passed, failed) {
   return passed + failed === 0 ? null : (passed / (passed + failed)) * 100
+}
+
+// ── Per-region scoring ───────────────────────────────────────────────────────
+//
+// A target has no region; scoring it "against us-east-1" means asserting
+// us-east-1's recorded expectations, which come from the split registry. On
+// every test with no registry row the expectation is region-invariant and the
+// verdict stands as classified, so the common path is a no-op and all
+// per-region scores of a split-free run are identical.
+
+/**
+ * Re-evaluate classified verdicts against one region's expectations.
+ *
+ * For a test with a registry row naming this region, the region's recorded
+ * answer replaces the committed assertion as the expectation:
+ *
+ * - a verdict carrying `observed` (the target's recorded answer for the split
+ *   behaviour) passes exactly when the observation matches the region's
+ *   recorded answer;
+ * - a pass without an observation matched the committed assertion, which
+ *   encodes the row's pinned answer, so it passes here exactly when this
+ *   region records that same answer;
+ * - a fail without an observation is evidence of nothing beyond "not the
+ *   pinned answer". It stays a fail: a region match is only ever awarded on
+ *   evidence, and the conservative reading can only under-score a target,
+ *   never launder a non-conformance into a pass.
+ *
+ * Skips and indeterminates pass through untouched - an absence is the same
+ * absence in every region - as does any test in a region the row does not
+ * name, where the region-invariant expectation still applies.
+ */
+export function verdictsForRegion(verdicts, registry, region) {
+  return verdicts.map((v) => {
+    if (v.verdict !== 'pass' && v.verdict !== 'fail') return v
+    const row = splitFor(registry, v)
+    const expected = row?.regions?.[region]
+    if (!expected) return v
+    if (v.observed !== undefined) {
+      return { ...v, verdict: sameObservation(v.observed, expected) ? 'pass' : 'fail' }
+    }
+    if (v.verdict === 'pass') {
+      return {
+        ...v,
+        verdict: sameObservation(expected, row.regions[row.pinned]) ? 'pass' : 'fail',
+      }
+    }
+    return v
+  })
+}
+
+/** scoreVerdicts, with the verdicts re-evaluated against one region. */
+export function scoreAgainstRegion(verdicts, registry, region) {
+  return scoreVerdicts(verdictsForRegion(verdicts, registry, region))
+}
+
+/**
+ * Score a target against every region in the observed set, and take the
+ * best of them as the headline. Removing a region from a max() can only lower
+ * a score or leave it unchanged, so a target only ever fails a behaviour in
+ * the headline when no observed region matches what it did.
+ *
+ * The observed set comes from scripts/lib/observed.mjs. An empty set is an
+ * error: a score computed against nothing would be a silent 0% or 100%, and
+ * neither is an answer.
+ *
+ * Returns { regions: { [region]: scored }, headline: { region, rate } }, with
+ * ties broken by region name so a re-run is byte-identical (scoring is
+ * deterministic and offline by requirement).
+ */
+export function scoreAcrossRegions(verdicts, registry, observedRegions) {
+  if (!Array.isArray(observedRegions) || observedRegions.length === 0) {
+    throw new Error('cannot score against an empty observed region set')
+  }
+
+  const regions = {}
+  for (const region of observedRegions) {
+    regions[region] = scoreAgainstRegion(verdicts, registry, region)
+  }
+
+  let headline = null
+  for (const region of [...observedRegions].sort()) {
+    const rate = passRate(regions[region].passed, regions[region].failed)
+    if (rate === null) continue
+    if (headline === null || rate > headline.rate) headline = { region, rate }
+  }
+  // A run where nothing scored in any region has no headline rate; the first
+  // region (by name) keeps the shape stable for renderers.
+  if (headline === null) headline = { region: [...observedRegions].sort()[0], rate: null }
+  return { regions, headline }
+}
+
+/**
+ * Score one target's raw Vitest JSON (plus its indeterminate sidecar, when the
+ * run wrote one) across the observed region set. This is the single entry
+ * point the results table, the badges and the summary artefact all share, so
+ * the badge percentage, the table headline and results/summary.json can never
+ * disagree - the same invariant scoreResults was written to protect, extended
+ * to per-region scoring.
+ *
+ * Returns null only for a document that is not a target's Vitest output at all
+ * (no testResults array), so directory-scanning callers can skip it.
+ */
+export function scoreTarget(raw, sidecar, { registry, observed }) {
+  if (!Array.isArray(raw?.testResults)) return null
+  return scoreAcrossRegions(classifyResults(raw, sidecar), registry, observed)
+}
+
+/**
+ * The shared scoring inputs, loaded from their committed homes: the split
+ * registry (per-region expectations) and the region-health record (which
+ * regions a score may draw on). A thin fs loader over the pure logic above,
+ * mirroring registry.mjs and observed.mjs, so every consumer - table, badges,
+ * summary, tests - scores against the same committed state.
+ */
+export function loadScoringContext({
+  registryPath = 'registry/splits.json',
+  regionHealthPath = 'registry/regions.json',
+} = {}) {
+  const registry = loadRegistry(registryPath)
+  const health = loadRegionHealth(regionHealthPath)
+  return { registry, health, observed: observedRegions(health) }
 }
