@@ -61,11 +61,20 @@ describe('Query — FilterExpression functions and operators', { tags: ['query',
     ])
   })
 
+  // The empty-member membership pair lives under its own partition key so the
+  // shared seed fixture above (and every exact-count assertion built on it)
+  // stays untouched.
+  const emptyMemberPk = 'query-expr-empty-member'
+  const emptyMemberKeys = [
+    { pk: { S: emptyMemberPk }, sk: { S: 'has-empty' } },
+    { pk: { S: emptyMemberPk }, sk: { S: 'no-empty' } },
+  ]
+
   afterAll(async () => {
-    await cleanupItems(
-      compositeTableDef.name,
-      [...items, item4].map((item) => ({ pk: item.pk, sk: item.sk })),
-    )
+    await cleanupItems(compositeTableDef.name, [
+      ...[...items, item4].map((item) => ({ pk: item.pk, sk: item.sk })),
+      ...emptyMemberKeys,
+    ])
   })
 
   it('filters by size(attr) > :val', async () => {
@@ -374,6 +383,50 @@ describe('Query — FilterExpression functions and operators', { tags: ['query',
     // Only item 4 has a map with more than 2 keys
     expect(result.Items).toHaveLength(1)
     expect(result.Items![0].sk.S).toBe('4')
+  })
+
+  it('contains(setAttr, :empty) matches only the set holding the empty member', async () => {
+    // contains() on a set is membership, not substring: an empty-string
+    // operand matches a set that holds '' as a member and nothing else. The
+    // negative control is what gives the positive half meaning.
+    await Promise.all([
+      ddb.send(
+        new PutItemCommand({
+          TableName: compositeTableDef.name,
+          Item: {
+            pk: { S: emptyMemberPk },
+            sk: { S: 'has-empty' },
+            tags: { SS: ['', 'a'] },
+          },
+        }),
+      ),
+      ddb.send(
+        new PutItemCommand({
+          TableName: compositeTableDef.name,
+          Item: {
+            pk: { S: emptyMemberPk },
+            sk: { S: 'no-empty' },
+            tags: { SS: ['a', 'b'] },
+          },
+        }),
+      ),
+    ])
+
+    const result = await ddb.send(
+      new QueryCommand({
+        TableName: compositeTableDef.name,
+        KeyConditionExpression: 'pk = :pk',
+        FilterExpression: 'contains(tags, :elem)',
+        ExpressionAttributeValues: {
+          ':pk': { S: emptyMemberPk },
+          ':elem': { S: '' },
+        },
+        ConsistentRead: true,
+      }),
+    )
+
+    expect(result.Items).toHaveLength(1)
+    expect(result.Items![0].sk.S).toBe('has-empty')
   })
 
   it('size() on binary returns byte length', async () => {

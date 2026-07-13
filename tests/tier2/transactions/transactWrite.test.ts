@@ -51,6 +51,7 @@ const hashKeys = [
   { pk: { S: 'tw-and-noexist' } },
   { pk: { S: 'tw-mix-existing' } },
   { pk: { S: 'tw-mix-noexist' } },
+  { pk: { S: 'tw-ss-empty-member' } },
 ]
 
 const compositeKeys = [
@@ -142,6 +143,33 @@ describe('TransactWriteItems - basic functionality', { tags: ['transactions', 'd
       }),
     )
     expect(del.Item).toBeUndefined()
+  })
+
+  it('commits a Put whose string set carries an empty member', async () => {
+    // Empty string values are allowed within a set. The transactional write
+    // path revalidates the item on the way in, so acceptance here is a
+    // distinct claim from the PutItem one.
+    await ddb.send(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: hashTableDef.name,
+              Item: { pk: { S: 'tw-ss-empty-member' }, attr: { SS: [''] } },
+            },
+          },
+        ],
+      }),
+    )
+
+    const got = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'tw-ss-empty-member' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(got.Item!.attr.SS).toEqual([''])
   })
 
   it('succeeds when ConditionCheck condition is met', async () => {

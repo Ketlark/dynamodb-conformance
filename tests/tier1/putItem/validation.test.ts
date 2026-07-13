@@ -67,6 +67,49 @@ describe('PutItem — validation', { tags: ['put-item', 'data-plane', 'negative-
     )
   })
 
+  it('rejects an empty string member in a number set', async () => {
+    // Empty members are allowed in SS/BS but an empty string is not a number,
+    // so NS rejects it — on the numeric parse, not on emptiness.
+    await expectDynamoError(
+      () => ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: { pk: { S: 'test' }, bad: { NS: [''] } },
+        }),
+      ),
+      'ValidationException',
+    )
+  })
+
+  it('rejects duplicate empty string members in a string set', async () => {
+    await expectDynamoError(
+      () => ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: { pk: { S: 'test' }, bad: { SS: ['', ''] } },
+        }),
+      ),
+      'ValidationException',
+      'duplicates',
+    )
+  })
+
+  it('rejects duplicate zero-length members in a binary set', async () => {
+    await expectDynamoError(
+      () => ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: {
+            pk: { S: 'test' },
+            bad: { BS: [new Uint8Array(0), new Uint8Array(0)] },
+          },
+        }),
+      ),
+      'ValidationException',
+      'duplicates',
+    )
+  })
+
   it('rejects duplicate values in string set', async () => {
     await expectDynamoError(
       () => ddb.send(
