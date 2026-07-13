@@ -15,6 +15,11 @@ import {
   waitForGsiConsistency,
 } from '../../../src/helpers.js'
 
+// GSI backfills on real AWS usually land in 5-15 minutes even on empty
+// tables, but have been observed taking 25+ (eu-west-2, 2026-07-12). The
+// waits and test timeouts in this file are deliberately generous ceilings,
+// not expected durations - an ACTIVE index returns immediately.
+
 /** Create a base table with pk (S) + sk (S) for GSI lifecycle tests */
 async function createBaseTable(name: string): Promise<void> {
   await ddb.send(
@@ -68,7 +73,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     await Promise.all(tablesToCleanup.map(deleteTable))
   })
 
-  it('adds a hash-only GSI to an existing table', { timeout: 1_260_000 }, async () => {
+  it('adds a hash-only GSI to an existing table', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_add_hash')
     tablesToCleanup.push(name)
     await createBaseTable(name)
@@ -91,7 +96,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     const desc = await ddb.send(new DescribeTableCommand({ TableName: name }))
     const gsis = desc.Table!.GlobalSecondaryIndexes!
@@ -104,7 +109,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     expect(gsis[0].Projection?.ProjectionType).toBe('ALL')
   })
 
-  it('adds a composite GSI (hash + range) to an existing table', { timeout: 1_260_000 }, async () => {
+  it('adds a composite GSI (hash + range) to an existing table', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_add_comp')
     tablesToCleanup.push(name)
     await createBaseTable(name)
@@ -131,7 +136,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     const desc = await ddb.send(new DescribeTableCommand({ TableName: name }))
     const gsis = desc.Table!.GlobalSecondaryIndexes!
@@ -143,7 +148,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     ])
   })
 
-  it('adds a GSI with KEYS_ONLY projection', { timeout: 1_260_000 }, async () => {
+  it('adds a GSI with KEYS_ONLY projection', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_keys_only')
     tablesToCleanup.push(name)
     await createBaseTable(name)
@@ -166,7 +171,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     const desc = await ddb.send(new DescribeTableCommand({ TableName: name }))
     const gsi = desc.Table!.GlobalSecondaryIndexes![0]
@@ -174,7 +179,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     expect(gsi.Projection?.ProjectionType).toBe('KEYS_ONLY')
   })
 
-  it('adds a GSI with INCLUDE projection and NonKeyAttributes', { timeout: 1_260_000 }, async () => {
+  it('adds a GSI with INCLUDE projection and NonKeyAttributes', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_include')
     tablesToCleanup.push(name)
     await createBaseTable(name)
@@ -200,7 +205,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     const desc = await ddb.send(new DescribeTableCommand({ TableName: name }))
     const gsi = desc.Table!.GlobalSecondaryIndexes![0]
@@ -211,7 +216,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     )
   })
 
-  it('can query a newly created GSI after putting items', { timeout: 1_260_000 }, async () => {
+  it('can query a newly created GSI after putting items', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_query')
     tablesToCleanup.push(name)
     await createBaseTable(name)
@@ -270,7 +275,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     // Wait for the GSI to backfill existing items
     await waitForGsiConsistency({
@@ -297,7 +302,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     expect(pks).toEqual(['item1', 'item2'])
   })
 
-  it('adds multiple GSIs sequentially', { timeout: 2_520_000 }, async () => {
+  it('adds multiple GSIs sequentially', { timeout: 4_920_000 }, async () => {
     const name = uniqueTableName('ut_gsi_multi')
     tablesToCleanup.push(name)
     await createBaseTable(name)
@@ -321,7 +326,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     // Add second GSI
     await ddb.send(
@@ -342,7 +347,7 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     const desc = await ddb.send(new DescribeTableCommand({ TableName: name }))
     const gsis = desc.Table!.GlobalSecondaryIndexes!
@@ -360,7 +365,7 @@ describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane',
     await Promise.all(tablesToCleanup.map(deleteTable))
   })
 
-  it('removes a GSI from a table', { timeout: 1_260_000 }, async () => {
+  it('removes a GSI from a table', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_remove')
     tablesToCleanup.push(name)
     await createTableWithGsi(name)
@@ -381,7 +386,7 @@ describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane',
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     const after = await ddb.send(new DescribeTableCommand({ TableName: name }))
     // GSI list should be empty or undefined
@@ -389,7 +394,7 @@ describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane',
     expect(gsis).toHaveLength(0)
   })
 
-  it('base table operations still work after removing a GSI', { timeout: 1_260_000 }, async () => {
+  it('base table operations still work after removing a GSI', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_rm_ops')
     tablesToCleanup.push(name)
     await createTableWithGsi(name)
@@ -406,7 +411,7 @@ describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane',
       }),
     )
 
-    await waitUntilActive(name, 1_200_000)
+    await waitUntilActive(name, 2_400_000)
 
     // Put an item — should still work
     await ddb.send(
@@ -455,7 +460,7 @@ describe('UpdateTable — GSI validation', { tags: ['update-table', 'control-pla
     await Promise.all(tablesToCleanup.map(deleteTable))
   })
 
-  it('rejects adding a GSI with a name that already exists', { timeout: 1_260_000 }, async () => {
+  it('rejects adding a GSI with a name that already exists', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_dup')
     tablesToCleanup.push(name)
     await createTableWithGsi(name)
