@@ -68,6 +68,53 @@ async function createTableWithGsi(name: string): Promise<void> {
   await waitUntilActive(name)
 }
 
+/**
+ * Create a table whose GSI shares pk with the table key and which also carries
+ * an LSI. Deleting that GSI then discriminates a correct union-recompute of
+ * AttributeDefinitions from the two obvious wrong implementations: a naive
+ * subtractor drops pk (still used by the table key), and a tableKeys ∪ gsiKeys
+ * recompute drops lsiSk (still used by the LSI).
+ */
+async function createTableWithLsiAndSharedKeyGsi(name: string): Promise<void> {
+  await ddb.send(
+    new CreateTableCommand({
+      TableName: name,
+      AttributeDefinitions: [
+        { AttributeName: 'pk', AttributeType: 'S' },
+        { AttributeName: 'sk', AttributeType: 'S' },
+        { AttributeName: 'lsiSk', AttributeType: 'N' },
+        { AttributeName: 'gsiSk', AttributeType: 'S' },
+      ],
+      KeySchema: [
+        { AttributeName: 'pk', KeyType: 'HASH' },
+        { AttributeName: 'sk', KeyType: 'RANGE' },
+      ],
+      LocalSecondaryIndexes: [
+        {
+          IndexName: 'lsi1',
+          KeySchema: [
+            { AttributeName: 'pk', KeyType: 'HASH' },
+            { AttributeName: 'lsiSk', KeyType: 'RANGE' },
+          ],
+          Projection: { ProjectionType: 'ALL' },
+        },
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: 'existingGsi',
+          KeySchema: [
+            { AttributeName: 'pk', KeyType: 'HASH' },
+            { AttributeName: 'gsiSk', KeyType: 'RANGE' },
+          ],
+          Projection: { ProjectionType: 'ALL' },
+        },
+      ],
+      BillingMode: 'PAY_PER_REQUEST',
+    }),
+  )
+  await waitUntilActive(name)
+}
+
 /** AttributeDefinitions sorted by name: assertions compare the full set, not the order */
 function sortedAttrDefs(table: TableDescription): AttributeDefinition[] {
   return [...(table.AttributeDefinitions ?? [])].sort((a, b) =>
@@ -465,6 +512,54 @@ describe('UpdateTable — add GSI', { tags: ['update-table', 'control-plane', 's
     expect(got.Item).toBeDefined()
   })
 
+  it('drops an unused AttributeDefinition supplied with a GSI add', { timeout: 2_460_000 }, async () => {
+    const name = uniqueTableName('ut_gsi_unused')
+    tablesToCleanup.push(name)
+    await createBaseTable(name)
+
+    // CreateTable rejects an AttributeDefinition no key schema uses (pinned
+    // in tests/tier1/createTable/basic.test.ts); UpdateTable instead accepts
+    // the call and silently drops the unused definition. The two operations
+    // genuinely diverge. Codifies observed AWS behaviour (eu-west-2,
+    // 2026-07-12) that AWS has never documented.
+    const updateRes = await ddb.send(
+      new UpdateTableCommand({
+        TableName: name,
+        AttributeDefinitions: [
+          { AttributeName: 'g1', AttributeType: 'S' },
+          { AttributeName: 'extraUnused', AttributeType: 'S' },
+        ],
+        GlobalSecondaryIndexUpdates: [
+          {
+            Create: {
+              IndexName: 'gsiUnused',
+              KeySchema: [{ AttributeName: 'g1', KeyType: 'HASH' }],
+              Projection: { ProjectionType: 'KEYS_ONLY' },
+            },
+          },
+        ],
+      }),
+    )
+
+    // The drop is synchronous: extraUnused is already absent from the
+    // UpdateTable response, before any backfill starts.
+    expect(sortedAttrDefs(updateRes.TableDescription!)).toEqual([
+      { AttributeName: 'g1', AttributeType: 'S' },
+      { AttributeName: 'pk', AttributeType: 'S' },
+      { AttributeName: 'sk', AttributeType: 'S' },
+    ])
+
+    // Cleanup enablement: DeleteTable is rejected while an index is CREATING.
+    await waitUntilActive(name, 2_400_000)
+
+    // And the dropped definition stays dropped once the index is ACTIVE.
+    const desc = await ddb.send(new DescribeTableCommand({ TableName: name }))
+    expect(sortedAttrDefs(desc.Table!)).toEqual([
+      { AttributeName: 'g1', AttributeType: 'S' },
+      { AttributeName: 'pk', AttributeType: 'S' },
+      { AttributeName: 'sk', AttributeType: 'S' },
+    ])
+  })
 })
 
 describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane', 'slow', 'gsi'] }, () => {
@@ -477,7 +572,10 @@ describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane',
   it('removes a GSI from a table', { timeout: 2_460_000 }, async () => {
     const name = uniqueTableName('ut_gsi_remove')
     tablesToCleanup.push(name)
-    await createTableWithGsi(name)
+    // The table shape is deliberate: the GSI shares pk with the table key and
+    // an LSI holds lsiSk, so the AttributeDefinitions assertion below can
+    // discriminate a correct recompute from naive subtraction.
+    await createTableWithLsiAndSharedKeyGsi(name)
 
     // Verify the GSI exists before removal
     const before = await ddb.send(new DescribeTableCommand({ TableName: name }))
@@ -501,6 +599,16 @@ describe('UpdateTable — remove GSI', { tags: ['update-table', 'control-plane',
     // GSI list should be empty or undefined
     const gsis = after.Table!.GlobalSecondaryIndexes ?? []
     expect(gsis).toHaveLength(0)
+
+    // Only the deleted index's orphaned key attribute (gsiSk) is pruned from
+    // AttributeDefinitions. pk survives because the table key still uses it;
+    // lsiSk survives because the LSI still does. Codifies observed AWS
+    // behaviour (eu-west-2, 2026-07-12); AWS documents nothing about pruning.
+    expect(sortedAttrDefs(after.Table!)).toEqual([
+      { AttributeName: 'lsiSk', AttributeType: 'N' },
+      { AttributeName: 'pk', AttributeType: 'S' },
+      { AttributeName: 'sk', AttributeType: 'S' },
+    ])
   })
 
   it('base table operations still work after removing a GSI', { timeout: 2_460_000 }, async () => {
