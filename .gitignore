@@ -9,7 +9,9 @@ dist/
 .env.local
 .env.*.local
 .DS_Store
-ground-truth/
+# Per-region ground truth is CI-artifact run output, never committed; only the
+# directory's README is tracked. See ground-truth/README.md.
+ground-truth/*.json
 .claude/settings.local.json
 .claude/*.lock
 

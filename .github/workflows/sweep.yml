@@ -1,0 +1,279 @@
+name: Ground Truth Sweep
+
+# Run the suite against real DynamoDB in every commercial region, producing
+# per-region ground truth (ground-truth/<region>.json plus its indeterminate
+# sidecar), then detect regional splits and record region health. Weekly, and
+# gating nothing: PR gating stays offline and deterministic, and a red region
+# here degrades to an unresolved verdict rather than a blocked build.
+#
+# Output goes to ground-truth/, never results/: any results/<slug>.json is
+# automatically scored, badged and published as a target row, so a per-region
+# file landing there would fabricate phantom targets and redden the PR gate.
+on:
+  schedule:
+    - cron: '0 3 * * 6' # sweep: 3am UTC Saturday, clear of Monday's gating run
+    - cron: '30 5 * * *' # reap: daily, catching tables a dead run stranded
+  workflow_dispatch:
+    inputs:
+      regions:
+        description: "Comma-separated region subset (blank = all commercial regions)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  regions:
+    name: Resolve region set
+    # Only the weekly cron (or a manual dispatch) sweeps; the daily cron only reaps.
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * 6'
+    runs-on: ubuntu-latest
+    outputs:
+      regions: ${{ steps.set.outputs.regions }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # src/regions.ts is the single source of the region set; the matrix is
+      # derived from it rather than hand-maintained here.
+      - name: Derive the matrix from src/regions.ts
+        id: set
+        env:
+          SUBSET: ${{ github.event.inputs.regions }}
+        run: |
+          regions=$(node --input-type=module -e '
+            const { COMMERCIAL_REGIONS } = await import("./src/regions.ts")
+            const subset = (process.env.SUBSET ?? "").split(",").map((s) => s.trim()).filter(Boolean)
+            const unknown = subset.filter((r) => !COMMERCIAL_REGIONS.includes(r))
+            if (unknown.length > 0) {
+              console.error(`unknown region(s): ${unknown.join(", ")}`)
+              process.exit(1)
+            }
+            console.log(JSON.stringify(subset.length > 0 ? subset : [...COMMERCIAL_REGIONS]))
+          ')
+          echo "regions=$regions" >> "$GITHUB_OUTPUT"
+          echo "Sweeping: $regions"
+
+  sweep:
+    name: ${{ matrix.region }}
+    needs: regions
+    runs-on: ubuntu-latest
+    # Inside the 2h OIDC credential window: a region slower than this cannot
+    # finish anyway, and the health gate will read its truncated output as
+    # unresolved rather than counting a partial run.
+    timeout-minutes: 115
+    strategy:
+      # A failing region must never block the others.
+      fail-fast: false
+      matrix:
+        region: ${{ fromJSON(needs.regions.outputs.regions) }}
+    # DynamoDB tables are regional, so regions cannot race each other - but the
+    # eu-west-2 job shares a region with the gating job in conformance.yml,
+    # whose by-prefix cleanup would delete this job's tables mid-run (and vice
+    # versa). It must join the same conformance-aws queue; every other region
+    # gets its own group so two sweeps cannot overlap in one region.
+    concurrency:
+      group: ${{ matrix.region == 'eu-west-2' && 'conformance-aws' || format('sweep-{0}', matrix.region) }}
+      cancel-in-progress: false
+    permissions:
+      id-token: write
+      contents: read
+    environment: conformance-testing
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ matrix.region }}
+          role-duration-seconds: 7200
+
+      # The gating scope (the full suite minus the GSI lifecycle file, whose
+      # 5-15 minute backfills per index would bust the credential window, and
+      # the S3/Kinesis service-integration suites, which no emulator implements
+      # and which carry their own non-gating job). Discovery is never narrowed
+      # to known splits: every region runs every scored test.
+      #
+      # continue-on-error: a real region failing a committed assertion IS the
+      # split signal this sweep exists to find, not a CI failure. The detect
+      # job carries the meaning; a region that produced nothing at all is read
+      # as unresolved there, never silently green here.
+      - name: Run the suite against ${{ matrix.region }}
+        continue-on-error: true
+        env:
+          CONFORMANCE_TARGET: ${{ matrix.region }}
+          CONFORMANCE_RESULTS_DIR: ground-truth
+          AWS_REGION: ${{ matrix.region }}
+          # Same flake absorption as the gating job: a one-off throttle passes
+          # on the retry, real drift fails deterministically and survives it.
+          CONFORMANCE_RETRY: '1'
+        run: npm run test:gating -- --reporter=json --outputFile=ground-truth/${{ matrix.region }}.json
+
+      - name: Sanitize account IDs
+        if: always()
+        run: node scripts/sanitize-arns.mjs
+
+      - name: Cleanup conformance tables
+        if: always()
+        timeout-minutes: 3
+        env:
+          AWS_REGION: ${{ matrix.region }}
+        run: |
+          aws dynamodb list-tables --query "TableNames[?starts_with(@, '_conformance_')]" --output text | \
+          tr '\t' '\n' | \
+          xargs -P4 -I{} aws dynamodb delete-table --table-name {} 2>/dev/null || true
+
+      # Uploaded under a non `results-*` name so the Update Results Table
+      # overlay (which globs results-*) never folds a region into the published
+      # target comparison.
+      - name: Upload ground truth
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ground-truth-${{ matrix.region }}
+          path: ground-truth/
+
+  detect:
+    name: Detect splits and record health
+    needs: [regions, sweep]
+    # always(): a region going red (or missing entirely) is exactly what this
+    # job exists to interpret, so it must run whatever the matrix did.
+    if: always() && needs.regions.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    # Targeted confirmation re-runs single tests in whichever regions disagreed,
+    # eu-west-2 included, so this job joins the same queue as the gating job's
+    # by-prefix cleanup rather than racing it.
+    concurrency:
+      group: conformance-aws
+      cancel-in-progress: false
+    permissions:
+      id-token: write
+      contents: read
+      issues: write # split-candidate, registry-drift and region-dropped issues
+    environment: conformance-testing
+
+    steps:
+      # registry/regions.json (region health) is committed back, so the
+      # checkout uses the results bot's token. registry/splits.json is never
+      # written by anything here: detection files issues, a human admits rows.
+      - name: Mint a token for the results bot
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RESULTS_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RESULTS_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+          role-duration-seconds: 7200
+
+      - name: Download the per-region results
+        uses: actions/download-artifact@v7
+        with:
+          pattern: ground-truth-*
+          path: ground-truth
+          merge-multiple: true
+
+      - name: Detect splits, confirm them, record region health
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECT: ${{ needs.regions.outputs.regions }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node scripts/sweep-detect.mjs ground-truth \
+            --expect "$(node -e 'console.log(JSON.parse(process.env.EXPECT).join(","))')" \
+            --record-health registry/regions.json \
+            --confirm \
+            --file-issues \
+            --run-url "$RUN_URL" \
+            --out ground-truth/sweep-report.json
+
+      - name: Upload the sweep report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sweep-report
+          path: ground-truth/sweep-report.json
+
+      - name: Commit the region health record
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add registry/regions.json
+          if git diff --staged --quiet; then
+            echo "Region health unchanged."
+          else
+            git commit -m "chore: update region health [skip ci]"
+            pushed=0
+            for i in 1 2 3; do
+              if git pull --rebase && git push; then pushed=1; break; fi
+              echo "push attempt $i failed; retrying"
+              sleep 5
+            done
+            if [ "$pushed" -ne 1 ]; then
+              echo "::warning title=Region health::push failed after 3 attempts; this sweep's health record was not persisted"
+              exit 1
+            fi
+          fi
+
+  reap:
+    name: Reap orphaned tables
+    # Runs after every sweep (skipped or not - the daily cron skips the matrix
+    # and comes straight here) so tables stranded by a dead run never sit for
+    # more than a day. The age gate inside the reaper is what keeps runs still
+    # in flight safe; see scripts/reap-orphans.mjs.
+    needs: sweep
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    environment: conformance-testing
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+          role-duration-seconds: 3600
+
+      - name: Reap orphans across all regions
+        run: node scripts/reap-orphans.mjs
