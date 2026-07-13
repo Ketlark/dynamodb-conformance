@@ -19,6 +19,12 @@
         "data-plane"
       ]
     },
+    "tests/tier1/batchGetItem/projection.test.ts": {
+      "BatchGetItem — legal shared-prefix projections": [
+        "batch",
+        "data-plane"
+      ]
+    },
     "tests/tier1/batchGetItem/validation.test.ts": {
       "BatchGetItem — validation": [
         "batch",
@@ -172,12 +178,6 @@
         "data-plane"
       ],
       "Same list-index projection merge": [
-        "get-item",
-        "data-plane"
-      ]
-    },
-    "tests/tier1/getItem/projectionValidation.test.ts": {
-      "GetItem — projection validation and fidelity": [
         "get-item",
         "data-plane"
       ]
@@ -375,6 +375,12 @@
         "data-plane"
       ]
     },
+    "tests/tier1/query/projection.test.ts": {
+      "Query — legal shared-prefix projections": [
+        "query",
+        "data-plane"
+      ]
+    },
     "tests/tier1/query/select.test.ts": {
       "Query — Select COUNT": [
         "query",
@@ -490,6 +496,12 @@
     },
     "tests/tier1/scan/parallel.test.ts": {
       "Scan — parallel": [
+        "scan",
+        "data-plane"
+      ]
+    },
+    "tests/tier1/scan/projection.test.ts": {
+      "Scan — legal shared-prefix projections": [
         "scan",
         "data-plane"
       ]
@@ -765,6 +777,11 @@
         "batch",
         "data-plane",
         "negative-path"
+      ],
+      "BatchGetItem — ProjectionExpression rejection messages": [
+        "batch",
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/batchWriteItem.test.ts": {
@@ -803,6 +820,11 @@
         "get-item",
         "data-plane",
         "negative-path"
+      ],
+      "GetItem — ProjectionExpression rejection messages": [
+        "get-item",
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/putItem.test.ts": {
@@ -816,10 +838,20 @@
         "query",
         "data-plane",
         "negative-path"
+      ],
+      "Query — ProjectionExpression rejection messages": [
+        "query",
+        "data-plane",
+        "negative-path"
       ]
     },
     "tests/tier3/error-messages/scan.test.ts": {
       "Scan — exact error messages": [
+        "scan",
+        "data-plane",
+        "negative-path"
+      ],
+      "Scan — ProjectionExpression rejection messages": [
         "scan",
         "data-plane",
         "negative-path"
@@ -898,6 +930,31 @@
       "Empty values — strings, binary, and sets": [
         "put-item",
         "get-item",
+        "data-plane"
+      ]
+    },
+    "tests/tier3/limits/expressionSize.test.ts": {
+      "Expression size limit (4KB) — UpdateExpression": [
+        "update-item",
+        "get-item",
+        "data-plane"
+      ],
+      "Expression size limit (4KB) — ConditionExpression": [
+        "put-item",
+        "data-plane"
+      ],
+      "Expression size limit (4KB) — Query FilterExpression": [
+        "query",
+        "put-item",
+        "data-plane"
+      ],
+      "Expression size limit (4KB) — Scan FilterExpression": [
+        "scan",
+        "data-plane"
+      ],
+      "Expression size limit (4KB) — ProjectionExpression": [
+        "get-item",
+        "put-item",
         "data-plane"
       ]
     },
