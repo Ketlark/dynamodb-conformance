@@ -184,30 +184,29 @@ export function detectRegistryDrift(verdictsByRegion, registry) {
 }
 
 /**
- * The definite failures a region's report entry carries, so a human can
- * adjudicate from the sweep report alone.
+ * Every definite failure in a region's verdicts, annotated for the sweep
+ * report - { file, fullName, explained, rowId? } - so a human can adjudicate
+ * from the report alone.
  *
- * An unresolved region lists every definite failure (it produced no
- * candidates, so the report is the only place its redness is legible). A
- * resolved region lists only its failures on admitted-split tests, each with
- * the matched row id: those failures surface nowhere else - candidates skip
- * admitted rows, drift checks only the regions a row names, and the health
- * gate excludes them - yet they are exactly the cohort-membership evidence
- * an adjudicator needs to extend a row to regions it does not yet name. A
- * resolved region's novel failures are candidates and are not repeated here.
+ * Every region lists every definite failure, resolved or not. An unresolved
+ * region's list is the only place its redness is legible. A resolved
+ * region's explained failures are the cohort-membership evidence an
+ * adjudicator needs to extend an admitted row to regions it does not yet
+ * name (they surface nowhere else: candidates skip admitted rows, drift
+ * checks only named regions, the health gate excludes them). And a resolved
+ * region's novel failures are NOT always candidates - a test every region
+ * fails has no pass side and never becomes one - so filtering them out here
+ * would be the one place a uniform behaviour change could hide. Nothing here
+ * may produce silence.
  *
- * Entries carry one uniform shape either way - { file, fullName, explained,
- * rowId? } - so a report consumer never has to branch on the region's
- * resolved flag to know what a failure entry means. `rowFor(verdict)` returns
- * the admitted registry row or null; injected so explained-ness has exactly
- * one definition, shared with the health gate.
+ * `rowFor(verdict)` returns the admitted registry row or null; injected so
+ * explained-ness has exactly one definition, shared with the health gate.
  */
-export function reportFailures(verdicts, rowFor, resolved) {
+export function reportFailures(verdicts, rowFor) {
   const failures = []
   for (const v of verdicts) {
     if (v.verdict !== 'fail') continue
     const row = rowFor(v)
-    if (resolved && !row) continue
     failures.push({
       file: relativeTestFile(v.file),
       fullName: v.fullName,
@@ -256,24 +255,29 @@ export function evidenceFor(docs, test) {
  * `runTest(region, test)` returns a verdict string; the default runner spawns
  * the real suite (makeVitestRunner). Injected so the logic tests without AWS.
  */
-export async function confirmCandidates(candidates, { runs = 5, runTest }) {
+export async function confirmCandidates(candidates, { runs = 5, runTest, onProgress } = {}) {
   const confirmed = []
   const discarded = []
   for (const candidate of candidates) {
     const rerunRegions = Object.keys(candidate.regions)
       .filter((region) => candidate.regions[region] === 'fail')
       .sort()
-    // detectSplitCandidates guarantees a mixed pass/fail verdict set, so an
-    // empty fail side means the caller broke that contract - and a candidate
-    // confirmed on zero re-runs must never approach the human gate.
+    // detectSplitCandidates guarantees a mixed pass/fail verdict set. A
+    // candidate with no fail side is a broken caller, and it must fail loudly
+    // here: discarding it politely would launder the contract violation into
+    // an outcome indistinguishable from a legitimate flake.
     if (rerunRegions.length === 0) {
-      discarded.push({ ...candidate, reason: 'no fail-side region to re-run; nothing to confirm' })
-      continue
+      throw new Error(
+        `confirmCandidates: candidate "${candidate.test.fullName}" has no fail-side region; ` +
+          'detectSplitCandidates guarantees a mixed verdict set',
+      )
     }
     let failure = null
+    let attempts = 0
     const started = Date.now()
     outer: for (const region of rerunRegions) {
       for (let i = 1; i <= runs; i++) {
+        attempts++
         const verdict = await runTest(region, candidate.test)
         if (verdict !== 'fail') {
           failure = `re-run ${i} in ${region} returned ${verdict}; the sweep observed fail`
@@ -281,14 +285,18 @@ export async function confirmCandidates(candidates, { runs = 5, runTest }) {
         }
       }
     }
-    // The cost data future re-tuning (--confirm-runs, parallelism) needs.
+    // The cost data future re-tuning (--confirm-runs, parallelism) needs;
+    // attempts counts what actually ran, which an early discard cuts short.
     console.log(
-      `confirm: ${candidate.test.fullName}: ${rerunRegions.length} region(s) × ${runs}, ` +
+      `confirm: ${candidate.test.fullName}: ${attempts} run(s) across ${rerunRegions.length} region(s), ` +
         `${Math.round((Date.now() - started) / 1000)}s`,
     )
     if (failure === null) {
       confirmed.push({ ...candidate, confirmation: { runs, regions: rerunRegions } })
     } else discarded.push({ ...candidate, reason: failure })
+    // Checkpoint after every candidate: a timeout in the tail costs only the
+    // candidates not yet decided, never the ones already done.
+    onProgress?.({ confirmed: [...confirmed], discarded: [...discarded] })
   }
   return { confirmed, discarded }
 }
@@ -577,7 +585,7 @@ export async function run(args, { runTest } = {}) {
     const assessed = assessRegion(verdicts, { isExplained: (v) => Boolean(rowFor(v)) })
     health[region] = {
       ...assessed,
-      failures: reportFailures(verdicts, rowFor, assessed.resolved),
+      failures: reportFailures(verdicts, rowFor),
     }
     if (assessed.resolved) verdictsByRegion[region] = verdicts
   }
@@ -604,9 +612,29 @@ export async function run(args, { runTest } = {}) {
     writeFileSync(args.recordHealth, JSON.stringify(healthDoc, null, 2) + '\n')
   }
 
-  let confirmed = []
-  let discarded = []
-  const writeReport = (confirmationState) => {
+  const emitIssues = (issues) => {
+    for (const issue of issues) {
+      if (args.fileIssues) {
+        const outcome = fileIssue(issue)
+        console.log(`${outcome.action}: ${issue.title}`)
+      } else {
+        console.log(`\n--- would file: ${issue.title} [${issue.labels.join(', ')}] ---\n`)
+        console.log(issue.body)
+      }
+    }
+  }
+
+  // Pages and drift file NOW, before the confirmation tail: the drop was
+  // just recorded, and the drop and the page are one act (see
+  // scripts/lib/observed.mjs) - a crash or timeout during the long
+  // confirmation loop must never leave a recorded drop unpaged. Neither
+  // depends on confirmation; only candidate issues wait for it.
+  emitIssues([
+    ...drift.map((f) => buildDriftIssue(f, { date: args.date, runUrl: args.runUrl })),
+    ...pages.map((p) => buildPageIssue(p, { date: args.date, runUrl: args.runUrl })),
+  ])
+
+  const writeReport = (confirmationState, confirmed = [], discarded = []) => {
     if (!args.out) return
     mkdirSync(dirname(args.out), { recursive: true })
     writeFileSync(
@@ -619,31 +647,24 @@ export async function run(args, { runTest } = {}) {
     )
   }
 
-  // Health above, and an initial report here, both land BEFORE confirmation:
-  // the confirmation loop is the long tail of a wide sweep, and the job
-  // timeout killing the process mid-loop must cost only the unconfirmed
-  // candidates - never the sweep's health record or its report artifact.
+  // Health, pages and an initial report all land BEFORE confirmation: the
+  // confirmation loop is the long tail of a wide sweep, and the job timeout
+  // killing the process mid-loop must cost only the not-yet-confirmed
+  // candidates - never the sweep's health record or its report artefact.
+  // Confirmation then checkpoints the report after every candidate, so the
+  // ones already decided survive too.
   writeReport(args.confirm ? 'pending' : 'not-requested')
 
+  let confirmed = []
+  let discarded = []
   if (args.confirm) {
     ;({ confirmed, discarded } = await confirmCandidates(candidates, {
       runs: args.confirmRuns,
       runTest: runTest ?? makeVitestRunner(),
+      onProgress: (progress) => writeReport('pending', progress.confirmed, progress.discarded),
     }))
-    writeReport('complete')
+    writeReport('complete', confirmed, discarded)
   }
-
-  const issues = [
-    ...(args.confirm ? confirmed : []).map((c) =>
-      buildCandidateIssue(c, {
-        date: args.date,
-        runUrl: args.runUrl,
-        evidence: evidenceFor(docs, c.test),
-      }),
-    ),
-    ...drift.map((f) => buildDriftIssue(f, { date: args.date, runUrl: args.runUrl })),
-    ...pages.map((p) => buildPageIssue(p, { date: args.date, runUrl: args.runUrl })),
-  ]
 
   const unresolved = regions.filter((r) => !health[r].resolved)
   console.log(
@@ -656,15 +677,15 @@ export async function run(args, { runTest } = {}) {
       `, ${drift.length} drift finding(s), ${pages.length} region(s) paged`,
   )
 
-  for (const issue of issues) {
-    if (args.fileIssues) {
-      const outcome = fileIssue(issue)
-      console.log(`${outcome.action}: ${issue.title}`)
-    } else {
-      console.log(`\n--- would file: ${issue.title} [${issue.labels.join(', ')}] ---\n`)
-      console.log(issue.body)
-    }
-  }
+  emitIssues(
+    (args.confirm ? confirmed : []).map((c) =>
+      buildCandidateIssue(c, {
+        date: args.date,
+        runUrl: args.runUrl,
+        evidence: evidenceFor(docs, c.test),
+      }),
+    ),
+  )
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

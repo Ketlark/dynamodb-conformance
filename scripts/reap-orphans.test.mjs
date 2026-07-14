@@ -122,10 +122,26 @@ describe('exitVerdict', () => {
     })
   })
 
-  it('every region unreachable is a systemic failure and exits 1', () => {
-    const verdict = exitVerdict({ stuck: 0, unreachable: 34, regionCount: 34 })
-    expect(verdict.code).toBe(1)
-    expect(verdict.reason).toMatch(/every region was unreachable/)
+  it('a majority of regions unreachable is a systemic failure and exits 1', () => {
+    const all = exitVerdict({ stuck: 0, unreachable: 34, regionCount: 34 })
+    expect(all.code).toBe(1)
+    expect(all.reason).toMatch(/systemic, not regional/)
+    // The boundary: 17 of 34 warns, 18 of 34 fails.
+    expect(exitVerdict({ stuck: 0, unreachable: 17, regionCount: 34 })).toEqual({
+      code: 0,
+      reason: null,
+      warn: true,
+    })
+    expect(exitVerdict({ stuck: 0, unreachable: 18, regionCount: 34 }).code).toBe(1)
+  })
+
+  it('the opt-in enablement window stays on the warning path', () => {
+    // Six disabled opt-in regions must not redden the daily run.
+    expect(exitVerdict({ stuck: 0, unreachable: 6, regionCount: 34 })).toEqual({
+      code: 0,
+      reason: null,
+      warn: true,
+    })
   })
 
   it('an undeletable orphan fails the run even with unreachable regions present', () => {

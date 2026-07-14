@@ -20,7 +20,7 @@ on:
         required: false
         default: ""
       # false = report-only reconnaissance: full sweep, full confirmation, the
-      # report artifact only. No health recording, no drops or pages, no
+      # report artefact only. No health recording, no drops or pages, no
       # issues. The schedule always records (an absent input reads as true).
       record:
         description: "Record region health and file issues (false = report-only)"
@@ -240,8 +240,13 @@ jobs:
           name: sweep-report
           path: ground-truth/sweep-report.json
 
+      # always(): the health record is written BEFORE the long confirmation
+      # tail precisely so a timeout or crash there cannot lose it - but this
+      # step inheriting the implicit success() would throw it away again.
+      # Page issues are filed before confirmation too, so committing a drop
+      # from a failed run never splits the drop-and-page act.
       - name: Commit the region health record
-        if: env.RECORD == 'true'
+        if: always() && env.RECORD == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

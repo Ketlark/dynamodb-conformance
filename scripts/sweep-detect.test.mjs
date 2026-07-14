@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { splitFor } from './lib/registry.mjs'
 import {
   buildCandidateIssue,
   buildDriftIssue,
@@ -170,13 +171,13 @@ describe('reportFailures', () => {
     file: '/home/runner/work/suite/tests/tier3/limits/nestingDepth.test.ts',
     fullName: 'Nesting depth — rejects a 32-level value',
   })
-  const rowForVerdict = (v) => {
-    const doc = rowFor()
-    return doc.splits.find((r) => v.file.endsWith(r.test.file) && v.fullName === r.test.fullName) ?? null
-  }
+  // The tests exercise exactly the matcher production injects (splitFor),
+  // never a hand-rolled variant that could drift from it.
+  const doc = rowFor()
+  const rowForVerdict = (v) => splitFor(doc, v)
 
-  it('an unresolved region lists every definite failure with the explained flag', () => {
-    const failures = reportFailures([verdict('fail'), novel, verdict('pass')], rowForVerdict, false)
+  it('lists every definite failure with the explained flag and matched row id', () => {
+    const failures = reportFailures([verdict('fail'), novel, verdict('pass')], rowForVerdict)
     expect(failures).toEqual([
       { file: TEST.file, fullName: TEST.fullName, explained: true, rowId: 'row-1' },
       {
@@ -187,15 +188,16 @@ describe('reportFailures', () => {
     ])
   })
 
-  it('a resolved region lists only admitted-split failures, in the same entry shape', () => {
-    const failures = reportFailures([verdict('fail'), novel], rowForVerdict, true)
-    expect(failures).toEqual([
-      { file: TEST.file, fullName: TEST.fullName, explained: true, rowId: 'row-1' },
+  it('a uniform failure no candidate can carry still appears: nothing may produce silence', () => {
+    // A rowless test failing in every region has no pass side and never
+    // becomes a candidate; this list is its only trace in the sweep's output.
+    expect(reportFailures([novel], rowForVerdict)).toEqual([
+      {
+        file: 'tests/tier3/limits/nestingDepth.test.ts',
+        fullName: 'Nesting depth — rejects a 32-level value',
+        explained: false,
+      },
     ])
-  })
-
-  it('a resolved region with no admitted-split failures carries an empty list', () => {
-    expect(reportFailures([novel, verdict('pass')], rowForVerdict, true)).toEqual([])
   })
 
   it('indeterminates and skips never appear: only definite failures are evidence', () => {
@@ -203,7 +205,7 @@ describe('reportFailures', () => {
       verdict('indeterminate', { reason: { reason: 'transport', at: 'test' } }),
       verdict('skip'),
     ]
-    expect(reportFailures(absent, rowForVerdict, false)).toEqual([])
+    expect(reportFailures(absent, rowForVerdict)).toEqual([])
   })
 })
 
@@ -261,18 +263,26 @@ describe('confirmCandidates', () => {
     expect(discarded).toHaveLength(1)
   })
 
-  it('a candidate with no fail-side region is discarded, never vacuously confirmed', async () => {
+  it('a candidate with no fail-side region breaks the caller contract loudly', async () => {
     const noFailSide = { test: TEST, regions: { 'eu-west-2': 'pass', 'us-east-1': 'pass' } }
-    let called = false
-    const runTest = () => {
-      called = true
-      return 'fail'
+    await expect(
+      confirmCandidates([noFailSide], { runs: 5, runTest: () => 'fail' }),
+    ).rejects.toThrow(/no fail-side region/)
+  })
+
+  it('reports progress after every candidate, so a checkpoint can persist decided ones', async () => {
+    const a = { test: TEST, regions: { 'eu-west-2': 'pass', 'us-east-1': 'fail' } }
+    const b = {
+      test: { ...TEST, fullName: 'another split test' },
+      regions: { 'eu-west-2': 'pass', 'ap-southeast-2': 'fail' },
     }
-    const { confirmed, discarded } = await confirmCandidates([noFailSide], { runs: 5, runTest })
-    expect(called).toBe(false)
-    expect(confirmed).toEqual([])
-    expect(discarded).toHaveLength(1)
-    expect(discarded[0].reason).toMatch(/nothing to confirm/)
+    const snapshots = []
+    await confirmCandidates([a, b], {
+      runs: 1,
+      runTest: () => 'fail',
+      onProgress: (p) => snapshots.push(p.confirmed.length),
+    })
+    expect(snapshots).toEqual([1, 2])
   })
 })
 

@@ -138,17 +138,24 @@ export function parseArgs(argv) {
 
 /**
  * The run's exit verdict from its outcomes. An undeletable orphan always
- * fails the run: that is the reaper's real signal and a human must look.
- * Unreachable regions warn rather than fail - an opt-in region sits
- * unreachable until account enablement, and a daily red run for a region
- * that holds no tables teaches people to ignore the alarm - UNLESS every
- * region was unreachable, which means nothing was walked at all (broken
- * credentials or network) and silence would hide it.
+ * fails the run: that is the reaper's real signal and a human must look. A
+ * minority of unreachable regions warns rather than fails - an opt-in region
+ * sits unreachable until account enablement, and a daily red run for a
+ * region that holds no tables teaches people to ignore the alarm. A MAJORITY
+ * unreachable is not a regional condition; it is broken credentials, a
+ * policy change, or a network fault, and silence would hide it. A single
+ * region that stays persistently unreachable is not this module's alarm to
+ * raise: it also fails its weekly sweeps, and two consecutive misses drop
+ * and page it through the sweep's own channel (scripts/lib/observed.mjs).
  */
 export function exitVerdict({ stuck, unreachable, regionCount }) {
   if (stuck > 0) return { code: 1, reason: `${stuck} undeletable orphan(s)`, warn: false }
-  if (unreachable >= regionCount && regionCount > 0) {
-    return { code: 1, reason: 'every region was unreachable: nothing was walked', warn: false }
+  if (unreachable * 2 > regionCount) {
+    return {
+      code: 1,
+      reason: `${unreachable} of ${regionCount} region(s) unreachable: systemic, not regional`,
+      warn: false,
+    }
   }
   // The whole alarm policy lives here: warn exactly when the run passes with
   // regions it could not walk, so main prints what the verdict says and
