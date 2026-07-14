@@ -19,6 +19,14 @@ on:
         description: "Comma-separated region subset (blank = all commercial regions)"
         required: false
         default: ""
+      # false = report-only reconnaissance: full sweep, full confirmation, the
+      # report artifact only. No health recording, no drops or pages, no
+      # issues. The schedule always records (an absent input reads as true).
+      record:
+        description: "Record region health and file issues (false = report-only)"
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -202,19 +210,25 @@ jobs:
           path: ground-truth
           merge-multiple: true
 
+      # Recording is on for the schedule and for any dispatch that does not
+      # explicitly say record: false; only the explicit false is report-only.
       - name: Detect splits, confirm them, record region health
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECT: ${{ needs.regions.outputs.regions }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RECORD: ${{ github.event.inputs.record != 'false' }}
         run: |
+          flags=()
+          if [ "$RECORD" = "true" ]; then
+            flags+=(--record-health registry/regions.json --file-issues)
+          fi
           node scripts/sweep-detect.mjs ground-truth \
             --expect "$(node -e 'console.log(JSON.parse(process.env.EXPECT).join(","))')" \
-            --record-health registry/regions.json \
             --confirm \
-            --file-issues \
             --run-url "$RUN_URL" \
-            --out ground-truth/sweep-report.json
+            --out ground-truth/sweep-report.json \
+            "${flags[@]}"
 
       - name: Upload the sweep report
         if: always()
@@ -224,6 +238,7 @@ jobs:
           path: ground-truth/sweep-report.json
 
       - name: Commit the region health record
+        if: github.event.inputs.record != 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
