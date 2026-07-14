@@ -12,7 +12,7 @@ name: Ground Truth Sweep
 on:
   schedule:
     - cron: '0 3 * * 6' # sweep: 3am UTC Saturday, clear of Monday's gating run
-    - cron: '30 5 * * *' # reap: daily, catching tables a dead run stranded
+    - cron: '30 5 * * *' # cleanup: daily, catching tables a dead run stranded
   workflow_dispatch:
     inputs:
       regions:
@@ -34,7 +34,7 @@ permissions:
 jobs:
   regions:
     name: Resolve region set
-    # Only the weekly cron (or a manual dispatch) sweeps; the daily cron only reaps.
+    # Only the weekly cron (or a manual dispatch) sweeps; the daily cron only cleans up.
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * 6'
     runs-on: ubuntu-latest
     outputs:
@@ -267,12 +267,12 @@ jobs:
             fi
           fi
 
-  reap:
-    name: Reap orphaned tables
+  cleanup:
+    name: Clean up orphaned tables
     # Runs after every sweep (skipped or not - the daily cron skips the matrix
     # and comes straight here) so tables stranded by a dead run never sit for
-    # more than a day. The age gate inside the reaper is what keeps runs still
-    # in flight safe; see scripts/reap-orphans.mjs.
+    # more than a day. The age gate inside the cleanup is what keeps runs still
+    # in flight safe; see scripts/cleanup-orphans.mjs.
     needs: sweep
     if: always()
     runs-on: ubuntu-latest
@@ -298,5 +298,5 @@ jobs:
           aws-region: eu-west-2
           role-duration-seconds: 3600
 
-      - name: Reap orphans across all regions
-        run: node scripts/reap-orphans.mjs
+      - name: Clean up orphans across all regions
+        run: node scripts/cleanup-orphans.mjs

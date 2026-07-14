@@ -3,9 +3,9 @@ import {
   DEFAULT_MAX_AGE_HOURS,
   exitVerdict,
   parseArgs,
-  reapAll,
+  cleanupAll,
   selectOrphans,
-} from './reap-orphans.mjs'
+} from './cleanup-orphans.mjs'
 import { COMMERCIAL_REGIONS } from '../src/regions.ts'
 
 const HOUR = 60 * 60 * 1000
@@ -70,18 +70,18 @@ describe('selectOrphans', () => {
   })
 })
 
-describe('reapAll', () => {
+describe('cleanupAll', () => {
   it('an unreachable region is reported and skipped, never aborting the others', async () => {
     const visited = []
-    const { reaped, failures } = await reapAll(['eu-west-2', 'sa-east-1', 'us-east-1'], {
-      reap: async (region) => {
+    const { cleaned, failures } = await cleanupAll(['eu-west-2', 'sa-east-1', 'us-east-1'], {
+      cleanup: async (region) => {
         visited.push(region)
         if (region === 'sa-east-1') throw new Error('connect ETIMEDOUT')
         return { deleted: [], failed: [] }
       },
     })
     expect(visited).toEqual(['eu-west-2', 'sa-east-1', 'us-east-1'])
-    expect(Object.keys(reaped)).toEqual(['eu-west-2', 'us-east-1'])
+    expect(Object.keys(cleaned)).toEqual(['eu-west-2', 'us-east-1'])
     expect(failures).toEqual([{ region: 'sa-east-1', message: 'connect ETIMEDOUT' }])
   })
 })

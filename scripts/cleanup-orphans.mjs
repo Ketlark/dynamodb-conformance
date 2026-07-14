@@ -3,7 +3,7 @@
 /**
  * Delete orphaned `_conformance_` tables, per region, across the commercial
  * region set. A sweep that dies mid-flight strands tables in every region it
- * touched; this reaper finishes the cleanup the dead run could not.
+ * touched; this cleanup finishes the job the dead run could not.
  *
  * Idempotent and resumable: it selects from a fresh listing every time, so
  * running it twice is harmless and running it after a partial failure finishes
@@ -20,9 +20,9 @@
  * under any condition - the same contract the IAM role enforces.
  *
  * Usage:
- *   node scripts/reap-orphans.mjs [--dry-run] [--max-age-hours N] [region ...]
+ *   node scripts/cleanup-orphans.mjs [--dry-run] [--max-age-hours N] [region ...]
  *
- * With no regions named it reaps the full commercial set (src/regions.ts).
+ * With no regions named it walks the full commercial set (src/regions.ts).
  */
 
 import {
@@ -41,7 +41,7 @@ export const DEFAULT_MAX_AGE_HOURS = 3
  * Pure selection: the table names safe to delete. A table qualifies only when
  * it carries the `_conformance_` prefix AND is provably older than the
  * threshold. A table whose age cannot be established is left alone - deleting
- * on missing evidence is how a reaper becomes an outage.
+ * on missing evidence is how a cleanup becomes an outage.
  */
 export function selectOrphans(tables, { now = Date.now(), maxAgeMs }) {
   return tables
@@ -55,23 +55,23 @@ export function selectOrphans(tables, { now = Date.now(), maxAgeMs }) {
 }
 
 /**
- * Run one region's reap via `reap`, isolating failures: a region that cannot
+ * Run one region's cleanup via `cleanup`, isolating failures: a region that cannot
  * be reached is reported and skipped, never allowed to abort the others.
  */
-export async function reapAll(regions, { reap }) {
-  const reaped = {}
+export async function cleanupAll(regions, { cleanup }) {
+  const cleaned = {}
   const failures = []
   for (const region of regions) {
     try {
-      reaped[region] = await reap(region)
+      cleaned[region] = await cleanup(region)
     } catch (e) {
       failures.push({ region, message: e?.message ?? String(e) })
     }
   }
-  return { reaped, failures }
+  return { cleaned, failures }
 }
 
-async function reapRegion(region, { maxAgeMs, dryRun }) {
+async function cleanupRegion(region, { maxAgeMs, dryRun }) {
   const client = new DynamoDBClient({ region })
   try {
     const names = []
@@ -138,7 +138,7 @@ export function parseArgs(argv) {
 
 /**
  * The run's exit verdict from its outcomes. An undeletable orphan always
- * fails the run: that is the reaper's real signal and a human must look. A
+ * fails the run: that is the cleanup's real signal and a human must look. A
  * minority of unreachable regions warns rather than fails - an opt-in region
  * sits unreachable until account enablement, and a daily red run for a
  * region that holds no tables teaches people to ignore the alarm. A MAJORITY
@@ -166,13 +166,13 @@ export function exitVerdict({ stuck, unreachable, regionCount }) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const maxAgeMs = args.maxAgeHours * 60 * 60 * 1000
-  const { reaped, failures } = await reapAll(args.regions, {
-    reap: (region) => reapRegion(region, { maxAgeMs, dryRun: args.dryRun }),
+  const { cleaned, failures } = await cleanupAll(args.regions, {
+    cleanup: (region) => cleanupRegion(region, { maxAgeMs, dryRun: args.dryRun }),
   })
 
   let strays = 0
   let stuck = 0
-  for (const [region, { deleted, failed }] of Object.entries(reaped)) {
+  for (const [region, { deleted, failed }] of Object.entries(cleaned)) {
     strays += deleted.length
     stuck += failed.length
     for (const name of deleted) {
@@ -196,7 +196,7 @@ async function main() {
   })
   if (verdict.warn) {
     console.log(
-      `::warning title=Reaper::unreachable region(s) skipped: ${failures.map((f) => f.region).join(', ')}`,
+      `::warning title=Orphan cleanup::unreachable region(s) skipped: ${failures.map((f) => f.region).join(', ')}`,
     )
   }
   if (verdict.code !== 0) {
