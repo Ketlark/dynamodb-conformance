@@ -503,7 +503,12 @@ async function main() {
       continue
     }
     const verdicts = classifyResults(docs[region].results, docs[region].sidecar)
-    health[region] = assessRegion(verdicts)
+    // A failure on a test with an admitted registry row is a recorded
+    // regional difference, not sickness - it must not spend the region's
+    // sick-failure budget (see assessRegion).
+    health[region] = assessRegion(verdicts, {
+      isExplained: (v) => Boolean(splitFor(registry, { file: v.file, fullName: v.fullName })),
+    })
     if (health[region].resolved) verdictsByRegion[region] = verdicts
   }
 

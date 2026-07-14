@@ -399,6 +399,34 @@ describe('the CLI, end to end on fixtures', () => {
     expect(res.stdout).toContain('1 split candidate(s) (unconfirmed)')
   })
 
+  it('a region failing only an admitted-split test resolves: admission must never spend the sick budget', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sweep-detect-'))
+    const { gt, registryPath } = writeFixtures(dir)
+    // Point the registry row at the fixture test itself: us-east-1's failure
+    // is now a recorded regional difference, matching the row's rejected side.
+    writeFileSync(registryPath, JSON.stringify(rowFor(), null, 2))
+
+    const res = runCli(
+      [
+        gt,
+        '--registry', registryPath,
+        '--expect', 'eu-west-2,us-east-1',
+        '--date', '2026-07-11',
+        '--out', join(dir, 'report.json'),
+      ],
+      dir,
+    )
+    expect(res.status, res.stderr).toBe(0)
+
+    const report = JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8'))
+    expect(report.regions['us-east-1'].resolved).toBe(true)
+    expect(report.regions['us-east-1'].counts).toMatchObject({ failed: 1, explainedFailed: 1 })
+    // The admitted disagreement is not a fresh candidate, and behaving as
+    // recorded is not drift.
+    expect(report.candidates).toEqual([])
+    expect(report.drift).toEqual([])
+  })
+
   it('surfaces drift on an admitted row as an issue body, still without touching the registry', () => {
     const dir = mkdtempSync(join(tmpdir(), 'sweep-detect-'))
     const { gt, registryPath } = writeFixtures(dir)
