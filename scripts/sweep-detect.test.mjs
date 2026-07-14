@@ -14,6 +14,7 @@ import {
   fileIssue,
   parseArgs,
   relativeTestFile,
+  reportFailures,
 } from './sweep-detect.mjs'
 
 const TEST = {
@@ -160,6 +161,44 @@ describe('detectRegistryDrift', () => {
       rowFor(),
     )
     expect(findings).toEqual([])
+  })
+})
+
+describe('reportFailures', () => {
+  const novel = verdict('fail', {
+    file: '/home/runner/work/suite/tests/tier3/limits/nestingDepth.test.ts',
+    fullName: 'Nesting depth — rejects a 32-level value',
+  })
+
+  it('an unresolved region lists every definite failure with the explained flag', () => {
+    const failures = reportFailures([verdict('fail'), novel, verdict('pass')], rowFor(), false)
+    expect(failures).toEqual([
+      { file: TEST.file, fullName: TEST.fullName, explained: true, rowId: 'row-1' },
+      {
+        file: 'tests/tier3/limits/nestingDepth.test.ts',
+        fullName: 'Nesting depth — rejects a 32-level value',
+        explained: false,
+      },
+    ])
+  })
+
+  it('a resolved region lists only admitted-split failures, with the matched row id', () => {
+    const failures = reportFailures([verdict('fail'), novel], rowFor(), true)
+    expect(failures).toEqual([
+      { file: TEST.file, fullName: TEST.fullName, rowId: 'row-1' },
+    ])
+  })
+
+  it('a resolved region with no admitted-split failures carries an empty list', () => {
+    expect(reportFailures([novel, verdict('pass')], rowFor(), true)).toEqual([])
+  })
+
+  it('indeterminates and skips never appear: only definite failures are evidence', () => {
+    const absent = [
+      verdict('indeterminate', { reason: { reason: 'transport', at: 'test' } }),
+      verdict('skip'),
+    ]
+    expect(reportFailures(absent, rowFor(), false)).toEqual([])
   })
 })
 
@@ -376,6 +415,7 @@ describe('the CLI, end to end on fixtures', () => {
     // never silent.
     expect(report.regions['sa-east-1'].resolved).toBe(false)
     expect(report.regions['sa-east-1'].reasons[0].kind).toBe('missing-results')
+    expect(report.regions['sa-east-1'].failures).toEqual([])
 
     // Health recorded: the second consecutive miss drops sa-east-1 and pages in
     // the same act; the resolved regions reset to zero.
@@ -421,6 +461,11 @@ describe('the CLI, end to end on fixtures', () => {
     const report = JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8'))
     expect(report.regions['us-east-1'].resolved).toBe(true)
     expect(report.regions['us-east-1'].counts).toMatchObject({ failed: 1, explainedFailed: 1 })
+    // The resolved region's admitted-split failure is the report's
+    // cohort-membership evidence, carrying the row it matched.
+    expect(report.regions['us-east-1'].failures).toEqual([
+      { file: TEST.file, fullName: TEST.fullName, rowId: 'row-1' },
+    ])
     // The admitted disagreement is not a fresh candidate, and behaving as
     // recorded is not drift.
     expect(report.candidates).toEqual([])

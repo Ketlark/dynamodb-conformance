@@ -183,6 +183,38 @@ export function detectRegistryDrift(verdictsByRegion, registry) {
   return findings
 }
 
+/**
+ * The definite failures a region's report entry carries, so a human can
+ * adjudicate from the sweep report alone.
+ *
+ * An unresolved region lists every definite failure (it produced no
+ * candidates, so the report is the only place its redness is legible). A
+ * resolved region lists only its failures on admitted-split tests, each with
+ * the matched row id: those failures surface nowhere else - candidates skip
+ * admitted rows, drift checks only the regions a row names, and the health
+ * gate excludes them - yet they are exactly the cohort-membership evidence
+ * an adjudicator needs to extend a row to regions it does not yet name. A
+ * resolved region's novel failures are candidates and are not repeated here.
+ */
+export function reportFailures(verdicts, registry, resolved) {
+  const failures = []
+  for (const v of verdicts) {
+    if (v.verdict !== 'fail') continue
+    const row = splitFor(registry, { file: v.file, fullName: v.fullName })
+    if (resolved) {
+      if (row) failures.push({ file: relativeTestFile(v.file), fullName: v.fullName, rowId: row.id })
+    } else {
+      failures.push({
+        file: relativeTestFile(v.file),
+        fullName: v.fullName,
+        explained: Boolean(row),
+        ...(row ? { rowId: row.id } : {}),
+      })
+    }
+  }
+  return failures
+}
+
 /** Raw per-region evidence for one test: status and failure messages. */
 export function evidenceFor(docs, test) {
   const out = {}
@@ -499,6 +531,7 @@ async function main() {
         resolved: false,
         reasons: [{ kind: 'missing-results', detail: 'the sweep produced no results file for this region' }],
         counts: null,
+        failures: [],
       }
       continue
     }
@@ -509,6 +542,7 @@ async function main() {
     health[region] = assessRegion(verdicts, {
       isExplained: (v) => Boolean(splitFor(registry, { file: v.file, fullName: v.fullName })),
     })
+    health[region].failures = reportFailures(verdicts, registry, health[region].resolved)
     if (health[region].resolved) verdictsByRegion[region] = verdicts
   }
 
