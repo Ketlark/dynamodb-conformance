@@ -3,6 +3,18 @@
     "eu-west-2": {
       "lastResolved": "2026-07-06",
       "consecutiveUnresolved": 0
+    },
+    "us-east-1": {
+      "lastResolved": "2026-07-14",
+      "consecutiveUnresolved": 0
+    },
+    "eu-central-1": {
+      "lastResolved": "2026-07-14",
+      "consecutiveUnresolved": 0
+    },
+    "ap-southeast-2": {
+      "lastResolved": null,
+      "consecutiveUnresolved": 1
     }
   }
 }
