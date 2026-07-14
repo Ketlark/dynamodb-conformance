@@ -171,6 +171,12 @@ jobs:
       contents: read
       issues: write # split-candidate, registry-drift and region-dropped issues
     environment: conformance-testing
+    env:
+      # The ONE definition of report-only: recording is on for the schedule
+      # and for any dispatch that does not explicitly say record: false. Both
+      # the detect step and the commit step read this - recording health and
+      # committing it must never disagree.
+      RECORD: ${{ github.event.inputs.record != 'false' }}
 
     steps:
       # registry/regions.json (region health) is committed back, so the
@@ -210,14 +216,11 @@ jobs:
           path: ground-truth
           merge-multiple: true
 
-      # Recording is on for the schedule and for any dispatch that does not
-      # explicitly say record: false; only the explicit false is report-only.
       - name: Detect splits, confirm them, record region health
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECT: ${{ needs.regions.outputs.regions }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          RECORD: ${{ github.event.inputs.record != 'false' }}
         run: |
           flags=()
           if [ "$RECORD" = "true" ]; then
@@ -238,7 +241,7 @@ jobs:
           path: ground-truth/sweep-report.json
 
       - name: Commit the region health record
-        if: github.event.inputs.record != 'false'
+        if: env.RECORD == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

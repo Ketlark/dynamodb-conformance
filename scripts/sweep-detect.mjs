@@ -195,22 +195,25 @@ export function detectRegistryDrift(verdictsByRegion, registry) {
  * gate excludes them - yet they are exactly the cohort-membership evidence
  * an adjudicator needs to extend a row to regions it does not yet name. A
  * resolved region's novel failures are candidates and are not repeated here.
+ *
+ * Entries carry one uniform shape either way - { file, fullName, explained,
+ * rowId? } - so a report consumer never has to branch on the region's
+ * resolved flag to know what a failure entry means. `rowFor(verdict)` returns
+ * the admitted registry row or null; injected so explained-ness has exactly
+ * one definition, shared with the health gate.
  */
-export function reportFailures(verdicts, registry, resolved) {
+export function reportFailures(verdicts, rowFor, resolved) {
   const failures = []
   for (const v of verdicts) {
     if (v.verdict !== 'fail') continue
-    const row = splitFor(registry, { file: v.file, fullName: v.fullName })
-    if (resolved) {
-      if (row) failures.push({ file: relativeTestFile(v.file), fullName: v.fullName, rowId: row.id })
-    } else {
-      failures.push({
-        file: relativeTestFile(v.file),
-        fullName: v.fullName,
-        explained: Boolean(row),
-        ...(row ? { rowId: row.id } : {}),
-      })
-    }
+    const row = rowFor(v)
+    if (resolved && !row) continue
+    failures.push({
+      file: relativeTestFile(v.file),
+      fullName: v.fullName,
+      explained: Boolean(row),
+      ...(row ? { rowId: row.id } : {}),
+    })
   }
   return failures
 }
@@ -260,6 +263,13 @@ export async function confirmCandidates(candidates, { runs = 5, runTest }) {
     const rerunRegions = Object.keys(candidate.regions)
       .filter((region) => candidate.regions[region] === 'fail')
       .sort()
+    // detectSplitCandidates guarantees a mixed pass/fail verdict set, so an
+    // empty fail side means the caller broke that contract - and a candidate
+    // confirmed on zero re-runs must never approach the human gate.
+    if (rerunRegions.length === 0) {
+      discarded.push({ ...candidate, reason: 'no fail-side region to re-run; nothing to confirm' })
+      continue
+    }
     let failure = null
     const started = Date.now()
     outer: for (const region of rerunRegions) {
@@ -541,6 +551,7 @@ export function parseArgs(argv) {
  */
 export async function run(args, { runTest } = {}) {
   const registry = loadRegistry(args.registry)
+  const rowFor = (v) => splitFor(registry, v)
   const docs = readSweepDir(args.dir)
   const regions = args.expect ?? Object.keys(docs).sort()
 
@@ -561,12 +572,14 @@ export async function run(args, { runTest } = {}) {
     const verdicts = classifyResults(docs[region].results, docs[region].sidecar)
     // A failure on a test with an admitted registry row is a recorded
     // regional difference, not sickness - it must not spend the region's
-    // sick-failure budget (see assessRegion).
-    health[region] = assessRegion(verdicts, {
-      isExplained: (v) => Boolean(splitFor(registry, { file: v.file, fullName: v.fullName })),
-    })
-    health[region].failures = reportFailures(verdicts, registry, health[region].resolved)
-    if (health[region].resolved) verdictsByRegion[region] = verdicts
+    // sick-failure budget (see assessRegion). rowFor is the one definition of
+    // explained-ness, shared by the gate and the report.
+    const assessed = assessRegion(verdicts, { isExplained: (v) => Boolean(rowFor(v)) })
+    health[region] = {
+      ...assessed,
+      failures: reportFailures(verdicts, rowFor, assessed.resolved),
+    }
+    if (assessed.resolved) verdictsByRegion[region] = verdicts
   }
 
   const candidates = detectSplitCandidates(verdictsByRegion, registry)

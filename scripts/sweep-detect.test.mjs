@@ -170,9 +170,13 @@ describe('reportFailures', () => {
     file: '/home/runner/work/suite/tests/tier3/limits/nestingDepth.test.ts',
     fullName: 'Nesting depth — rejects a 32-level value',
   })
+  const rowForVerdict = (v) => {
+    const doc = rowFor()
+    return doc.splits.find((r) => v.file.endsWith(r.test.file) && v.fullName === r.test.fullName) ?? null
+  }
 
   it('an unresolved region lists every definite failure with the explained flag', () => {
-    const failures = reportFailures([verdict('fail'), novel, verdict('pass')], rowFor(), false)
+    const failures = reportFailures([verdict('fail'), novel, verdict('pass')], rowForVerdict, false)
     expect(failures).toEqual([
       { file: TEST.file, fullName: TEST.fullName, explained: true, rowId: 'row-1' },
       {
@@ -183,15 +187,15 @@ describe('reportFailures', () => {
     ])
   })
 
-  it('a resolved region lists only admitted-split failures, with the matched row id', () => {
-    const failures = reportFailures([verdict('fail'), novel], rowFor(), true)
+  it('a resolved region lists only admitted-split failures, in the same entry shape', () => {
+    const failures = reportFailures([verdict('fail'), novel], rowForVerdict, true)
     expect(failures).toEqual([
-      { file: TEST.file, fullName: TEST.fullName, rowId: 'row-1' },
+      { file: TEST.file, fullName: TEST.fullName, explained: true, rowId: 'row-1' },
     ])
   })
 
   it('a resolved region with no admitted-split failures carries an empty list', () => {
-    expect(reportFailures([novel, verdict('pass')], rowFor(), true)).toEqual([])
+    expect(reportFailures([novel, verdict('pass')], rowForVerdict, true)).toEqual([])
   })
 
   it('indeterminates and skips never appear: only definite failures are evidence', () => {
@@ -199,7 +203,7 @@ describe('reportFailures', () => {
       verdict('indeterminate', { reason: { reason: 'transport', at: 'test' } }),
       verdict('skip'),
     ]
-    expect(reportFailures(absent, rowFor(), false)).toEqual([])
+    expect(reportFailures(absent, rowForVerdict, false)).toEqual([])
   })
 })
 
@@ -255,6 +259,20 @@ describe('confirmCandidates', () => {
     const { confirmed, discarded } = await confirmCandidates([candidate], { runs: 5, runTest })
     expect(confirmed).toEqual([])
     expect(discarded).toHaveLength(1)
+  })
+
+  it('a candidate with no fail-side region is discarded, never vacuously confirmed', async () => {
+    const noFailSide = { test: TEST, regions: { 'eu-west-2': 'pass', 'us-east-1': 'pass' } }
+    let called = false
+    const runTest = () => {
+      called = true
+      return 'fail'
+    }
+    const { confirmed, discarded } = await confirmCandidates([noFailSide], { runs: 5, runTest })
+    expect(called).toBe(false)
+    expect(confirmed).toEqual([])
+    expect(discarded).toHaveLength(1)
+    expect(discarded[0].reason).toMatch(/nothing to confirm/)
   })
 })
 
@@ -532,7 +550,7 @@ describe('the CLI, end to end on fixtures', () => {
     // The resolved region's admitted-split failure is the report's
     // cohort-membership evidence, carrying the row it matched.
     expect(report.regions['us-east-1'].failures).toEqual([
-      { file: TEST.file, fullName: TEST.fullName, rowId: 'row-1' },
+      { file: TEST.file, fullName: TEST.fullName, explained: true, rowId: 'row-1' },
     ])
     // The admitted disagreement is not a fresh candidate, and behaving as
     // recorded is not drift.

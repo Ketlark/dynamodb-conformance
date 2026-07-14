@@ -146,11 +146,14 @@ export function parseArgs(argv) {
  * credentials or network) and silence would hide it.
  */
 export function exitVerdict({ stuck, unreachable, regionCount }) {
-  if (stuck > 0) return { code: 1, reason: `${stuck} undeletable orphan(s)` }
+  if (stuck > 0) return { code: 1, reason: `${stuck} undeletable orphan(s)`, warn: false }
   if (unreachable >= regionCount && regionCount > 0) {
-    return { code: 1, reason: 'every region was unreachable: nothing was walked' }
+    return { code: 1, reason: 'every region was unreachable: nothing was walked', warn: false }
   }
-  return { code: 0, reason: null }
+  // The whole alarm policy lives here: warn exactly when the run passes with
+  // regions it could not walk, so main prints what the verdict says and
+  // decides nothing.
+  return { code: 0, reason: null, warn: unreachable > 0 }
 }
 
 async function main() {
@@ -184,8 +187,7 @@ async function main() {
     unreachable: failures.length,
     regionCount: args.regions.length,
   })
-  if (failures.length > 0 && verdict.code === 0) {
-    // Annotate the run without reddening it; see exitVerdict for why.
+  if (verdict.warn) {
     console.log(
       `::warning title=Reaper::unreachable region(s) skipped: ${failures.map((f) => f.region).join(', ')}`,
     )

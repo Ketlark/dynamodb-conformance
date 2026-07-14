@@ -118,6 +118,7 @@ describe('exitVerdict', () => {
     expect(exitVerdict({ stuck: 0, unreachable: 1, regionCount: 34 })).toEqual({
       code: 0,
       reason: null,
+      warn: true,
     })
   })
 
@@ -133,8 +134,12 @@ describe('exitVerdict', () => {
     expect(verdict.reason).toMatch(/2 undeletable/)
   })
 
-  it('a clean run exits 0 and an undeletable-only run exits 1: the old contract holds', () => {
-    expect(exitVerdict({ stuck: 0, unreachable: 0, regionCount: 34 }).code).toBe(0)
+  it('a clean run exits 0 with no warning, an undeletable-only run exits 1: the old contract holds', () => {
+    expect(exitVerdict({ stuck: 0, unreachable: 0, regionCount: 34 })).toEqual({
+      code: 0,
+      reason: null,
+      warn: false,
+    })
     expect(exitVerdict({ stuck: 1, unreachable: 0, regionCount: 34 }).code).toBe(1)
   })
 })
