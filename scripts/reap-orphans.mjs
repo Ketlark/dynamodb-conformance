@@ -136,6 +136,23 @@ export function parseArgs(argv) {
   return args
 }
 
+/**
+ * The run's exit verdict from its outcomes. An undeletable orphan always
+ * fails the run: that is the reaper's real signal and a human must look.
+ * Unreachable regions warn rather than fail - an opt-in region sits
+ * unreachable until account enablement, and a daily red run for a region
+ * that holds no tables teaches people to ignore the alarm - UNLESS every
+ * region was unreachable, which means nothing was walked at all (broken
+ * credentials or network) and silence would hide it.
+ */
+export function exitVerdict({ stuck, unreachable, regionCount }) {
+  if (stuck > 0) return { code: 1, reason: `${stuck} undeletable orphan(s)` }
+  if (unreachable >= regionCount && regionCount > 0) {
+    return { code: 1, reason: 'every region was unreachable: nothing was walked' }
+  }
+  return { code: 0, reason: null }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const maxAgeMs = args.maxAgeHours * 60 * 60 * 1000
@@ -162,7 +179,21 @@ async function main() {
     `${args.regions.length} region(s): ${strays} orphan(s) ${args.dryRun ? 'found' : 'deleted'}, ` +
       `${stuck} undeletable, ${failures.length} region(s) unreachable`,
   )
-  if (stuck > 0 || failures.length > 0) process.exit(1)
+  const verdict = exitVerdict({
+    stuck,
+    unreachable: failures.length,
+    regionCount: args.regions.length,
+  })
+  if (failures.length > 0 && verdict.code === 0) {
+    // Annotate the run without reddening it; see exitVerdict for why.
+    console.log(
+      `::warning title=Reaper::unreachable region(s) skipped: ${failures.map((f) => f.region).join(', ')}`,
+    )
+  }
+  if (verdict.code !== 0) {
+    console.error(verdict.reason)
+    process.exit(1)
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
