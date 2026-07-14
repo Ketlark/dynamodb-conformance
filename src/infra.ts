@@ -39,6 +39,8 @@ import {
 } from '@aws-sdk/client-kinesis'
 import { s3, kinesis } from './aws-aux.js'
 import { isEmulator, region } from './aws-config.js'
+import { IndeterminateError } from './indeterminate.js'
+import { ceilingsFor } from './regions.js'
 
 let resourceCounter = 0
 function uniqueName(base: string): string {
@@ -176,8 +178,11 @@ export async function withKinesisStream<T>(
 export async function waitUntilActiveInRegion(
   client: DynamoDBClient,
   tableName: string,
-  timeoutMs = 60_000,
+  opts: { timeoutMs?: number; region?: string } = {},
 ): Promise<void> {
+  // The ceiling comes from the target region's profile; the client itself
+  // cannot say which region it points at synchronously, so callers name it.
+  const timeoutMs = opts.timeoutMs ?? ceilingsFor(opts.region).crossRegionActiveMs
   const start = Date.now()
   let delay = 0
   while (Date.now() - start < timeoutMs) {
@@ -186,16 +191,22 @@ export async function waitUntilActiveInRegion(
     if (delay > 0) await sleep(delay)
     delay = Math.min(delay || 500, 2000)
   }
-  throw new Error(`Timeout waiting for table ${tableName} to become ACTIVE`)
+  // The ceiling expiring says nothing about what the region would eventually
+  // answer; typed so it cannot be mistaken for a behavioural result.
+  throw new IndeterminateError(
+    'table-active-timeout',
+    `Timeout waiting for table ${tableName} to become ACTIVE`,
+  )
 }
 
 /** Create a table in a specific region and wait for it to become ACTIVE. */
 export async function createTableInRegion(
   client: DynamoDBClient,
   input: CreateTableCommandInput,
+  opts: { timeoutMs?: number; region?: string } = {},
 ): Promise<void> {
   await client.send(new CreateTableCommand(input))
-  await waitUntilActiveInRegion(client, input.TableName!)
+  await waitUntilActiveInRegion(client, input.TableName!, opts)
 }
 
 /** Delete a table in a specific region. Idempotent; swallows not-found. */

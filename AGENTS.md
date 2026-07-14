@@ -10,8 +10,11 @@ An independent conformance test suite for DynamoDB-compatible
 endpoints. Tests are first run against real AWS DynamoDB to establish
 ground truth, then against any target (DynamoDB Local, Dynoxide,
 Dynalite, LocalStack, ExtendDB, or anything else implementing the
-DynamoDB HTTP API). A target passes only if it returns the same answer real
-DynamoDB does.
+DynamoDB HTTP API). Ground truth is recorded per region - real DynamoDB
+disagrees with itself in a few places, and the admitted cases live in
+`registry/splits.json` - so a target passes a behaviour if it returns the
+same answer real DynamoDB does in at least one observed region, and its
+headline score is its best-matching region.
 
 ## Ground rules for contributions
 
@@ -20,7 +23,10 @@ DynamoDB does.
    the PR description. If you cannot, flag that in the PR and a
    maintainer will verify against real DynamoDB before merging.
    Either way, if real DynamoDB rejects the test, the test is wrong;
-   do not adjust the assertion to match an emulator.
+   do not adjust the assertion to match an emulator. One region is
+   enough: the weekly sweep runs every test in every commercial region,
+   so a behaviour that turns out to be region-split gets caught there,
+   not by you.
 2. **No emulator-specific tests.** Tests must pass on real DynamoDB.
    The suite's value depends on this invariant.
 3. **Discuss before coding for anything non-trivial.** Open a GitHub
@@ -56,17 +62,24 @@ other**. Two emulators agreeing on a wrong answer does not move the
 baseline; real DynamoDB is the only arbiter. If an emulator author
 disagrees with a test's expected value, the resolution is to re-run
 it against real DynamoDB and update the baseline, not to negotiate
-between emulators.
+between emulators. Where real regions genuinely disagree with each
+other, the split registry records what each region returns rather than
+picking a winner - but only a maintainer admits a row, on captured
+evidence, so two emulators agreeing still moves nothing.
 
 ## What a new test needs to demonstrate
 
 Before opening a PR that adds or modifies a test:
 
-1. **Required: the test passes against real AWS DynamoDB.** This is
-   the non-negotiable gate. If real DynamoDB rejects the test, the
-   test is wrong; do not adjust the assertion to make an emulator
-   pass. Run with an unset `DYNAMODB_ENDPOINT` (or whatever your
-   environment configures for real AWS).
+1. **Required: the test passes against real AWS DynamoDB, in one
+   region.** This is the non-negotiable gate. If real DynamoDB rejects
+   the test, the test is wrong; do not adjust the assertion to make an
+   emulator pass. Run with an unset `DYNAMODB_ENDPOINT` (or whatever
+   your environment configures for real AWS), in whichever region you
+   can reach. You are not expected to run it in more than one: the
+   weekly sweep runs the full suite in every commercial region, and if
+   your test lands on a behaviour where regions disagree, the sweep
+   surfaces it as a split candidate for a maintainer to adjudicate.
 2. **Required: the test runs cleanly against at least one emulator
    target.** This proves the test is well-formed and actually
    exercises an emulator rather than just real DynamoDB. Dynoxide is

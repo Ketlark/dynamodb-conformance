@@ -122,6 +122,36 @@ describe('BatchWriteItem — basic', { tags: ['batch', 'data-plane'] }, () => {
 
     await cleanupItems(hashTableDef.name, [{ pk: { S: 'bw-mix-put' } }])
   })
+
+  it('writes an item whose string set carries an empty member', async () => {
+    // Empty string values are allowed within a set, and the batch write path
+    // validates the item on the way in just as PutItem does.
+    const result = await ddb.send(
+      new BatchWriteItemCommand({
+        RequestItems: {
+          [hashTableDef.name]: [
+            {
+              PutRequest: {
+                Item: { pk: { S: 'bw-ss-empty-member' }, attr: { SS: [''] } },
+              },
+            },
+          ],
+        },
+      }),
+    )
+    expect(result.UnprocessedItems).toEqual({})
+
+    const get = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'bw-ss-empty-member' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(get.Item!.attr.SS).toEqual([''])
+
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'bw-ss-empty-member' } }])
+  })
 })
 
 describe('BatchWriteItem — multiple tables', { tags: ['batch', 'data-plane'] }, () => {

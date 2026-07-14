@@ -101,7 +101,7 @@ jobs:
         run: |
           node scripts/capture-validation-messages.mjs eu-west-2 > "$RUNNER_TEMP/euw2.json"
           node scripts/drift-diff.mjs "$RUNNER_TEMP/euw2.json" \
-            --baseline captures/2026-06-09-validation-rewording.json \
+            --baseline captures/2026-07-13-empty-set-member.json \
             --region eu-west-2 --out "$RUNNER_TEMP/drift.json"
 
       # File or update a single deduped issue so a red Monday is actionable, not a

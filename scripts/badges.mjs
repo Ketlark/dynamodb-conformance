@@ -8,16 +8,25 @@
  * its docs (where it goes stale). Regenerated alongside the results table on
  * every conformance run, so the badge always tracks the latest figures.
  *
- * The percentage matches the published results table exactly: both use the
- * shared scorer in lib/score.mjs (passed / (passed + failed), skips excluded).
+ * The percentage matches the published results table exactly: both take the
+ * target's headline - its best-matching observed region - from the shared
+ * scorer (scoreTarget in lib/score.mjs), which classifies the run first so a
+ * failed observation counts neither for nor against the number. Real DynamoDB
+ * is the ground truth: each real region scores 100% against its own recorded
+ * behaviour by construction, so its badge is 100% without scoring a file.
  *
  * Run: `npm run results:badges` (regenerates the committed badges). The badge
  * freshness test fails if a committed file drifts from a fresh build.
  */
 
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import { GROUND_TRUTH_SLUG, isPublishedTarget, passRate, scoreResults } from './lib/score.mjs'
+import {
+  GROUND_TRUTH_SLUG,
+  isPublishedTarget,
+  loadScoringContext,
+  scoreTarget,
+} from './lib/score.mjs'
 
 const RESULTS_DIR = 'results'
 
@@ -31,23 +40,25 @@ export function colour(pct) {
   return 'red'
 }
 
-// A target's conformance pass rate, or null when there is nothing to show: the
-// slug is a reserved scratch slug (e.g. local), the file is not a target result
-// (e.g. tag-manifest.json), or the target ran no scored tests. Real DynamoDB is
-// the ground truth, pinned to 100%.
-export function rateFor(slug, raw) {
+// A target's headline conformance rate, or null when there is nothing to show:
+// the slug is a reserved scratch slug (e.g. local), the file is not a target
+// result (e.g. tag-manifest.json), or the target ran no scored tests. Real
+// DynamoDB is the ground truth, at 100% by self-agreement. `context` carries
+// the registry and observed region set (loadScoringContext) plus the run's
+// indeterminate sidecar, when it wrote one.
+export function rateFor(slug, raw, context) {
   if (!isPublishedTarget(slug)) return null
   if (slug === GROUND_TRUTH_SLUG) return 100
-  const scored = scoreResults(raw)
-  return scored ? passRate(scored.passed, scored.failed) : null
+  const scored = scoreTarget(raw, context.sidecar ?? null, context)
+  return scored ? scored.headline.rate : null
 }
 
 // Build the shields.io endpoint badge object for a target, or null when there
 // is nothing to show. Pure (no I/O) so it backs both the CLI writer and the
 // freshness test. The colour keys off the displayed (rounded) percentage, so a
 // badge reading "99.0%" can't show the sub-99 colour.
-export function buildBadge(slug, raw) {
-  const rate = rateFor(slug, raw)
+export function buildBadge(slug, raw, context) {
+  const rate = rateFor(slug, raw, context)
   if (rate === null) return null
   const display = rate.toFixed(1)
   return {
@@ -59,16 +70,24 @@ export function buildBadge(slug, raw) {
 }
 
 // Write results/<slug>.badge.json for every target result file; returns the
-// number of badges written.
-export function writeBadges(resultsDir = RESULTS_DIR) {
+// number of badges written. Sidecar and badge files are companions of a
+// target's results file, not targets, so they are never scored themselves.
+export function writeBadges(resultsDir = RESULTS_DIR, context = loadScoringContext()) {
   const files = readdirSync(resultsDir).filter(
-    (f) => f.endsWith('.json') && !f.endsWith('.badge.json'),
+    (f) =>
+      f.endsWith('.json') &&
+      !f.endsWith('.badge.json') &&
+      !f.endsWith('.indeterminate.json'),
   )
   let written = 0
   for (const file of files) {
     const slug = basename(file, '.json')
     const raw = JSON.parse(readFileSync(join(resultsDir, file), 'utf8'))
-    const badge = buildBadge(slug, raw)
+    const sidecarFile = join(resultsDir, `${slug}.indeterminate.json`)
+    const sidecar = existsSync(sidecarFile)
+      ? JSON.parse(readFileSync(sidecarFile, 'utf8'))
+      : null
+    const badge = buildBadge(slug, raw, { ...context, sidecar })
     if (!badge) continue
     writeFileSync(
       join(resultsDir, `${slug}.badge.json`),

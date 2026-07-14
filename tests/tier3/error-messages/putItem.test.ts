@@ -157,6 +157,97 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
     }
   })
 
+  it('empty binary set: full parameter-values-invalid error', async () => {
+    // Binary uses entirely different wording from the string/number set
+    // messages (no two-space quirk, different verb).
+    try {
+      await ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: { pk: { S: 'test' }, bad: { BS: [] } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toContain(
+        'One or more parameter values were invalid: Binary sets should not be empty',
+      )
+    }
+  })
+
+  it('empty string member in NS: numeric conversion error', async () => {
+    // A set may hold an empty string member (SS) or zero-length binary member
+    // (BS); NS rejects '' because it is not a number, not because it is empty.
+    // Structural assertion: the core is invariant across the 2026-07 four-region
+    // capture; newer-wording regions add the envelope prefix and echo the
+    // (empty) offending value after a trailing colon, both floated here.
+    try {
+      await ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: { pk: { S: 'test' }, bad: { NS: [''] } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toContain(
+        'The parameter cannot be converted to a numeric value',
+      )
+    }
+  })
+
+  it('duplicate empty string members in SS: full duplicates error', async () => {
+    try {
+      await ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: { pk: { S: 'test' }, bad: { SS: ['', ''] } },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      // Float the collection rendering and any envelope prefix; pin the bespoke
+      // message either side of it, as the non-empty duplicate case above does.
+      expect((err as DynamoDBServiceException).message).toContain(
+        'One or more parameter values were invalid: Input collection',
+      )
+      expect((err as DynamoDBServiceException).message).toContain('contains duplicates')
+    }
+  })
+
+  it('duplicate zero-length members in BS: full duplicates error', async () => {
+    try {
+      await ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: {
+            pk: { S: 'test' },
+            bad: { BS: [new Uint8Array(0), new Uint8Array(0)] },
+          },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toContain(
+        'One or more parameter values were invalid: Input collection',
+      )
+      // The binary form names the set type, with AWS's missing space before
+      // 'of' ("...]of type BS...") - invariant across the 2026-07 four-region
+      // capture, only the collection rendering and envelope vary.
+      expect((err as DynamoDBServiceException).message).toContain(
+        'of type BS contains duplicates',
+      )
+    }
+  })
+
   it('NULL attr with false is accepted and normalises to NULL true', async () => {
     // AWS behaviour change captured 2026-06-08 (eu-west-2): PutItem with a
     // { NULL: false } attribute is no longer rejected. The value is accepted

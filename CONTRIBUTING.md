@@ -19,7 +19,11 @@ the same ground in a form those tools pick up automatically.
 
 Tests encode real AWS DynamoDB behaviour. Implementations are checked
 against real DynamoDB, not against each other; two emulators agreeing
-on a wrong answer does not move the baseline. Run new or modified
+on a wrong answer does not move the baseline. Ground truth is recorded
+per region: where real regions genuinely disagree, the split registry
+(`registry/splits.json`) records each region's answer, and a target
+passes if it matches at least one observed region. Only a maintainer
+admits a registry row. Run new or modified
 tests against real AWS DynamoDB where you can. If you cannot run
 against real AWS, flag that in the PR and a maintainer will verify
 before merging. If real DynamoDB rejects a test, the test is wrong;
@@ -31,7 +35,9 @@ See `AGENTS.md` for the fuller version.
 
 Before opening a PR that adds or modifies a test:
 
-1. **Required:** the test passes against real AWS DynamoDB.
+1. **Required:** the test passes against real AWS DynamoDB in one
+   region - whichever you can reach. The weekly sweep covers the rest
+   and will surface any regional split your test happens to land on.
 2. **Required:** the test runs cleanly against at least one emulator
    target. Dynoxide is the easiest local target (no Docker, no JVM);
    DynamoDB Local, Dynalite, and LocalStack are fine alternatives if
@@ -103,7 +109,8 @@ and a message assertion whose strictness fits the message:
   core - the field and the constraint phrase) when AWS's rendering is
   non-deterministic. The `N validation error detected:` envelope, the
   echoed input value, and field-name casing all vary by region (see the
-  2026-06 four-region capture) and are not part of the contract the API
+  2026-06 four-region capture, and `registry/splits.json` for behavioural
+  splits) and are not part of the contract the API
   model defines, so don't pin them. Pin what is invariant across regions
   and float the rest. This is the same idea as `createTable.test.ts`'s
   backend-variant handling.

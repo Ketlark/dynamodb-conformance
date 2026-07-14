@@ -18,6 +18,9 @@ import {
   type AttributeValue,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from './client.js'
+import { region } from './aws-config.js'
+import { IndeterminateError, indeterminateFrom } from './indeterminate.js'
+import { ceilingsFor } from './regions.js'
 import type { TestTableDef } from './types.js'
 
 const TABLE_PREFIX = '_conformance_'
@@ -132,7 +135,7 @@ function buildCreateInput(def: TestTableDef): CreateTableCommandInput {
 /** Wait until a table reaches ACTIVE status (and all GSIs are ACTIVE) */
 export async function waitUntilActive(
   tableName: string,
-  timeoutMs = 120_000,
+  timeoutMs = ceilingsFor(region).tableActiveMs,
 ): Promise<void> {
   const start = Date.now()
   let delay = 0
@@ -153,7 +156,13 @@ export async function waitUntilActive(
     if (delay > 0) await sleep(delay)
     delay = Math.min(delay || 500, 2000)
   }
-  throw new Error(`Timeout waiting for table ${tableName} to become ACTIVE`)
+  // A ceiling expiring is not an answer from DynamoDB: the table may well have
+  // gone ACTIVE moments later. Typed so it can never read as a behavioural
+  // disagreement downstream.
+  throw new IndeterminateError(
+    'table-active-timeout',
+    `Timeout waiting for table ${tableName} to become ACTIVE`,
+  )
 }
 
 /** Create a table from a TestTableDef and wait for it to become ACTIVE */
@@ -259,9 +268,15 @@ async function disableDeletionProtection(tableName: string): Promise<void> {
   } catch (e: unknown) {
     if (e instanceof DynamoDBServiceException && e.name === 'ThrottlingException') {
       await sleep(16_000)
-      await ddb.send(
-        new UpdateTableCommand({ TableName: tableName, DeletionProtectionEnabled: false }),
-      )
+      try {
+        await ddb.send(
+          new UpdateTableCommand({ TableName: tableName, DeletionProtectionEnabled: false }),
+        )
+      } catch (e2: unknown) {
+        // A throttle that outlasts both the SDK's retry and this 16-second
+        // backoff never produced an answer; surface it typed.
+        throw indeterminateFrom(e2) ?? e2
+      }
       return
     }
     throw e
@@ -345,7 +360,13 @@ interface WaitForGsiOptions {
 
 /** Wait for GSI to reflect the expected number of items */
 export async function waitForGsiConsistency(opts: WaitForGsiOptions): Promise<void> {
-  const { tableName, indexName, partitionKey, expectedCount, timeoutMs = 10_000 } = opts
+  const {
+    tableName,
+    indexName,
+    partitionKey,
+    expectedCount,
+    timeoutMs = ceilingsFor(region).gsiConsistencyMs,
+  } = opts
   const start = Date.now()
   let delay = 0
   while (Date.now() - start < timeoutMs) {
@@ -362,7 +383,12 @@ export async function waitForGsiConsistency(opts: WaitForGsiOptions): Promise<vo
     if (delay > 0) await sleep(delay)
     delay = Math.min((delay || 250) * 1.5, 2000)
   }
-  throw new Error(`Timeout waiting for GSI ${indexName} consistency (expected ${expectedCount} items)`)
+  // An index that has not settled within the ceiling is a failed observation,
+  // not evidence about what the index would eventually return.
+  throw new IndeterminateError(
+    'gsi-consistency-timeout',
+    `Timeout waiting for GSI ${indexName} consistency (expected ${expectedCount} items)`,
+  )
 }
 
 function sleep(ms: number): Promise<void> {

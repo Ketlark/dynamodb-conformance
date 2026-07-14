@@ -44,9 +44,9 @@ body:
     id: evidence
     attributes:
       label: Real-AWS evidence
-      description: A console or CLI transcript showing what real AWS DynamoDB does for this case. This is what lets a maintainer move the baseline.
+      description: A console or CLI transcript showing what real AWS DynamoDB does for this case, naming the region you ran it in. Regions can genuinely disagree (the admitted cases are in registry/splits.json), so evidence without a region can't move the baseline. If you suspect a regional split, transcripts from more than one region are ideal.
       placeholder: |
-        $ aws dynamodb put-item --table-name ... --region eu-west-2
+        $ aws dynamodb put-item --table-name ... --region <the region you tested>
         (the response or error real AWS returned)
     validations:
       required: true

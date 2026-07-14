@@ -1,4 +1,5 @@
 import {
+  PutItemCommand,
   QueryCommand,
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
@@ -6,6 +7,7 @@ import { ddb } from '../../../src/client.js'
 import {
   compositeTableDef,
   hashTableDef,
+  cleanupItems,
 } from '../../../src/helpers.js'
 
 describe('Query — exact error messages', { tags: ['query', 'data-plane', 'negative-path'] }, () => {
@@ -231,6 +233,95 @@ describe('Query — exact error messages', { tags: ['query', 'data-plane', 'nega
       expect((err as DynamoDBServiceException).message).toBe(
         '1 validation error detected: Must specify the AttributesToGet or ProjectionExpression when choosing to get SPECIFIC_ATTRIBUTES',
       )
+    }
+  })
+})
+
+describe('Query — ProjectionExpression rejection messages', { tags: ['query', 'data-plane', 'negative-path'] }, () => {
+  // The rejections run against a key condition matching no partition: a target
+  // that only validates the projection per matched row would return an empty
+  // result here instead of throwing, so the zero-match request proves the check
+  // precedes row evaluation. The matching-partition control at the end proves
+  // the rejection is not an artefact of the empty result. Query returns these
+  // messages bare, with no "1 validation error detected:" envelope, unlike
+  // some of its other rejections.
+  const queryWithProjection = (
+    pk: string,
+    expr: string,
+    names?: Record<string, string>,
+  ) =>
+    ddb.send(
+      new QueryCommand({
+        TableName: hashTableDef.name,
+        KeyConditionExpression: 'pk = :pk',
+        ExpressionAttributeValues: { ':pk': { S: pk } },
+        ProjectionExpression: expr,
+        ...(names ? { ExpressionAttributeNames: names } : {}),
+      }),
+    )
+  const noMatch = 'em-query-proj-no-such-partition'
+
+  it('duplicate paths (a, a) reject even when the key condition matches no partition', async () => {
+    try {
+      await queryWithProjection(noMatch, 'a, a')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    }
+  })
+
+  it('two distinct aliases resolving to one attribute (#a, #b -> a): rejected on the resolved names', async () => {
+    try {
+      await queryWithProjection(noMatch, '#a, #b', { '#a': 'a', '#b': 'a' })
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    }
+  })
+
+  it('overlapping parent and child paths (a, a.b) reject even when the key condition matches no partition', async () => {
+    try {
+      await queryWithProjection(noMatch, 'a, a.b')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a, b]',
+      )
+    }
+  })
+
+  it('duplicate paths still reject when the key condition matches a partition (control)', async () => {
+    // The control proving the zero-match rejections above are not an artefact
+    // of the empty result: with a row genuinely in the partition, the same
+    // request still rejects rather than returning the row.
+    const pk = 'em-query-proj-ctl'
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: pk }, a: { S: 'alpha' } },
+      }),
+    )
+    try {
+      await queryWithProjection(pk, 'a, a')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    } finally {
+      await cleanupItems(hashTableDef.name, [{ pk: { S: pk } }])
     }
   })
 })

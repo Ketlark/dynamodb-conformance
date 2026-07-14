@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Format a GitHub issue body from a Vitest JSON report's failed assertions, and
- * - when a drift diff is supplied - label the failure as confirmed AWS drift or
- * a likely flake.
+ * Format a GitHub issue body from a Vitest JSON report's classified failures,
+ * and - when a drift diff is supplied - label the failure as confirmed AWS
+ * drift or a likely flake.
  *
  * Usage:
  *   node scripts/report-failure.mjs <vitest-json> <run-url> \
@@ -11,29 +11,69 @@
  *
  * The scheduled-run workflow calls this on a deterministic ground-truth failure
  * (after retries) and threads the output onto a single deduped issue, so a red
- * Monday is actionable rather than a silent X. With --drift (the output of
- * drift-diff.mjs comparing a fresh eu-west-2 capture against the committed
- * baseline) it fills the triage slot with a verdict and writes the recommended
- * issue label to --verdict-out. The pure functions are unit-tested via
- * test:tooling.
+ * Monday is actionable rather than a silent X.
+ *
+ * The report is classified (scripts/lib/classify.mjs) before anything is
+ * listed, because a raw `status: "failed"` cannot tell a real behavioural
+ * failure from a failed observation. The run's indeterminate sidecar is read
+ * from the path beside the report (<report>.json -> <report>.indeterminate.json,
+ * the pairing src/indeterminate-sink.ts writes), so the triage this issue
+ * carries distinguishes three kinds of red:
+ *
+ * - definite failures: real behavioural evidence, listed for re-characterising;
+ * - failed observations (test-level indeterminates): timeouts, exhausted
+ *   throttles, transport faults - not evidence of drift, listed separately;
+ * - a run-level indeterminate: provisioning never completed, so no test
+ *   produced an observation and nothing is listed as a failure.
+ *
+ * With --drift (the output of drift-diff.mjs comparing a fresh eu-west-2
+ * capture against the committed baseline) it fills the triage slot with a
+ * verdict and writes the recommended issue label to --verdict-out. The pure
+ * functions are unit-tested via test:tooling.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { classifyResults } from './lib/classify.mjs'
 
-/** Pull failed assertions out of a Vitest JSON report. */
-export function collectFailures(report) {
+/**
+ * Classify every assertion in a Vitest JSON report (merging its indeterminate
+ * sidecar) and pair each verdict with the report's display fields: the test's
+ * name and the first line of its first failure message.
+ */
+export function collectResults(report, sidecar = null) {
+  if (!Array.isArray(report?.testResults)) return []
+  const verdicts = classifyResults(report, sidecar)
   const out = []
-  for (const tr of report?.testResults ?? []) {
-    for (const ar of tr?.assertionResults ?? []) {
-      if (ar?.status !== 'failed') continue
+  let i = 0
+  for (const tr of report.testResults) {
+    for (const ar of tr.assertionResults ?? []) {
+      const { verdict, reason } = verdicts[i++]
       const name =
         ar.fullName ||
         [...(ar.ancestorTitles ?? []), ar.title].filter(Boolean).join(' > ')
       const detail = (ar.failureMessages ?? [])[0]?.split('\n')[0]?.trim() ?? ''
-      out.push({ file: tr.name, name, detail })
+      out.push({ file: tr.name, name, detail, verdict, reason })
     }
   }
   return out
+}
+
+/**
+ * The report's definite failures: real behavioural evidence, classified so a
+ * failed observation is never listed as one.
+ */
+export function collectFailures(report, sidecar = null) {
+  return collectResults(report, sidecar)
+    .filter((r) => r.verdict === 'fail')
+    .map(({ file, name, detail }) => ({ file, name, detail }))
+}
+
+/**
+ * The report's failed observations (indeterminates). Each carries its reason
+ * and whether the observation failed at test or run level.
+ */
+export function collectIndeterminates(report, sidecar = null) {
+  return collectResults(report, sidecar).filter((r) => r.verdict === 'indeterminate')
 }
 
 /**
@@ -69,29 +109,57 @@ export function verdictFromDrift(driftResult) {
   }
 }
 
-/** Build the Markdown issue body. `report` may be null when parsing failed. */
-export function buildIssueBody(report, runUrl, verdict = null) {
+/**
+ * Build the Markdown issue body. `report` may be null when parsing failed;
+ * `sidecar` is the run's indeterminate sidecar, when it wrote one.
+ */
+export function buildIssueBody(report, runUrl, verdict = null, sidecar = null) {
   const lines = []
   lines.push('The scheduled `Conformance Tests` ground-truth run went red after retries.')
   lines.push('')
   if (runUrl) lines.push(`Run: ${runUrl}`)
   lines.push('')
 
-  if (!report) {
+  const runLevel = (sidecar?.runLevel ?? [])[0] ?? null
+  if (runLevel) {
+    // A run-level indeterminate means no test produced an
+    // observation, so listing the run's reds as failures would present one
+    // provisioning fault as several hundred behavioural disagreements.
+    lines.push(
+      `**The run itself was indeterminate**: provisioning never completed (\`${runLevel.reason}\`),`,
+    )
+    lines.push('so no test produced an observation. This is a failed observation')
+    lines.push('of AWS, not evidence of drift; investigate the run (credentials, throttling,')
+    lines.push('region health) rather than re-characterising any assertion.')
+  } else if (!report) {
     lines.push('The Vitest report could not be read or parsed, so the failure was')
     lines.push('likely in setup/teardown or the runner itself. See the run log.')
   } else {
-    const failures = collectFailures(report)
-    if (failures.length === 0) {
+    const failures = collectFailures(report, sidecar)
+    const indeterminates = collectIndeterminates(report, sidecar)
+    if (failures.length === 0 && indeterminates.length === 0) {
       lines.push('No failed assertions are present in the report, so the failure was')
       lines.push('likely in a `beforeAll`/`afterAll` hook or infrastructure rather than')
       lines.push('a test body. See the run log.')
-    } else {
+    }
+    if (failures.length > 0) {
       lines.push(`**${failures.length} failed test${failures.length === 1 ? '' : 's'}:**`)
       lines.push('')
       for (const f of failures) {
         lines.push(`- \`${f.name}\``)
         if (f.detail) lines.push(`  - ${f.detail}`)
+      }
+    }
+    if (indeterminates.length > 0) {
+      if (failures.length > 0) lines.push('')
+      lines.push(
+        `**${indeterminates.length} failed observation${indeterminates.length === 1 ? '' : 's'}** ` +
+          '(indeterminate: timeout, exhausted throttle or transport fault - not behavioural',
+      )
+      lines.push('failures, and counted neither for nor against ground truth):')
+      lines.push('')
+      for (const t of indeterminates) {
+        lines.push(`- \`${t.name}\` - \`${t.reason?.reason ?? 'unknown'}\``)
       }
     }
   }
@@ -142,8 +210,12 @@ function main() {
     process.exit(1)
   }
   const report = readJson(reportPath)
+  // The sidecar sits beside the report it qualifies (src/indeterminate-sink.ts
+  // pairs the two by slug), so its path is derived rather than passed.
+  const sidecarPath = reportPath.replace(/\.json$/, '.indeterminate.json')
+  const sidecar = existsSync(sidecarPath) ? readJson(sidecarPath) : null
   const verdict = args.drift ? verdictFromDrift(readJson(args.drift)) : null
-  process.stdout.write(buildIssueBody(report, runUrl, verdict) + '\n')
+  process.stdout.write(buildIssueBody(report, runUrl, verdict, sidecar) + '\n')
   if (args.verdictOut && verdict) writeFileSync(args.verdictOut, verdict.label + '\n')
 }
 

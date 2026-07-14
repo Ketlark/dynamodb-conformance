@@ -157,3 +157,90 @@ describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'
     }
   })
 })
+
+describe('BatchGetItem — ProjectionExpression rejection messages', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
+  // BatchGetItem carries its projection per table entry inside RequestItems,
+  // but the projection rules and their messages match the other read
+  // operations. None of the keys below resolves to a stored item, which is the
+  // point: the rejections fire before any read.
+  const batchGetWithProjection = (expr: string, names?: Record<string, string>) =>
+    ddb.send(
+      new BatchGetItemCommand({
+        RequestItems: {
+          [hashTableDef.name]: {
+            Keys: [{ pk: { S: 'em-bg-proj' } }],
+            ProjectionExpression: expr,
+            ...(names ? { ExpressionAttributeNames: names } : {}),
+          },
+        },
+      }),
+    )
+
+  it('duplicate paths (a, a) reject even when the key matches no item', async () => {
+    try {
+      await batchGetWithProjection('a, a')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    }
+  })
+
+  it('two distinct aliases resolving to one attribute (#a, #b -> a): rejected on the resolved names', async () => {
+    try {
+      await batchGetWithProjection('#a, #b', { '#a': 'a', '#b': 'a' })
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    }
+  })
+
+  it('overlapping parent and child paths (a, a.b): full overlap message', async () => {
+    try {
+      await batchGetWithProjection('a, a.b')
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a, b]',
+      )
+    }
+  })
+
+  it('a bad projection on one table entry rejects the whole batch despite a clean entry on another', async () => {
+    // Parity with the cross-table AttributesToGet/ProjectionExpression case
+    // above: one invalid entry fails the entire request, with the same message
+    // the single-entry rejection carries.
+    try {
+      await ddb.send(
+        new BatchGetItemCommand({
+          RequestItems: {
+            [hashTableDef.name]: {
+              Keys: [{ pk: { S: 'em-bg-proj-bad' } }],
+              ProjectionExpression: 'a, a',
+            },
+            [compositeTableDef.name]: {
+              Keys: [{ pk: { S: 'em-bg-proj-clean' }, sk: { S: 'z' } }],
+              ProjectionExpression: 'a',
+            },
+          },
+        }),
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'Invalid ProjectionExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]',
+      )
+    }
+  })
+})

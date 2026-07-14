@@ -209,6 +209,57 @@ describe('UpdateItem — SET', { tags: ['update-item', 'data-plane'] }, () => {
     expect(result.Item!.vals.L![0].S).toBe('a')
     expect(result.Item!.vals.L![3].S).toBe('d')
   })
+
+  it('SET creates a string set whose only member is the empty string', async () => {
+    // Empty string and binary values are allowed within a set; only the empty
+    // set itself is rejected.
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-set' } },
+        UpdateExpression: 'SET tags = :v',
+        ExpressionAttributeValues: { ':v': { SS: [''] } },
+      }),
+    )
+
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-set' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(result.Item!.tags.SS).toEqual([''])
+  })
+
+  it('SET on a document path creates a nested set with an empty member', async () => {
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: 'upd-set' }, wrapper: { M: {} } },
+      }),
+    )
+
+    // The document-path SET evaluates through the expression engine rather
+    // than the whole-item validator, so it is a distinct revalidation point.
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-set' } },
+        UpdateExpression: 'SET wrapper.tags = :v',
+        ExpressionAttributeValues: { ':v': { SS: [''] } },
+      }),
+    )
+
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-set' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(result.Item!.wrapper.M!.tags.SS).toEqual([''])
+  })
 })
 
 describe('UpdateItem — REMOVE', { tags: ['update-item', 'data-plane'] }, () => {
@@ -396,6 +447,126 @@ describe('UpdateItem — ADD', { tags: ['update-item', 'data-plane'] }, () => {
 
     await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-add-ss' } }])
   })
+
+  it('ADD of an empty string member onto an existing set adds it', async () => {
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: 'upd-add-ss-empty' }, tags: { SS: ['a'] } },
+      }),
+    )
+
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-add-ss-empty' } },
+        UpdateExpression: 'ADD tags :v',
+        ExpressionAttributeValues: { ':v': { SS: [''] } },
+      }),
+    )
+
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-add-ss-empty' } },
+        ConsistentRead: true,
+      }),
+    )
+    // Set order is not preserved; compare sorted.
+    expect([...result.Item!.tags.SS!].sort()).toEqual(['', 'a'])
+
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-add-ss-empty' } }])
+  })
+
+  it('ADD of an empty string member onto a missing attribute creates the set', async () => {
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: 'upd-add-ss-empty-new' } }, // no tags attribute
+      }),
+    )
+
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-add-ss-empty-new' } },
+        UpdateExpression: 'ADD tags :v',
+        ExpressionAttributeValues: { ':v': { SS: [''] } },
+      }),
+    )
+
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-add-ss-empty-new' } },
+        ConsistentRead: true,
+      }),
+    )
+    expect(result.Item!.tags.SS).toEqual([''])
+
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-add-ss-empty-new' } }])
+  })
+
+  it('ADD of an already-present empty member leaves the set unchanged', async () => {
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: 'upd-add-ss-empty-dup' }, tags: { SS: [''] } },
+      }),
+    )
+
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-add-ss-empty-dup' } },
+        UpdateExpression: 'ADD tags :v',
+        ExpressionAttributeValues: { ':v': { SS: [''] } },
+      }),
+    )
+
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-add-ss-empty-dup' } },
+        ConsistentRead: true,
+      }),
+    )
+    // Set semantics, not multiset: still exactly one member.
+    expect(result.Item!.tags.SS).toEqual([''])
+
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-add-ss-empty-dup' } }])
+  })
+
+  it('ADD of a zero-length binary member onto an existing binary set adds it', async () => {
+    await ddb.send(
+      new PutItemCommand({
+        TableName: hashTableDef.name,
+        Item: { pk: { S: 'upd-add-bs-empty' }, bins: { BS: [new Uint8Array([1])] } },
+      }),
+    )
+
+    await ddb.send(
+      new UpdateItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-add-bs-empty' } },
+        UpdateExpression: 'ADD bins :v',
+        ExpressionAttributeValues: { ':v': { BS: [new Uint8Array(0)] } },
+      }),
+    )
+
+    const result = await ddb.send(
+      new GetItemCommand({
+        TableName: hashTableDef.name,
+        Key: { pk: { S: 'upd-add-bs-empty' } },
+        ConsistentRead: true,
+      }),
+    )
+    const members = result.Item!.bins.BS!
+    expect(members).toHaveLength(2)
+    expect(members.map((b) => b.byteLength).sort()).toEqual([0, 1])
+
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-add-bs-empty' } }])
+  })
 })
 
 describe('UpdateItem — DELETE', { tags: ['update-item', 'data-plane'] }, () => {
@@ -471,6 +642,70 @@ describe('UpdateItem — DELETE', { tags: ['update-item', 'data-plane'] }, () =>
     expect(result.Item!.tags.SS).not.toContain('b')
 
     await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-del-ss' } }])
+  })
+
+  it('DELETE of the empty member removes it and keeps the rest', async () => {
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: 'upd-del-ss-empty' }, tags: { SS: ['', 'a'] } },
+    }))
+    await ddb.send(new UpdateItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: 'upd-del-ss-empty' } },
+      UpdateExpression: 'DELETE tags :v',
+      ExpressionAttributeValues: { ':v': { SS: [''] } },
+    }))
+    const result = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: 'upd-del-ss-empty' } },
+      ConsistentRead: true,
+    }))
+    expect(result.Item!.tags.SS).toEqual(['a'])
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-del-ss-empty' } }])
+  })
+
+  it('DELETE of the last remaining (empty) member removes the attribute entirely', async () => {
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: 'upd-del-ss-empty-last' }, tags: { SS: [''] } },
+    }))
+    await ddb.send(new UpdateItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: 'upd-del-ss-empty-last' } },
+      UpdateExpression: 'DELETE tags :v',
+      ExpressionAttributeValues: { ':v': { SS: [''] } },
+    }))
+    const result = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: 'upd-del-ss-empty-last' } },
+      ConsistentRead: true,
+    }))
+    // Attribute gone entirely, not left behind as an (unrepresentable) empty set.
+    expect(result.Item).toBeDefined()
+    expect(result.Item!.tags).toBeUndefined()
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-del-ss-empty-last' } }])
+  })
+
+  it('DELETE of the non-empty member leaves a set whose only member is empty', async () => {
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: 'upd-del-ss-to-empty' }, tags: { SS: ['', 'a'] } },
+    }))
+    await ddb.send(new UpdateItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: 'upd-del-ss-to-empty' } },
+      UpdateExpression: 'DELETE tags :v',
+      ExpressionAttributeValues: { ':v': { SS: ['a'] } },
+    }))
+    const result = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: 'upd-del-ss-to-empty' } },
+      ConsistentRead: true,
+    }))
+    // The set survives with the empty string as its sole member; the mutation
+    // output is a one-member set, not a removed attribute.
+    expect(result.Item!.tags.SS).toEqual([''])
+    await cleanupItems(hashTableDef.name, [{ pk: { S: 'upd-del-ss-to-empty' } }])
   })
 })
 
