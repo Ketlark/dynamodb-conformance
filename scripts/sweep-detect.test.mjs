@@ -15,6 +15,7 @@ import {
   parseArgs,
   relativeTestFile,
   reportFailures,
+  run,
 } from './sweep-detect.mjs'
 
 const TEST = {
@@ -205,24 +206,44 @@ describe('reportFailures', () => {
 describe('confirmCandidates', () => {
   const candidate = { test: TEST, regions: { 'eu-west-2': 'pass', 'us-east-1': 'fail' } }
 
-  it('confirms a candidate every re-run reproduces', async () => {
+  it('confirms a candidate every fail-side re-run reproduces, and never re-runs the pass side', async () => {
     const calls = []
     const runTest = (region) => {
       calls.push(region)
-      return candidate.regions[region]
+      return 'fail'
     }
     const { confirmed, discarded } = await confirmCandidates([candidate], { runs: 3, runTest })
     expect(confirmed).toHaveLength(1)
-    expect(confirmed[0].confirmation).toEqual({ runs: 3 })
+    expect(confirmed[0].confirmation).toEqual({ runs: 3, regions: ['us-east-1'] })
     expect(discarded).toEqual([])
-    // Targeted: only the disagreeing regions, only that test, runs× each.
-    expect(calls.filter((r) => r === 'eu-west-2')).toHaveLength(3)
+    // Targeted: only the divergent side, only that test, runs× each.
     expect(calls.filter((r) => r === 'us-east-1')).toHaveLength(3)
+    expect(calls.filter((r) => r === 'eu-west-2')).toHaveLength(0)
+  })
+
+  it('re-runs only the fail side of a wide candidate: cost scales with the cohort, not the region set', async () => {
+    const wide = {
+      test: TEST,
+      regions: Object.fromEntries([
+        ['ap-southeast-2', 'fail'],
+        ['us-east-1', 'fail'],
+        ...Array.from({ length: 28 }, (_, i) => [`eu-fake-${i}`, 'pass']),
+      ]),
+    }
+    const calls = []
+    const runTest = (region) => {
+      calls.push(region)
+      return 'fail'
+    }
+    const { confirmed } = await confirmCandidates([wide], { runs: 5, runTest })
+    expect(calls).toHaveLength(10)
+    expect(new Set(calls)).toEqual(new Set(['us-east-1', 'ap-southeast-2']))
+    expect(confirmed[0].confirmation.regions).toEqual(['ap-southeast-2', 'us-east-1'])
   })
 
   it('discards a candidate that fails to reproduce: it was non-determinism, not a split', async () => {
     let n = 0
-    const runTest = (region) => (++n === 4 ? 'pass' : candidate.regions[region])
+    const runTest = () => (++n === 2 ? 'pass' : 'fail')
     const { confirmed, discarded } = await confirmCandidates([candidate], { runs: 3, runTest })
     expect(confirmed).toEqual([])
     expect(discarded).toHaveLength(1)
@@ -241,7 +262,7 @@ describe('issue bodies', () => {
   const candidate = {
     test: TEST,
     regions: { 'eu-west-2': 'pass', 'us-east-1': 'fail' },
-    confirmation: { runs: 5 },
+    confirmation: { runs: 5, regions: ['us-east-1'] },
   }
 
   it('a candidate issue carries the evidence, the provenance, and the human gate', () => {
@@ -258,7 +279,10 @@ describe('issue bodies', () => {
     expect(issue.body).toContain('2026-07-11')
     expect(issue.body).toContain('https://example.test/run/1')
     expect(issue.body).toContain('ValidationException: nope')
-    expect(issue.body).toContain('re-run 5× per region')
+    // The confirmation line names exactly what was re-run and never claims
+    // pass-side repetition the pipeline did not perform.
+    expect(issue.body).toContain('the divergent side (us-east-1) was re-run 5× each')
+    expect(issue.body).toContain('Pass-side verdicts are single sweep observations')
     expect(issue.body).toContain('never writes `registry/splits.json`')
   })
 
@@ -383,6 +407,50 @@ function runCli(args, cwd) {
     encoding: 'utf8',
   })
 }
+
+describe('run: write ordering under confirmation', () => {
+  it('the health record and an initial report land before any confirmation run, and the report is rewritten after', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sweep-detect-'))
+    const { gt, registryPath, healthPath } = writeFixtures(dir)
+    const out = join(dir, 'report.json')
+    const args = parseArgs([
+      gt,
+      '--registry', registryPath,
+      '--record-health', healthPath,
+      '--expect', 'eu-west-2,us-east-1',
+      '--date', '2026-07-11',
+      '--out', out,
+      '--confirm',
+      '--confirm-runs', '2',
+    ])
+
+    // Snapshot both files at the moment confirmation FIRST runs: a job
+    // timeout mid-confirmation must already have both on disk.
+    let observed = null
+    const runTest = () => {
+      observed ??= {
+        health: JSON.parse(readFileSync(healthPath, 'utf8')),
+        report: JSON.parse(readFileSync(out, 'utf8')),
+      }
+      return 'fail'
+    }
+    await run(args, { runTest })
+
+    expect(observed).not.toBeNull()
+    expect(observed.health.regions['eu-west-2']).toEqual({
+      lastResolved: '2026-07-11',
+      consecutiveUnresolved: 0,
+    })
+    expect(observed.report.confirmationState).toBe('pending')
+    expect(observed.report.candidates).toHaveLength(1)
+    expect(observed.report.confirmed).toEqual([])
+
+    const final = JSON.parse(readFileSync(out, 'utf8'))
+    expect(final.confirmationState).toBe('complete')
+    expect(final.confirmed).toHaveLength(1)
+    expect(final.confirmed[0].confirmation).toEqual({ runs: 2, regions: ['us-east-1'] })
+  })
+})
 
 describe('the CLI, end to end on fixtures', () => {
   it('detects, reports, records health, and never touches the split registry', () => {
