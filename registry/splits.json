@@ -43,6 +43,106 @@
         "date": "2026-07-13",
         "issue": "https://github.com/paritysuite/dynamodb-conformance/issues/75"
       }
+    },
+    {
+      "id": "put-item-validation-error-aggregation",
+      "test": {
+        "file": "tests/tier3/validation-ordering/putItem.test.ts",
+        "fullName": "PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName"
+      },
+      "behaviour": "PutItem with an empty TableName and an invalid ReturnValues: part of the 2026-06 validation-framework rollout. New-cohort regions short-circuit at the table name and report one error; old-cohort regions aggregate both.",
+      "pinned": "eu-west-2",
+      "firstObserved": "2026-06-09",
+      "lastRefreshed": "2026-07-14",
+      "regions": {
+        "eu-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "1 validation error detected: Value at 'TableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "eu-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "1 validation error detected: Value at 'TableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "us-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-southeast-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        }
+      },
+      "evidence": [
+        "captures/2026-06-09-validation-rewording.json",
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29334921301"
+      ],
+      "admitted": {
+        "by": "Martin Hicks",
+        "date": "2026-07-14",
+        "issue": "https://github.com/paritysuite/dynamodb-conformance/issues/84"
+      }
+    },
+    {
+      "id": "update-item-validation-error-aggregation",
+      "test": {
+        "file": "tests/tier3/validation-ordering/updateItem.test.ts",
+        "fullName": "UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+      },
+      "behaviour": "UpdateItem with invalid ReturnValues and ReturnConsumedCapacity: part of the 2026-06 validation-framework rollout. New-cohort regions stop at the first invalid enum and report one error; old-cohort regions aggregate both.",
+      "pinned": "eu-west-2",
+      "firstObserved": "2026-06-09",
+      "lastRefreshed": "2026-07-14",
+      "regions": {
+        "eu-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "1 validation error detected: Failed to satisfy constraint: Member must satisfy enum value set: [ALL_OLD, UPDATED_OLD, ALL_NEW, UPDATE_NEW, NONE]"
+          }
+        },
+        "eu-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "1 validation error detected: Failed to satisfy constraint: Member must satisfy enum value set: [ALL_OLD, UPDATED_OLD, ALL_NEW, UPDATE_NEW, NONE]"
+          }
+        },
+        "us-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-southeast-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        }
+      },
+      "evidence": [
+        "captures/2026-06-09-validation-rewording.json",
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29334921301"
+      ],
+      "admitted": {
+        "by": "Martin Hicks",
+        "date": "2026-07-14",
+        "issue": "https://github.com/paritysuite/dynamodb-conformance/issues/85"
+      }
     }
   ]
 }

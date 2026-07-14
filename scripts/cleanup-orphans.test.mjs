@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_MAX_AGE_HOURS,
+  exitVerdict,
   parseArgs,
-  reapAll,
+  cleanupAll,
   selectOrphans,
-} from './reap-orphans.mjs'
+} from './cleanup-orphans.mjs'
 import { COMMERCIAL_REGIONS } from '../src/regions.ts'
 
 const HOUR = 60 * 60 * 1000
@@ -69,18 +70,18 @@ describe('selectOrphans', () => {
   })
 })
 
-describe('reapAll', () => {
+describe('cleanupAll', () => {
   it('an unreachable region is reported and skipped, never aborting the others', async () => {
     const visited = []
-    const { reaped, failures } = await reapAll(['eu-west-2', 'sa-east-1', 'us-east-1'], {
-      reap: async (region) => {
+    const { cleaned, failures } = await cleanupAll(['eu-west-2', 'sa-east-1', 'us-east-1'], {
+      cleanup: async (region) => {
         visited.push(region)
         if (region === 'sa-east-1') throw new Error('connect ETIMEDOUT')
         return { deleted: [], failed: [] }
       },
     })
     expect(visited).toEqual(['eu-west-2', 'sa-east-1', 'us-east-1'])
-    expect(Object.keys(reaped)).toEqual(['eu-west-2', 'us-east-1'])
+    expect(Object.keys(cleaned)).toEqual(['eu-west-2', 'us-east-1'])
     expect(failures).toEqual([{ region: 'sa-east-1', message: 'connect ETIMEDOUT' }])
   })
 })
@@ -105,5 +106,56 @@ describe('parseArgs', () => {
 
   it('rejects unknown options rather than ignoring them', () => {
     expect(() => parseArgs(['--force'])).toThrow(/unknown option/)
+  })
+})
+
+// The daily-cron alarm contract: red means a human must look. Unreachable
+// regions (opt-in enablement pending, a regional wobble) warn instead, so the
+// alarm never trains anyone to ignore it - but nothing walked at all stays
+// loudly red, and an undeletable orphan always wins.
+describe('exitVerdict', () => {
+  it('one unreachable region among reachable ones warns rather than fails', () => {
+    expect(exitVerdict({ stuck: 0, unreachable: 1, regionCount: 34 })).toEqual({
+      code: 0,
+      reason: null,
+      warn: true,
+    })
+  })
+
+  it('a majority of regions unreachable is a systemic failure and exits 1', () => {
+    const all = exitVerdict({ stuck: 0, unreachable: 34, regionCount: 34 })
+    expect(all.code).toBe(1)
+    expect(all.reason).toMatch(/systemic, not regional/)
+    // The boundary: 17 of 34 warns, 18 of 34 fails.
+    expect(exitVerdict({ stuck: 0, unreachable: 17, regionCount: 34 })).toEqual({
+      code: 0,
+      reason: null,
+      warn: true,
+    })
+    expect(exitVerdict({ stuck: 0, unreachable: 18, regionCount: 34 }).code).toBe(1)
+  })
+
+  it('the opt-in enablement window stays on the warning path', () => {
+    // Six disabled opt-in regions must not redden the daily run.
+    expect(exitVerdict({ stuck: 0, unreachable: 6, regionCount: 34 })).toEqual({
+      code: 0,
+      reason: null,
+      warn: true,
+    })
+  })
+
+  it('an undeletable orphan fails the run even with unreachable regions present', () => {
+    const verdict = exitVerdict({ stuck: 2, unreachable: 1, regionCount: 34 })
+    expect(verdict.code).toBe(1)
+    expect(verdict.reason).toMatch(/2 undeletable/)
+  })
+
+  it('a clean run exits 0 with no warning, an undeletable-only run exits 1: the old contract holds', () => {
+    expect(exitVerdict({ stuck: 0, unreachable: 0, regionCount: 34 })).toEqual({
+      code: 0,
+      reason: null,
+      warn: false,
+    })
+    expect(exitVerdict({ stuck: 1, unreachable: 0, regionCount: 34 }).code).toBe(1)
   })
 })

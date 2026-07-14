@@ -12,13 +12,21 @@ name: Ground Truth Sweep
 on:
   schedule:
     - cron: '0 3 * * 6' # sweep: 3am UTC Saturday, clear of Monday's gating run
-    - cron: '30 5 * * *' # reap: daily, catching tables a dead run stranded
+    - cron: '30 5 * * *' # cleanup: daily, catching tables a dead run stranded
   workflow_dispatch:
     inputs:
       regions:
         description: "Comma-separated region subset (blank = all commercial regions)"
         required: false
         default: ""
+      # false = report-only reconnaissance: full sweep, full confirmation, the
+      # report artefact only. No health recording, no drops or pages, no
+      # issues. The schedule always records (an absent input reads as true).
+      record:
+        description: "Record region health and file issues (false = report-only)"
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: read
@@ -26,7 +34,7 @@ permissions:
 jobs:
   regions:
     name: Resolve region set
-    # Only the weekly cron (or a manual dispatch) sweeps; the daily cron only reaps.
+    # Only the weekly cron (or a manual dispatch) sweeps; the daily cron only cleans up.
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * 6'
     runs-on: ubuntu-latest
     outputs:
@@ -163,6 +171,12 @@ jobs:
       contents: read
       issues: write # split-candidate, registry-drift and region-dropped issues
     environment: conformance-testing
+    env:
+      # The ONE definition of report-only: recording is on for the schedule
+      # and for any dispatch that does not explicitly say record: false. Both
+      # the detect step and the commit step read this - recording health and
+      # committing it must never disagree.
+      RECORD: ${{ github.event.inputs.record != 'false' }}
 
     steps:
       # registry/regions.json (region health) is committed back, so the
@@ -208,13 +222,16 @@ jobs:
           EXPECT: ${{ needs.regions.outputs.regions }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          flags=()
+          if [ "$RECORD" = "true" ]; then
+            flags+=(--record-health registry/regions.json --file-issues)
+          fi
           node scripts/sweep-detect.mjs ground-truth \
             --expect "$(node -e 'console.log(JSON.parse(process.env.EXPECT).join(","))')" \
-            --record-health registry/regions.json \
             --confirm \
-            --file-issues \
             --run-url "$RUN_URL" \
-            --out ground-truth/sweep-report.json
+            --out ground-truth/sweep-report.json \
+            "${flags[@]}"
 
       - name: Upload the sweep report
         if: always()
@@ -223,7 +240,13 @@ jobs:
           name: sweep-report
           path: ground-truth/sweep-report.json
 
+      # always(): the health record is written BEFORE the long confirmation
+      # tail precisely so a timeout or crash there cannot lose it - but this
+      # step inheriting the implicit success() would throw it away again.
+      # Page issues are filed before confirmation too, so committing a drop
+      # from a failed run never splits the drop-and-page act.
       - name: Commit the region health record
+        if: always() && env.RECORD == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -244,12 +267,12 @@ jobs:
             fi
           fi
 
-  reap:
-    name: Reap orphaned tables
+  cleanup:
+    name: Clean up orphaned tables
     # Runs after every sweep (skipped or not - the daily cron skips the matrix
     # and comes straight here) so tables stranded by a dead run never sit for
-    # more than a day. The age gate inside the reaper is what keeps runs still
-    # in flight safe; see scripts/reap-orphans.mjs.
+    # more than a day. The age gate inside the cleanup is what keeps runs still
+    # in flight safe; see scripts/cleanup-orphans.mjs.
     needs: sweep
     if: always()
     runs-on: ubuntu-latest
@@ -275,5 +298,5 @@ jobs:
           aws-region: eu-west-2
           role-duration-seconds: 3600
 
-      - name: Reap orphans across all regions
-        run: node scripts/reap-orphans.mjs
+      - name: Clean up orphans across all regions
+        run: node scripts/cleanup-orphans.mjs

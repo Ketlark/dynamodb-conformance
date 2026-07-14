@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { splitFor } from './lib/registry.mjs'
 import {
   buildCandidateIssue,
   buildDriftIssue,
@@ -14,6 +15,8 @@ import {
   fileIssue,
   parseArgs,
   relativeTestFile,
+  reportFailures,
+  run,
 } from './sweep-detect.mjs'
 
 const TEST = {
@@ -163,27 +166,90 @@ describe('detectRegistryDrift', () => {
   })
 })
 
+describe('reportFailures', () => {
+  const novel = verdict('fail', {
+    file: '/home/runner/work/suite/tests/tier3/limits/nestingDepth.test.ts',
+    fullName: 'Nesting depth — rejects a 32-level value',
+  })
+  // The tests exercise exactly the matcher production injects (splitFor),
+  // never a hand-rolled variant that could drift from it.
+  const doc = rowFor()
+  const rowForVerdict = (v) => splitFor(doc, v)
+
+  it('lists every definite failure with the explained flag and matched row id', () => {
+    const failures = reportFailures([verdict('fail'), novel, verdict('pass')], rowForVerdict)
+    expect(failures).toEqual([
+      { file: TEST.file, fullName: TEST.fullName, explained: true, rowId: 'row-1' },
+      {
+        file: 'tests/tier3/limits/nestingDepth.test.ts',
+        fullName: 'Nesting depth — rejects a 32-level value',
+        explained: false,
+      },
+    ])
+  })
+
+  it('a uniform failure no candidate can carry still appears: nothing may produce silence', () => {
+    // A rowless test failing in every region has no pass side and never
+    // becomes a candidate; this list is its only trace in the sweep's output.
+    expect(reportFailures([novel], rowForVerdict)).toEqual([
+      {
+        file: 'tests/tier3/limits/nestingDepth.test.ts',
+        fullName: 'Nesting depth — rejects a 32-level value',
+        explained: false,
+      },
+    ])
+  })
+
+  it('indeterminates and skips never appear: only definite failures are evidence', () => {
+    const absent = [
+      verdict('indeterminate', { reason: { reason: 'transport', at: 'test' } }),
+      verdict('skip'),
+    ]
+    expect(reportFailures(absent, rowForVerdict)).toEqual([])
+  })
+})
+
 describe('confirmCandidates', () => {
   const candidate = { test: TEST, regions: { 'eu-west-2': 'pass', 'us-east-1': 'fail' } }
 
-  it('confirms a candidate every re-run reproduces', async () => {
+  it('confirms a candidate every fail-side re-run reproduces, and never re-runs the pass side', async () => {
     const calls = []
     const runTest = (region) => {
       calls.push(region)
-      return candidate.regions[region]
+      return 'fail'
     }
     const { confirmed, discarded } = await confirmCandidates([candidate], { runs: 3, runTest })
     expect(confirmed).toHaveLength(1)
-    expect(confirmed[0].confirmation).toEqual({ runs: 3 })
+    expect(confirmed[0].confirmation).toEqual({ runs: 3, regions: ['us-east-1'] })
     expect(discarded).toEqual([])
-    // Targeted: only the disagreeing regions, only that test, runs× each.
-    expect(calls.filter((r) => r === 'eu-west-2')).toHaveLength(3)
+    // Targeted: only the divergent side, only that test, runs× each.
     expect(calls.filter((r) => r === 'us-east-1')).toHaveLength(3)
+    expect(calls.filter((r) => r === 'eu-west-2')).toHaveLength(0)
+  })
+
+  it('re-runs only the fail side of a wide candidate: cost scales with the cohort, not the region set', async () => {
+    const wide = {
+      test: TEST,
+      regions: Object.fromEntries([
+        ['ap-southeast-2', 'fail'],
+        ['us-east-1', 'fail'],
+        ...Array.from({ length: 28 }, (_, i) => [`eu-fake-${i}`, 'pass']),
+      ]),
+    }
+    const calls = []
+    const runTest = (region) => {
+      calls.push(region)
+      return 'fail'
+    }
+    const { confirmed } = await confirmCandidates([wide], { runs: 5, runTest })
+    expect(calls).toHaveLength(10)
+    expect(new Set(calls)).toEqual(new Set(['us-east-1', 'ap-southeast-2']))
+    expect(confirmed[0].confirmation.regions).toEqual(['ap-southeast-2', 'us-east-1'])
   })
 
   it('discards a candidate that fails to reproduce: it was non-determinism, not a split', async () => {
     let n = 0
-    const runTest = (region) => (++n === 4 ? 'pass' : candidate.regions[region])
+    const runTest = () => (++n === 2 ? 'pass' : 'fail')
     const { confirmed, discarded } = await confirmCandidates([candidate], { runs: 3, runTest })
     expect(confirmed).toEqual([])
     expect(discarded).toHaveLength(1)
@@ -196,13 +262,35 @@ describe('confirmCandidates', () => {
     expect(confirmed).toEqual([])
     expect(discarded).toHaveLength(1)
   })
+
+  it('a candidate with no fail-side region breaks the caller contract loudly', async () => {
+    const noFailSide = { test: TEST, regions: { 'eu-west-2': 'pass', 'us-east-1': 'pass' } }
+    await expect(
+      confirmCandidates([noFailSide], { runs: 5, runTest: () => 'fail' }),
+    ).rejects.toThrow(/no fail-side region/)
+  })
+
+  it('reports progress after every candidate, so a checkpoint can persist decided ones', async () => {
+    const a = { test: TEST, regions: { 'eu-west-2': 'pass', 'us-east-1': 'fail' } }
+    const b = {
+      test: { ...TEST, fullName: 'another split test' },
+      regions: { 'eu-west-2': 'pass', 'ap-southeast-2': 'fail' },
+    }
+    const snapshots = []
+    await confirmCandidates([a, b], {
+      runs: 1,
+      runTest: () => 'fail',
+      onProgress: (p) => snapshots.push(p.confirmed.length),
+    })
+    expect(snapshots).toEqual([1, 2])
+  })
 })
 
 describe('issue bodies', () => {
   const candidate = {
     test: TEST,
     regions: { 'eu-west-2': 'pass', 'us-east-1': 'fail' },
-    confirmation: { runs: 5 },
+    confirmation: { runs: 5, regions: ['us-east-1'] },
   }
 
   it('a candidate issue carries the evidence, the provenance, and the human gate', () => {
@@ -219,7 +307,10 @@ describe('issue bodies', () => {
     expect(issue.body).toContain('2026-07-11')
     expect(issue.body).toContain('https://example.test/run/1')
     expect(issue.body).toContain('ValidationException: nope')
-    expect(issue.body).toContain('re-run 5× per region')
+    // The confirmation line names exactly what was re-run and never claims
+    // pass-side repetition the pipeline did not perform.
+    expect(issue.body).toContain('the divergent side (us-east-1) was re-run 5× each')
+    expect(issue.body).toContain('Pass-side verdicts are single sweep observations')
     expect(issue.body).toContain('never writes `registry/splits.json`')
   })
 
@@ -345,6 +436,50 @@ function runCli(args, cwd) {
   })
 }
 
+describe('run: write ordering under confirmation', () => {
+  it('the health record and an initial report land before any confirmation run, and the report is rewritten after', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sweep-detect-'))
+    const { gt, registryPath, healthPath } = writeFixtures(dir)
+    const out = join(dir, 'report.json')
+    const args = parseArgs([
+      gt,
+      '--registry', registryPath,
+      '--record-health', healthPath,
+      '--expect', 'eu-west-2,us-east-1',
+      '--date', '2026-07-11',
+      '--out', out,
+      '--confirm',
+      '--confirm-runs', '2',
+    ])
+
+    // Snapshot both files at the moment confirmation FIRST runs: a job
+    // timeout mid-confirmation must already have both on disk.
+    let observed = null
+    const runTest = () => {
+      observed ??= {
+        health: JSON.parse(readFileSync(healthPath, 'utf8')),
+        report: JSON.parse(readFileSync(out, 'utf8')),
+      }
+      return 'fail'
+    }
+    await run(args, { runTest })
+
+    expect(observed).not.toBeNull()
+    expect(observed.health.regions['eu-west-2']).toEqual({
+      lastResolved: '2026-07-11',
+      consecutiveUnresolved: 0,
+    })
+    expect(observed.report.confirmationState).toBe('pending')
+    expect(observed.report.candidates).toHaveLength(1)
+    expect(observed.report.confirmed).toEqual([])
+
+    const final = JSON.parse(readFileSync(out, 'utf8'))
+    expect(final.confirmationState).toBe('complete')
+    expect(final.confirmed).toHaveLength(1)
+    expect(final.confirmed[0].confirmation).toEqual({ runs: 2, regions: ['us-east-1'] })
+  })
+})
+
 describe('the CLI, end to end on fixtures', () => {
   it('detects, reports, records health, and never touches the split registry', () => {
     const dir = mkdtempSync(join(tmpdir(), 'sweep-detect-'))
@@ -376,6 +511,7 @@ describe('the CLI, end to end on fixtures', () => {
     // never silent.
     expect(report.regions['sa-east-1'].resolved).toBe(false)
     expect(report.regions['sa-east-1'].reasons[0].kind).toBe('missing-results')
+    expect(report.regions['sa-east-1'].failures).toEqual([])
 
     // Health recorded: the second consecutive miss drops sa-east-1 and pages in
     // the same act; the resolved regions reset to zero.
@@ -397,6 +533,39 @@ describe('the CLI, end to end on fixtures', () => {
     expect(res.stdout).toContain('would file: Region dropped from the observed set: sa-east-1')
     expect(res.stdout).not.toContain('would file: Split candidate')
     expect(res.stdout).toContain('1 split candidate(s) (unconfirmed)')
+  })
+
+  it('a region failing only an admitted-split test resolves: admission must never spend the sick budget', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sweep-detect-'))
+    const { gt, registryPath } = writeFixtures(dir)
+    // Point the registry row at the fixture test itself: us-east-1's failure
+    // is now a recorded regional difference, matching the row's rejected side.
+    writeFileSync(registryPath, JSON.stringify(rowFor(), null, 2))
+
+    const res = runCli(
+      [
+        gt,
+        '--registry', registryPath,
+        '--expect', 'eu-west-2,us-east-1',
+        '--date', '2026-07-11',
+        '--out', join(dir, 'report.json'),
+      ],
+      dir,
+    )
+    expect(res.status, res.stderr).toBe(0)
+
+    const report = JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8'))
+    expect(report.regions['us-east-1'].resolved).toBe(true)
+    expect(report.regions['us-east-1'].counts).toMatchObject({ failed: 1, explainedFailed: 1 })
+    // The resolved region's admitted-split failure is the report's
+    // cohort-membership evidence, carrying the row it matched.
+    expect(report.regions['us-east-1'].failures).toEqual([
+      { file: TEST.file, fullName: TEST.fullName, explained: true, rowId: 'row-1' },
+    ])
+    // The admitted disagreement is not a fresh candidate, and behaving as
+    // recorded is not drift.
+    expect(report.candidates).toEqual([])
+    expect(report.drift).toEqual([])
   })
 
   it('surfaces drift on an admitted row as an issue body, still without touching the registry', () => {

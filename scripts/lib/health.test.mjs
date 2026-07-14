@@ -134,3 +134,107 @@ describe('assessRegion', () => {
     ).toThrow(/unrecognised verdict/)
   })
 })
+
+// A failure on a test with an admitted split-registry row is a recorded
+// regional difference, not sickness. The predicate is injected by the caller
+// (scripts/sweep-detect.mjs builds it from the registry), so these tests
+// drive it directly.
+describe('assessRegion with admitted splits (isExplained)', () => {
+  const explainedBelow = (dir) => (v) => v.file.startsWith(dir)
+
+  it('a region whose only definite failures are admitted splits resolves, with the failures visible in counts', () => {
+    const health = assessRegion(
+      verdicts({
+        fails: [
+          ['tests/tier3/admitted/a.test.ts', 1],
+          ['tests/tier3/admitted/b.test.ts', 1],
+          ['tests/tier3/admitted/c.test.ts', 1],
+          ['tests/tier3/admitted/d.test.ts', 1],
+        ],
+      }),
+      { isExplained: explainedBelow('tests/tier3/admitted/') },
+    )
+    expect(health.resolved).toBe(true)
+    expect(health.counts).toMatchObject({ failed: 4, explainedFailed: 4, failingFiles: 4 })
+  })
+
+  it('three admitted failures plus one novel failure resolves, and the novel one stays visible', () => {
+    // The shape ap-southeast-2 produced on 2026-07-14: three June-rollout
+    // splits plus the Sydney-only nesting-depth failure.
+    const health = assessRegion(
+      verdicts({
+        fails: [
+          ['tests/tier3/admitted/a.test.ts', 1],
+          ['tests/tier3/admitted/b.test.ts', 1],
+          ['tests/tier3/admitted/c.test.ts', 1],
+          ['tests/tier3/limits/nestingDepth.test.ts', 1],
+        ],
+      }),
+      { isExplained: explainedBelow('tests/tier3/admitted/') },
+    )
+    expect(health.resolved).toBe(true)
+    expect(health.counts).toMatchObject({ failed: 4, explainedFailed: 3 })
+  })
+
+  it('unexplained failures alone still trip both ceilings: exactly 3 unexplained files plus admitted extras resolves, a 4th tips it', () => {
+    const admitted = [
+      ['tests/tier3/admitted/a.test.ts', 1],
+      ['tests/tier3/admitted/b.test.ts', 1],
+    ]
+    const threeNovelFiles = [
+      ['tests/tier3/x.test.ts', 1],
+      ['tests/tier3/y.test.ts', 1],
+      ['tests/tier3/z.test.ts', 1],
+    ]
+    const opts = { isExplained: explainedBelow('tests/tier3/admitted/') }
+    expect(
+      assessRegion(verdicts({ fails: [...admitted, ...threeNovelFiles] }), opts).resolved,
+    ).toBe(true)
+    const fourNovelFiles = [...threeNovelFiles, ['tests/tier3/w.test.ts', 1]]
+    const over = assessRegion(verdicts({ fails: [...admitted, ...fourNovelFiles] }), opts)
+    expect(over.resolved).toBe(false)
+    expect(over.reasons.map((r) => r.kind)).toEqual(['widespread-failures'])
+  })
+
+  it('the unexplained test ceiling holds independently of file clustering', () => {
+    const oneExplained = { isExplained: (v) => v.fullName === 'tests/tier3/a.test.ts f0' }
+    // 16 failures in 2 files, one explained: 15 unexplained sits at the ceiling.
+    expect(
+      assessRegion(
+        verdicts({ fails: [['tests/tier3/a.test.ts', 8], ['tests/tier3/b.test.ts', 8]] }),
+        oneExplained,
+      ).resolved,
+    ).toBe(true)
+    // 17 failures, one explained: 16 unexplained tips it.
+    expect(
+      assessRegion(
+        verdicts({ fails: [['tests/tier3/a.test.ts', 9], ['tests/tier3/b.test.ts', 8]] }),
+        oneExplained,
+      ).resolved,
+    ).toBe(false)
+  })
+
+  it('the widespread-failures detail names both the unexplained and the explained counts', () => {
+    const health = assessRegion(
+      verdicts({
+        fails: [
+          ['tests/tier3/admitted/a.test.ts', 1],
+          ['tests/tier3/w.test.ts', 1],
+          ['tests/tier3/x.test.ts', 1],
+          ['tests/tier3/y.test.ts', 1],
+          ['tests/tier3/z.test.ts', 1],
+        ],
+      }),
+      { isExplained: explainedBelow('tests/tier3/admitted/') },
+    )
+    expect(health.resolved).toBe(false)
+    expect(health.reasons[0].detail).toMatch(/4 unexplained definite failures across 4 files/)
+    expect(health.reasons[0].detail).toMatch(/1 further failure\(s\) match admitted splits/)
+  })
+
+  it('explained-ness never applies to indeterminate verdicts: absence stays absence', () => {
+    const health = assessRegion(verdicts({ indeterminate: 7 }), { isExplained: () => true })
+    expect(health.resolved).toBe(false)
+    expect(health.reasons.map((r) => r.kind)).toEqual(['widespread-indeterminacy'])
+  })
+})

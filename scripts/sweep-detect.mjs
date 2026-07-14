@@ -183,6 +183,40 @@ export function detectRegistryDrift(verdictsByRegion, registry) {
   return findings
 }
 
+/**
+ * Every definite failure in a region's verdicts, annotated for the sweep
+ * report - { file, fullName, explained, rowId? } - so a human can adjudicate
+ * from the report alone.
+ *
+ * Every region lists every definite failure, resolved or not. An unresolved
+ * region's list is the only place its redness is legible. A resolved
+ * region's explained failures are the cohort-membership evidence an
+ * adjudicator needs to extend an admitted row to regions it does not yet
+ * name (they surface nowhere else: candidates skip admitted rows, drift
+ * checks only named regions, the health gate excludes them). And a resolved
+ * region's novel failures are NOT always candidates - a test every region
+ * fails has no pass side and never becomes one - so filtering them out here
+ * would be the one place a uniform behaviour change could hide. Nothing here
+ * may produce silence.
+ *
+ * `rowFor(verdict)` returns the admitted registry row or null; injected so
+ * explained-ness has exactly one definition, shared with the health gate.
+ */
+export function reportFailures(verdicts, rowFor) {
+  const failures = []
+  for (const v of verdicts) {
+    if (v.verdict !== 'fail') continue
+    const row = rowFor(v)
+    failures.push({
+      file: relativeTestFile(v.file),
+      fullName: v.fullName,
+      explained: Boolean(row),
+      ...(row ? { rowId: row.id } : {}),
+    })
+  }
+  return failures
+}
+
 /** Raw per-region evidence for one test: status and failure messages. */
 export function evidenceFor(docs, test) {
   const out = {}
@@ -202,32 +236,67 @@ export function evidenceFor(docs, test) {
 // ── Targeted confirmation ────────────────────────────────────────────────────
 
 /**
- * Re-run each candidate - only that test, in only the disagreeing regions -
- * `runs` times each, keeping only candidates where every re-run reproduces the
- * sweep's observation. Anything else (a flipped verdict, an indeterminate, a
- * test that did not run) discards the candidate: it was non-determinism, not a
- * split, or it could not be re-observed - and in neither case may it approach
- * the registry.
+ * Re-run each candidate - only that test, in only the regions on the
+ * divergent side - `runs` times each, keeping only candidates where every
+ * re-run reproduces the sweep's failure. Anything else (a flipped verdict, an
+ * indeterminate, a test that did not run) discards the candidate: it was
+ * non-determinism, not a split, or it could not be re-observed - and in
+ * neither case may it approach the registry.
+ *
+ * Only the fail side is re-run. A fail verdict contradicts the committed
+ * assertion and must reproduce to be believed; a pass verdict is the steady
+ * state, re-proven by every sweep of that region. Re-running the pass side
+ * too would scale confirmation with the region set instead of the divergent
+ * cohort, which on a full-region sweep costs more wall-clock than the sweep
+ * itself and busts the detect job's ceiling. The confirmation block records
+ * which regions were re-run so downstream provenance never overstates the
+ * evidence.
  *
  * `runTest(region, test)` returns a verdict string; the default runner spawns
  * the real suite (makeVitestRunner). Injected so the logic tests without AWS.
  */
-export async function confirmCandidates(candidates, { runs = 5, runTest }) {
+export async function confirmCandidates(candidates, { runs = 5, runTest, onProgress } = {}) {
   const confirmed = []
   const discarded = []
   for (const candidate of candidates) {
+    const rerunRegions = Object.keys(candidate.regions)
+      .filter((region) => candidate.regions[region] === 'fail')
+      .sort()
+    // detectSplitCandidates guarantees a mixed pass/fail verdict set. A
+    // candidate with no fail side is a broken caller, and it must fail loudly
+    // here: discarding it politely would launder the contract violation into
+    // an outcome indistinguishable from a legitimate flake.
+    if (rerunRegions.length === 0) {
+      throw new Error(
+        `confirmCandidates: candidate "${candidate.test.fullName}" has no fail-side region; ` +
+          'detectSplitCandidates guarantees a mixed verdict set',
+      )
+    }
     let failure = null
-    outer: for (const [region, original] of Object.entries(candidate.regions)) {
+    let attempts = 0
+    const started = Date.now()
+    outer: for (const region of rerunRegions) {
       for (let i = 1; i <= runs; i++) {
+        attempts++
         const verdict = await runTest(region, candidate.test)
-        if (verdict !== original) {
-          failure = `re-run ${i} in ${region} returned ${verdict}; the sweep observed ${original}`
+        if (verdict !== 'fail') {
+          failure = `re-run ${i} in ${region} returned ${verdict}; the sweep observed fail`
           break outer
         }
       }
     }
-    if (failure === null) confirmed.push({ ...candidate, confirmation: { runs } })
-    else discarded.push({ ...candidate, reason: failure })
+    // The cost data future re-tuning (--confirm-runs, parallelism) needs;
+    // attempts counts what actually ran, which an early discard cuts short.
+    console.log(
+      `confirm: ${candidate.test.fullName}: ${attempts} run(s) across ${rerunRegions.length} region(s), ` +
+        `${Math.round((Date.now() - started) / 1000)}s`,
+    )
+    if (failure === null) {
+      confirmed.push({ ...candidate, confirmation: { runs, regions: rerunRegions } })
+    } else discarded.push({ ...candidate, reason: failure })
+    // Checkpoint after every candidate: a timeout in the tail costs only the
+    // candidates not yet decided, never the ones already done.
+    onProgress?.({ confirmed: [...confirmed], discarded: [...discarded] })
   }
   return { confirmed, discarded }
 }
@@ -304,7 +373,7 @@ export function buildCandidateIssue(candidate, { date, runUrl, evidence = {} }) 
     `- **Test:** \`${test.file}\``,
     `- **Name:** ${test.fullName}`,
     confirmation
-      ? `- **Confirmation:** re-run ${confirmation.runs}× per region; every run reproduced the sweep's observation.`
+      ? `- **Confirmation:** the divergent side (${confirmation.regions.join(', ')}) was re-run ${confirmation.runs}× each; every run reproduced the failure. Pass-side verdicts are single sweep observations.`
       : `- **Confirmation:** none - this candidate has NOT been re-confirmed and must not be admitted on this evidence alone.`,
     '',
     '| Region | Verdict against the committed assertion |',
@@ -483,9 +552,14 @@ export function parseArgs(argv) {
   return args
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2))
+/**
+ * The whole pipeline for one sweep, exported so the write ordering is
+ * testable with an injected runner. `runTest` overrides the confirmation
+ * runner; omitted, --confirm spawns the real suite (makeVitestRunner).
+ */
+export async function run(args, { runTest } = {}) {
   const registry = loadRegistry(args.registry)
+  const rowFor = (v) => splitFor(registry, v)
   const docs = readSweepDir(args.dir)
   const regions = args.expect ?? Object.keys(docs).sort()
 
@@ -499,25 +573,25 @@ async function main() {
         resolved: false,
         reasons: [{ kind: 'missing-results', detail: 'the sweep produced no results file for this region' }],
         counts: null,
+        failures: [],
       }
       continue
     }
     const verdicts = classifyResults(docs[region].results, docs[region].sidecar)
-    health[region] = assessRegion(verdicts)
-    if (health[region].resolved) verdictsByRegion[region] = verdicts
+    // A failure on a test with an admitted registry row is a recorded
+    // regional difference, not sickness - it must not spend the region's
+    // sick-failure budget (see assessRegion). rowFor is the one definition of
+    // explained-ness, shared by the gate and the report.
+    const assessed = assessRegion(verdicts, { isExplained: (v) => Boolean(rowFor(v)) })
+    health[region] = {
+      ...assessed,
+      failures: reportFailures(verdicts, rowFor),
+    }
+    if (assessed.resolved) verdictsByRegion[region] = verdicts
   }
 
   const candidates = detectSplitCandidates(verdictsByRegion, registry)
   const drift = detectRegistryDrift(verdictsByRegion, registry)
-
-  let confirmed = []
-  let discarded = []
-  if (args.confirm) {
-    ;({ confirmed, discarded } = await confirmCandidates(candidates, {
-      runs: args.confirmRuns,
-      runTest: makeVitestRunner(),
-    }))
-  }
 
   // Record each region's outcome; a region dropped by this sweep pages in the
   // same act (see scripts/lib/observed.mjs for why the two must not be split).
@@ -538,28 +612,58 @@ async function main() {
     writeFileSync(args.recordHealth, JSON.stringify(healthDoc, null, 2) + '\n')
   }
 
-  const issues = [
-    ...(args.confirm ? confirmed : []).map((c) =>
-      buildCandidateIssue(c, {
-        date: args.date,
-        runUrl: args.runUrl,
-        evidence: evidenceFor(docs, c.test),
-      }),
-    ),
+  const emitIssues = (issues) => {
+    for (const issue of issues) {
+      if (args.fileIssues) {
+        const outcome = fileIssue(issue)
+        console.log(`${outcome.action}: ${issue.title}`)
+      } else {
+        console.log(`\n--- would file: ${issue.title} [${issue.labels.join(', ')}] ---\n`)
+        console.log(issue.body)
+      }
+    }
+  }
+
+  // Pages and drift file NOW, before the confirmation tail: the drop was
+  // just recorded, and the drop and the page are one act (see
+  // scripts/lib/observed.mjs) - a crash or timeout during the long
+  // confirmation loop must never leave a recorded drop unpaged. Neither
+  // depends on confirmation; only candidate issues wait for it.
+  emitIssues([
     ...drift.map((f) => buildDriftIssue(f, { date: args.date, runUrl: args.runUrl })),
     ...pages.map((p) => buildPageIssue(p, { date: args.date, runUrl: args.runUrl })),
-  ]
+  ])
 
-  if (args.out) {
+  const writeReport = (confirmationState, confirmed = [], discarded = []) => {
+    if (!args.out) return
     mkdirSync(dirname(args.out), { recursive: true })
     writeFileSync(
       args.out,
       JSON.stringify(
-        { date: args.date, regions: health, candidates, confirmed, discarded, drift, pages },
+        { date: args.date, confirmationState, regions: health, candidates, confirmed, discarded, drift, pages },
         null,
         2,
       ) + '\n',
     )
+  }
+
+  // Health, pages and an initial report all land BEFORE confirmation: the
+  // confirmation loop is the long tail of a wide sweep, and the job timeout
+  // killing the process mid-loop must cost only the not-yet-confirmed
+  // candidates - never the sweep's health record or its report artefact.
+  // Confirmation then checkpoints the report after every candidate, so the
+  // ones already decided survive too.
+  writeReport(args.confirm ? 'pending' : 'not-requested')
+
+  let confirmed = []
+  let discarded = []
+  if (args.confirm) {
+    ;({ confirmed, discarded } = await confirmCandidates(candidates, {
+      runs: args.confirmRuns,
+      runTest: runTest ?? makeVitestRunner(),
+      onProgress: (progress) => writeReport('pending', progress.confirmed, progress.discarded),
+    }))
+    writeReport('complete', confirmed, discarded)
   }
 
   const unresolved = regions.filter((r) => !health[r].resolved)
@@ -573,19 +677,19 @@ async function main() {
       `, ${drift.length} drift finding(s), ${pages.length} region(s) paged`,
   )
 
-  for (const issue of issues) {
-    if (args.fileIssues) {
-      const outcome = fileIssue(issue)
-      console.log(`${outcome.action}: ${issue.title}`)
-    } else {
-      console.log(`\n--- would file: ${issue.title} [${issue.labels.join(', ')}] ---\n`)
-      console.log(issue.body)
-    }
-  }
+  emitIssues(
+    (args.confirm ? confirmed : []).map((c) =>
+      buildCandidateIssue(c, {
+        date: args.date,
+        runUrl: args.runUrl,
+        evidence: evidenceFor(docs, c.test),
+      }),
+    ),
+  )
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((e) => {
+  run(parseArgs(process.argv.slice(2))).catch((e) => {
     console.error(e.message)
     process.exit(1)
   })
