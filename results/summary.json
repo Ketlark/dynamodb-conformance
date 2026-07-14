@@ -16,7 +16,7 @@
   "groundTruth": {
     "slug": "dynamodb",
     "rate": 100,
-    "runDate": "2026-07-06"
+    "runDate": "2026-07-13"
   },
   "targets": {
     "dynalite": {
@@ -55,7 +55,7 @@
         }
       },
       "version": "4.0.0",
-      "runDate": "2026-07-06"
+      "runDate": "2026-07-13"
     },
     "dynamodb-local": {
       "headline": {
@@ -93,7 +93,7 @@
         }
       },
       "version": "d89f8fcc6b1a",
-      "runDate": "2026-07-06"
+      "runDate": "2026-07-13"
     },
     "dynoxide": {
       "headline": {
@@ -131,7 +131,7 @@
         }
       },
       "version": "0.11.3",
-      "runDate": "2026-07-06"
+      "runDate": "2026-07-13"
     },
     "extenddb": {
       "headline": {
@@ -169,7 +169,7 @@
         }
       },
       "version": "v0.1.1",
-      "runDate": "2026-07-06"
+      "runDate": "2026-07-13"
     },
     "floci": {
       "headline": {
@@ -206,8 +206,8 @@
           }
         }
       },
-      "version": "51c2a38d394f",
-      "runDate": "2026-07-06"
+      "version": "4f69631e5601",
+      "runDate": "2026-07-13"
     },
     "localstack": {
       "headline": {
@@ -244,19 +244,19 @@
           }
         }
       },
-      "version": "2026.6.1",
-      "runDate": "2026-07-06"
+      "version": "2026.6.2",
+      "runDate": "2026-07-13"
     },
     "ministack": {
       "headline": {
         "region": "eu-west-2",
-        "rate": 86.5
+        "rate": 86.6
       },
       "regions": {
         "eu-west-2": {
-          "rate": 86.5,
-          "passed": 755,
-          "failed": 118,
+          "rate": 86.6,
+          "passed": 756,
+          "failed": 117,
           "skipped": 0,
           "indeterminate": 0,
           "count": 873,
@@ -274,16 +274,16 @@
               "i": 0
             },
             "tier3": {
-              "p": 222,
-              "f": 50,
+              "p": 223,
+              "f": 49,
               "s": 0,
               "i": 0
             }
           }
         }
       },
-      "version": "e99876293803",
-      "runDate": "2026-07-06"
+      "version": "27304b7b6d09",
+      "runDate": "2026-07-13"
     }
   }
 }
