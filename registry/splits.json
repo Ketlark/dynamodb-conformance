@@ -9,7 +9,7 @@
       "behaviour": "PutItem with an attribute value of { NULL: false }",
       "pinned": "eu-west-2",
       "firstObserved": "2026-06-09",
-      "lastRefreshed": "2026-07-06",
+      "lastRefreshed": "2026-07-14",
       "regions": {
         "eu-west-2": {
           "outcome": "accepted",
@@ -32,11 +32,194 @@
             "name": "ValidationException",
             "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
           }
+        },
+        "af-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-northeast-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-northeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-southeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-southeast-4": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-southeast-5": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-southeast-6": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ap-southeast-7": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ca-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "ca-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "eu-central-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "eu-north-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "1 validation error detected: One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "eu-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "eu-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "eu-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "eu-west-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "il-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "me-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "mx-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "sa-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "us-east-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "us-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
+        },
+        "us-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+          }
         }
       },
       "evidence": [
         "captures/2026-06-09-validation-rewording.json",
-        "captures/cross-region-latest.json"
+        "captures/cross-region-latest.json",
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29364537167"
       ],
       "admitted": {
         "by": "Martin Hicks",
@@ -82,11 +265,187 @@
             "name": "ValidationException",
             "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
           }
+        },
+        "af-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-northeast-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-northeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-southeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-southeast-4": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-southeast-5": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-southeast-6": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ap-southeast-7": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ca-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "ca-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "eu-central-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "eu-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "eu-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "eu-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "eu-west-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "il-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "me-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "mx-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "sa-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "us-east-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "us-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "us-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]; Value '' at 'tableName' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
         }
       },
       "evidence": [
         "captures/2026-06-09-validation-rewording.json",
-        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29334921301"
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29334921301",
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29364537167"
       ],
       "admitted": {
         "by": "Martin Hicks",
@@ -132,11 +491,187 @@
             "name": "ValidationException",
             "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
           }
+        },
+        "af-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-northeast-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-northeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-southeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-southeast-4": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-southeast-5": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-southeast-6": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ap-southeast-7": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ca-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "ca-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "eu-central-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "eu-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "eu-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "eu-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "eu-west-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "il-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "me-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "mx-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "sa-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "us-east-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "us-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
+        },
+        "us-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "2 validation errors detected: Value 'INVALID' at 'returnConsumedCapacity' failed to satisfy constraint: Member must satisfy enum value set: [INDEXES, TOTAL, NONE]; Value 'INVALID' at 'returnValues' failed to satisfy constraint: Member must satisfy enum value set: [ALL_NEW, UPDATED_OLD, ALL_OLD, NONE, UPDATED_NEW]"
+          }
         }
       },
       "evidence": [
         "captures/2026-06-09-validation-rewording.json",
-        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29334921301"
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29334921301",
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29364537167"
       ],
       "admitted": {
         "by": "Martin Hicks",
