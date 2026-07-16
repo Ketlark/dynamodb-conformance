@@ -100,11 +100,16 @@ jobs:
 
       - run: npm ci
 
+      # The role is assumed via us-east-1's STS endpoint, not the target
+      # region's. An opt-in region whose enablement has not fully propagated has
+      # no reachable regional STS endpoint, so assuming there blackholes for
+      # ~80 minutes of retries and the region produces nothing. The credentials
+      # are global; the suite step below sets AWS_REGION to the target region.
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ matrix.region }}
+          aws-region: us-east-1
           role-duration-seconds: 7200
 
       # The gating scope (the full suite minus the GSI lifecycle file, whose
@@ -240,6 +245,19 @@ jobs:
           name: sweep-report
           path: ground-truth/sweep-report.json
 
+      # A full sweep's confirmation tail runs well over an hour, outliving the
+      # results-bot token minted at job start (a GitHub App token lives ~1h). The
+      # health push at the end is re-authed with a freshly minted token, or it
+      # fails with "could not read Username" and the record is lost.
+      - name: Re-mint the bot token for the health push
+        id: health-token
+        if: always() && env.RECORD == 'true'
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RESULTS_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RESULTS_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
       # always(): the health record is written BEFORE the long confirmation
       # tail precisely so a timeout or crash there cannot lose it - but this
       # step inheriting the implicit success() would throw it away again.
@@ -247,9 +265,13 @@ jobs:
       # from a failed run never splits the drop-and-page act.
       - name: Commit the region health record
         if: always() && env.RECORD == 'true'
+        env:
+          BOT_TOKEN: ${{ steps.health-token.outputs.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Re-auth with the freshly minted token; checkout's persisted one has expired.
+          git remote set-url origin "https://x-access-token:${BOT_TOKEN}@github.com/${{ github.repository }}.git"
           git add registry/regions.json
           if git diff --staged --quiet; then
             echo "Region health unchanged."
