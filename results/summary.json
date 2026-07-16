@@ -32,7 +32,7 @@
   "groundTruth": {
     "slug": "dynamodb",
     "rate": 100,
-    "runDate": "2026-07-15"
+    "runDate": "2026-07-16"
   },
   "targets": {
     "dynalite": {
@@ -127,7 +127,7 @@
         }
       },
       "version": "4.0.0",
-      "runDate": "2026-07-15"
+      "runDate": "2026-07-16"
     },
     "dynamodb-local": {
       "headline": {
@@ -221,7 +221,7 @@
         }
       },
       "version": "d89f8fcc6b1a",
-      "runDate": "2026-07-15"
+      "runDate": "2026-07-16"
     },
     "dynoxide": {
       "headline": {
@@ -315,25 +315,25 @@
         }
       },
       "version": "0.11.3",
-      "runDate": "2026-07-15"
+      "runDate": "2026-07-16"
     },
     "extenddb": {
       "headline": {
         "region": "eu-central-1",
-        "rate": 83.1
+        "rate": 83
       },
       "regions": {
         "eu-central-1": {
-          "rate": 83.1,
-          "passed": 757,
-          "failed": 154,
+          "rate": 83,
+          "passed": 756,
+          "failed": 155,
           "skipped": 43,
           "indeterminate": 0,
           "count": 954,
           "tiers": {
             "tier1": {
-              "p": 406,
-              "f": 69,
+              "p": 405,
+              "f": 70,
               "s": 0,
               "i": 0
             },
@@ -352,16 +352,16 @@
           }
         },
         "eu-west-2": {
-          "rate": 83.1,
-          "passed": 757,
-          "failed": 154,
+          "rate": 83,
+          "passed": 756,
+          "failed": 155,
           "skipped": 43,
           "indeterminate": 0,
           "count": 954,
           "tiers": {
             "tier1": {
-              "p": 406,
-              "f": 69,
+              "p": 405,
+              "f": 70,
               "s": 0,
               "i": 0
             },
@@ -380,16 +380,16 @@
           }
         },
         "us-east-1": {
-          "rate": 83,
-          "passed": 756,
-          "failed": 155,
+          "rate": 82.9,
+          "passed": 755,
+          "failed": 156,
           "skipped": 43,
           "indeterminate": 0,
           "count": 954,
           "tiers": {
             "tier1": {
-              "p": 406,
-              "f": 69,
+              "p": 405,
+              "f": 70,
               "s": 0,
               "i": 0
             },
@@ -409,7 +409,7 @@
         }
       },
       "version": "v0.1.1",
-      "runDate": "2026-07-15"
+      "runDate": "2026-07-16"
     },
     "floci": {
       "headline": {
@@ -503,7 +503,7 @@
         }
       },
       "version": "d2ecc8035822",
-      "runDate": "2026-07-15"
+      "runDate": "2026-07-16"
     },
     "localstack": {
       "headline": {
@@ -597,7 +597,7 @@
         }
       },
       "version": "2026.6.3",
-      "runDate": "2026-07-15"
+      "runDate": "2026-07-16"
     },
     "ministack": {
       "headline": {
@@ -691,7 +691,7 @@
         }
       },
       "version": "0b5dba5153fc",
-      "runDate": "2026-07-15"
+      "runDate": "2026-07-16"
     }
   }
 }
