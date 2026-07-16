@@ -678,6 +678,224 @@
         "date": "2026-07-14",
         "issue": "https://github.com/paritysuite/dynamodb-conformance/issues/85"
       }
+    },
+    {
+      "id": "update-item-nesting-depth-expression-value",
+      "test": {
+        "file": "tests/tier3/limits/nestingDepth.test.ts",
+        "fullName": "Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException"
+      },
+      "behaviour": "A 32-level (leaf at level 33) ExpressionAttributeValue in an UpdateItem ConditionExpression, one level past the documented 32-level nesting cap. Regions that enforce the cap on expression values reject it up front with ValidationException; regions where that stricter validation has not yet rolled out accept the value, evaluate the condition (which is false against the test item), and surface ConditionalCheckFailedException. Same stricter-validation rollout shape as the 2026-06 changes.",
+      "pinned": "eu-west-2",
+      "firstObserved": "2026-07-15",
+      "lastRefreshed": "2026-07-15",
+      "regions": {
+        "eu-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "Nesting Levels have exceeded supported limits: Attributes in the item have nested levels beyond supported limit"
+          }
+        },
+        "af-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-northeast-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-northeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-southeast-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-southeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-southeast-4": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-southeast-5": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-southeast-6": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ap-southeast-7": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ca-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "ca-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "eu-central-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "eu-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "eu-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "eu-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "eu-west-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "il-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "me-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "mx-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "sa-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "us-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "us-east-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "us-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        },
+        "us-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ConditionalCheckFailedException",
+            "message": "The conditional request failed"
+          }
+        }
+      },
+      "evidence": [
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/29433077383",
+        "https://github.com/paritysuite/dynamodb-conformance/issues/88"
+      ],
+      "admitted": {
+        "by": "Martin Hicks",
+        "date": "2026-07-16",
+        "issue": "https://github.com/paritysuite/dynamodb-conformance/issues/88"
+      }
     }
   ]
 }

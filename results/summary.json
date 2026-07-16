@@ -286,9 +286,9 @@
           }
         },
         "us-east-1": {
-          "rate": 99,
-          "passed": 931,
-          "failed": 9,
+          "rate": 98.9,
+          "passed": 930,
+          "failed": 10,
           "skipped": 14,
           "indeterminate": 0,
           "count": 954,
@@ -306,8 +306,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 312,
-              "f": 8,
+              "p": 311,
+              "f": 9,
               "s": 0,
               "i": 0
             }
