@@ -241,6 +241,30 @@ describe('per-region scoring', () => {
     expect(headline.region).toBe('eu-central-1')
   })
 
+  it('a tie goes to a characterised region, never one the registry has no answers for', () => {
+    // ap-east-2 appears in no split row, so every verdict passes through
+    // untouched and it ties the best characterised region by knowing nothing.
+    // It sorts first alphabetically; the headline must still name a region
+    // whose recorded answers actually did the work.
+    const verdicts = suite({ verdict: 'pass' })
+    const { regions, headline } = scoreAcrossRegions(verdicts, registry, [
+      'ap-east-2',
+      ...REGIONS,
+    ])
+    expect(rateIn(regions['ap-east-2'])).toBe(100)
+    expect(headline).toEqual({ region: 'eu-central-1', rate: 100 })
+  })
+
+  it('an uncharacterised region that strictly wins still headlines: only ties are re-ordered', () => {
+    // No characterised region matches the observation, so every characterised
+    // column carries the fail while ap-east-2 passes it through. The max is
+    // the max; the tie-break must not distort a score.
+    const frankenstein = { outcome: 'accepted', detail: 'stored without normalising' }
+    const verdicts = suite({ verdict: 'pass', observed: frankenstein })
+    const { headline } = scoreAcrossRegions(verdicts, registry, ['ap-east-2', ...REGIONS])
+    expect(headline).toEqual({ region: 'ap-east-2', rate: 100 })
+  })
+
 })
 
 describe('scoreTarget', () => {

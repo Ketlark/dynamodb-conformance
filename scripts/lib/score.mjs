@@ -161,8 +161,9 @@ export function scoreAgainstRegion(verdicts, registry, region) {
  * neither is an answer.
  *
  * Returns { regions: { [region]: scored }, headline: { region, rate } }, with
- * ties broken by region name so a re-run is byte-identical (scoring is
- * deterministic and offline by requirement).
+ * ties preferring a region the registry characterises and then broken by
+ * region name, so a re-run is byte-identical (scoring is deterministic and
+ * offline by requirement).
  */
 export function scoreAcrossRegions(verdicts, registry, observedRegions) {
   if (!Array.isArray(observedRegions) || observedRegions.length === 0) {
@@ -174,11 +175,29 @@ export function scoreAcrossRegions(verdicts, registry, observedRegions) {
     regions[region] = scoreAgainstRegion(verdicts, registry, region)
   }
 
+  // Regions named in at least one split row. An observed region absent from
+  // every row is scored as if every expectation were region-invariant, so it
+  // can tie the best characterised region without the suite knowing anything
+  // region-specific about it. On a tie the headline must name a region whose
+  // recorded answers actually did the work: a Region column answering
+  // "conformant to what?" with a region the suite has never characterised is
+  // worse than no column.
+  const characterised = new Set(
+    registry.splits.flatMap((row) => Object.keys(row.regions)),
+  )
   let headline = null
   for (const region of [...observedRegions].sort()) {
     const rate = passRate(regions[region].passed, regions[region].failed)
     if (rate === null) continue
-    if (headline === null || rate > headline.rate) headline = { region, rate }
+    if (
+      headline === null ||
+      rate > headline.rate ||
+      (rate === headline.rate &&
+        characterised.has(region) &&
+        !characterised.has(headline.region))
+    ) {
+      headline = { region, rate }
+    }
   }
   // A run where nothing scored in any region has no headline rate; the first
   // region (by name) keeps the shape stable for renderers.
