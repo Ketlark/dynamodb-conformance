@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
+  cohortOf,
   GROUND_TRUTH_SLUG,
   isPublishedTarget,
   loadScoringContext,
   passRate,
+  PINNED_REGION,
+  regionLabel,
   scoreAcrossRegions,
   scoreAgainstRegion,
   scoreResults,
@@ -402,5 +405,66 @@ describe('isPublishedTarget', () => {
     expect(isPublishedTarget('dynamodb-local')).toBe(true)
     expect(isPublishedTarget('dynoxide')).toBe(true)
     expect(isPublishedTarget(GROUND_TRUTH_SLUG)).toBe(true)
+  })
+})
+
+describe('cohortOf / regionLabel', () => {
+  it('the pinned baseline is eu-west-2', () => {
+    expect(PINNED_REGION).toBe('eu-west-2')
+  })
+
+  it('reads "all regions" when every region ties at the top, not a tie-break winner', () => {
+    const entries = [
+      { region: 'af-south-1', rate: 80 },
+      { region: 'eu-west-2', rate: 80 },
+      { region: 'us-east-1', rate: 80 },
+    ]
+    const label = cohortOf(entries)
+    expect(label.kind).toBe('all')
+    expect(regionLabel(label)).toBe('all regions')
+  })
+
+  it('anchors on eu-west-2 and counts the rest when the baseline is in the top cohort', () => {
+    const entries = [
+      { region: 'af-south-1', rate: 90 },
+      { region: 'eu-west-2', rate: 90 },
+      { region: 'us-east-1', rate: 80 },
+    ]
+    const label = cohortOf(entries)
+    expect(label.kind).toBe('pinned-plus')
+    expect(regionLabel(label)).toBe('eu-west-2 + 1 region')
+  })
+
+  it('names a single region only when it beats eu-west-2', () => {
+    const entries = [
+      { region: 'eu-west-2', rate: 90 },
+      { region: 'eu-central-1', rate: 90 },
+      { region: 'us-east-1', rate: 92 },
+    ]
+    const label = cohortOf(entries)
+    expect(label.kind).toBe('beats-pinned')
+    expect(label.regions[0]).toBe('us-east-1')
+    expect(regionLabel(label)).toBe('us-east-1')
+  })
+
+  it('counts a beating cohort of several rather than crowning one representative', () => {
+    const entries = [
+      { region: 'eu-west-2', rate: 88 },
+      { region: 'ap-south-1', rate: 91 },
+      { region: 'us-east-1', rate: 91 },
+    ]
+    const label = cohortOf(entries)
+    expect(label.kind).toBe('beats-pinned')
+    expect(regionLabel(label)).toBe('2 regions')
+  })
+
+  it('ignores unrated regions and reads "-" when nothing scored', () => {
+    expect(regionLabel(cohortOf([{ region: 'eu-west-2', rate: null }]))).toBe('-')
+    const label = cohortOf([
+      { region: 'eu-west-2', rate: 75 },
+      { region: 'us-east-1', rate: null },
+    ])
+    expect(label.kind).toBe('all')
+    expect(regionLabel(label)).toBe('all regions')
   })
 })
