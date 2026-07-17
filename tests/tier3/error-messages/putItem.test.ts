@@ -1,6 +1,5 @@
 import {
   PutItemCommand,
-  GetItemCommand,
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
@@ -10,7 +9,6 @@ import {
   gsiBTableDef,
   cleanupItems,
 } from '../../../src/helpers.js'
-import { observeSplit, recordObserved } from '../../../src/observation-sink.js'
 
 const keysToCleanup = [
   { pk: { S: 'em-put-null-false' } },
@@ -249,44 +247,29 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
     }
   })
 
-  it('NULL attr with false is accepted and normalises to NULL true', async (ctx) => {
-    // AWS behaviour change captured 2026-06-08 (eu-west-2): PutItem with a
-    // { NULL: false } attribute is no longer rejected. The value is accepted
-    // and normalises to { NULL: true } on read. This is a split behaviour
-    // (registry row put-item-null-false-attribute-value): most regions still
-    // reject it, so the target's actual answer is recorded for per-region
-    // scoring.
-    await observeSplit(ctx.task, () =>
-      ddb.send(
+  it('rejects a { NULL: false } attribute value with a ValidationException', async () => {
+    // A NULL attribute value must carry true; { NULL: false } is rejected.
+    // eu-west-2 and eu-central-1 briefly accepted it and normalised to
+    // { NULL: true } on read - a per-region split the suite tracked - but by
+    // the 2026-07-17 ground-truth sweep both had reverted and every region
+    // rejects again, so the split was retired and this asserts the shared
+    // rejection. The envelope prefix ("1 validation error detected: ") still
+    // varies by region, so match the invariant clause, not the exact string.
+    try {
+      await ddb.send(
         new PutItemCommand({
           TableName: hashTableDef.name,
           Item: { pk: { S: 'em-put-null-false' }, attr1: { NULL: false } },
         }),
-      ),
-    )
-    const got = await ddb.send(
-      new GetItemCommand({
-        TableName: hashTableDef.name,
-        Key: { pk: { S: 'em-put-null-false' } },
-        ConsistentRead: true,
-      }),
-    )
-    expect(got.Item).toEqual({
-      pk: { S: 'em-put-null-false' },
-      attr1: { NULL: true },
-    })
-    // The registry row records the accepting regions' answer with this exact
-    // detail, which may only be claimed once the whole committed assertion
-    // has held - recording it before the read-back assertion would let a
-    // target that normalises attr1 but corrupts the item elsewhere carry a
-    // verified-looking observation out of a failing test, and per-region
-    // scoring would credit the accepting regions with a pass the suite
-    // itself marked red. Any earlier failure leaves the provisional detail
-    // from observeSplit, which matches no region.
-    recordObserved(ctx.task, {
-      outcome: 'accepted',
-      detail: 'stored, and normalised to { NULL: true } on read',
-    })
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toContain(
+        'One or more parameter values were invalid: Null attribute value types must have the value of true',
+      )
+    }
   })
 
   it('mixing expression and non-expression: full conflict error', async () => {
