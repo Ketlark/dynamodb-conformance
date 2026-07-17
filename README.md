@@ -1,4 +1,4 @@
-# DynamoDB Conformance Suite
+# Parity Suite: the DynamoDB conformance suite
 
 [![CI](https://github.com/paritysuite/dynamodb-conformance/actions/workflows/ci.yml/badge.svg)](https://github.com/paritysuite/dynamodb-conformance/actions/workflows/ci.yml)
 [![Licence: Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
@@ -44,7 +44,7 @@ _Scored against real DynamoDB's recorded behaviour in each observed region (`af-
 | [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 71.6% | 76.2% | af-south-1 | 675 | 211 | 68 | 4.0.0 | 2026-07-17 |
 <!-- results:end -->
 
-**Live results:** [paritysuite.org](https://paritysuite.org) - the full table for every target, tracked run over run.
+**Live results:** [the Parity Suite board](https://paritysuite.org) - the full table for every target, tracked run over run.
 
 DynamoDB is the ground truth, recorded per region. Real DynamoDB disagrees
 with itself in a handful of places (the admitted cases are in
@@ -420,9 +420,11 @@ Genuinely not covered, with no tests yet:
 
 When the suite surfaces a divergence in a target and you want to reference it from that target's own issue tracker, cite the suite as the independent source it is. The reference carries weight precisely because the suite is not the engine's own test harness: it scores every target against the same live-AWS baseline, so "the conformance suite flags this" says more than a self-written test can.
 
+**Disclosure.** This suite is maintained by the same person who maintains Dynoxide, one of the engines it scores. Dynoxide runs through the same automated matrix as every other target, against the same live-AWS ground truth. The tests and the results are in this repo.
+
 Fill in the bracketed parts. The block is the same whichever engine the finding concerns:
 
-> Found by the Parity Suite ([paritysuite.org](https://paritysuite.org)), an independent DynamoDB conformance suite that scores multiple engines against live AWS DynamoDB.
+> Found by [Parity Suite, the DynamoDB conformance suite](https://paritysuite.org) (paritysuite.org), an independent project that scores multiple engines against live AWS DynamoDB.
 >
 > **Operation:** [e.g. CreateTable]
 > **Expected (real DynamoDB, [region, e.g. eu-west-2]):** `[the exact response or error message real AWS returns]`
@@ -432,7 +434,7 @@ Fill in the bracketed parts. The block is the same whichever engine the finding 
 Two details keep the citation honest:
 
 - **Link the specific test, and pin it.** Use a commit SHA or tag (`.../blob/<sha>/...`), never `.../blob/main/...`: a `main` link rots the moment the file is reformatted or the lines shift, while a pinned link points at the exact assertion for good. Link the test itself, not a bare in-repo path, so it resolves for anyone reading the issue.
-- **Pinned test for a specific finding; site row only for a general claim.** The pinned test is durable evidence that this exact case diverged. The row on [paritysuite.org](https://paritysuite.org) is a live score that moves with every run, so it answers "how does this engine do overall", not "what broke here". Don't cite a moving score as evidence for a fixed bug.
+- **Pinned test for a specific finding; site row only for a general claim.** The pinned test is durable evidence that this exact case diverged. The row on [Parity Suite, the DynamoDB conformance suite](https://paritysuite.org) (paritysuite.org) is a live score that moves with every run, so it answers "how does this engine do overall", not "what broke here". Don't cite a moving score as evidence for a fixed bug.
 
 Real AWS DynamoDB is the ground truth here as everywhere: the "expected" line is what AWS does, captured against a named region, not what any emulator does. If the behaviour is one where regions disagree, say so and name the regions on each side - the admitted cases are in `registry/splits.json`.
 
