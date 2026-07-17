@@ -61,6 +61,17 @@ describe('observeSplit', () => {
     ).rejects.toBeInstanceOf(IndeterminateError)
     expect(t.meta.observed).toBeUndefined()
   })
+
+  it('records nothing for a rejection the registry shape cannot represent', async () => {
+    // A thrown string or a bare object has no name/message pair to record
+    // verbatim; fabricating one from coerced fields would publish an answer
+    // the target never gave. No evidence beats wrong evidence.
+    for (const rejection of ['boom', {}, { name: 'NoMessageError' }, null]) {
+      const t = task()
+      await expect(observeSplit(t, () => Promise.reject(rejection))).rejects.toBe(rejection)
+      expect(t.meta.observed).toBeUndefined()
+    }
+  })
 })
 
 describe('recordObserved', () => {
@@ -71,9 +82,10 @@ describe('recordObserved', () => {
       outcome: 'accepted',
       detail: 'stored, and normalised to { NULL: true } on read',
     })
-    expect(t.meta.observed?.outcome === 'accepted' && t.meta.observed.detail).toBe(
-      'stored, and normalised to { NULL: true } on read',
-    )
+    expect(t.meta.observed).toEqual({
+      outcome: 'accepted',
+      detail: 'stored, and normalised to { NULL: true } on read',
+    })
   })
 })
 

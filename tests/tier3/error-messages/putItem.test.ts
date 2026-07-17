@@ -271,19 +271,21 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
         ConsistentRead: true,
       }),
     )
-    // The registry row records the accepting regions' answer with this exact
-    // detail, which may only be claimed once the read-back has proven the
-    // normalisation it asserts. Accepted-but-unnormalised keeps the
-    // provisional detail from observeSplit and matches no region.
-    if (got.Item?.attr1?.NULL === true) {
-      recordObserved(ctx.task, {
-        outcome: 'accepted',
-        detail: 'stored, and normalised to { NULL: true } on read',
-      })
-    }
     expect(got.Item).toEqual({
       pk: { S: 'em-put-null-false' },
       attr1: { NULL: true },
+    })
+    // The registry row records the accepting regions' answer with this exact
+    // detail, which may only be claimed once the whole committed assertion
+    // has held - recording it before the read-back assertion would let a
+    // target that normalises attr1 but corrupts the item elsewhere carry a
+    // verified-looking observation out of a failing test, and per-region
+    // scoring would credit the accepting regions with a pass the suite
+    // itself marked red. Any earlier failure leaves the provisional detail
+    // from observeSplit, which matches no region.
+    recordObserved(ctx.task, {
+      outcome: 'accepted',
+      detail: 'stored, and normalised to { NULL: true } on read',
     })
   })
 

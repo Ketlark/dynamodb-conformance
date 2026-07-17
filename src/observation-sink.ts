@@ -74,11 +74,14 @@ export const PROVISIONAL_ACCEPTED_DETAIL = 'request accepted'
  * inside an existing try/catch or expectDynamoError unchanged.
  *
  * A resolved call is recorded as accepted with the provisional detail
- * above. A rejection is recorded with the error's name and message. A
- * failed observation (timeout, exhausted throttle, transport fault - see
- * src/indeterminate.ts) is not an answer and records nothing; the
- * indeterminate machinery classifies the test out of the denominator and
- * scoring ignores the region question entirely.
+ * above. A rejection carrying a string name and message - the shape every
+ * registry answer holds - is recorded verbatim. Anything else records
+ * nothing: a failed observation (timeout, exhausted throttle, transport
+ * fault - see src/indeterminate.ts) is not an answer, and a rejection
+ * without both fields is an answer the registry shape cannot faithfully
+ * represent, so fabricating one from coerced fields would publish something
+ * the target never said. Both fall back to the conservative no-evidence
+ * path.
  */
 export async function observeSplit<T>(task: TaskLike, run: () => Promise<T>): Promise<T> {
   try {
@@ -86,14 +89,15 @@ export async function observeSplit<T>(task: TaskLike, run: () => Promise<T>): Pr
     recordObserved(task, { outcome: 'accepted', detail: PROVISIONAL_ACCEPTED_DETAIL })
     return result
   } catch (e: unknown) {
-    if (indeterminateFrom(e) === null) {
-      const err = e as { name?: unknown; message?: unknown }
+    const err = e as { name?: unknown; message?: unknown }
+    if (
+      indeterminateFrom(e) === null &&
+      typeof err?.name === 'string' &&
+      typeof err?.message === 'string'
+    ) {
       recordObserved(task, {
         outcome: 'rejected',
-        error: {
-          name: String(err?.name),
-          message: typeof err?.message === 'string' ? err.message : '',
-        },
+        error: { name: err.name, message: err.message },
       })
     }
     throw e
