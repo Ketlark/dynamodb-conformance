@@ -1,4 +1,4 @@
-# DynamoDB Conformance Suite
+# Parity Suite: the DynamoDB conformance suite
 
 [![CI](https://github.com/paritysuite/dynamodb-conformance/actions/workflows/ci.yml/badge.svg)](https://github.com/paritysuite/dynamodb-conformance/actions/workflows/ci.yml)
 [![Licence: Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
@@ -44,7 +44,7 @@ _Scored against real DynamoDB's recorded behaviour in each observed region (`af-
 | [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 71.6% | 76.2% | af-south-1 | 675 | 211 | 68 | 4.0.0 | 2026-07-17 |
 <!-- results:end -->
 
-**Live results:** [paritysuite.org](https://paritysuite.org) - the full table for every target, tracked run over run.
+**Live results:** [the Parity Suite board](https://paritysuite.org) - the full table for every target, tracked run over run.
 
 DynamoDB is the ground truth, recorded per region. Real DynamoDB disagrees
 with itself in a handful of places (the admitted cases are in
