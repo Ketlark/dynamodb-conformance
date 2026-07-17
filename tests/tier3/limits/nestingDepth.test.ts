@@ -5,6 +5,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { observeSplit } from '../../../src/observation-sink.js'
 
 // Wrap a scalar leaf in `depth` single-key maps: depth=1 -> { M: { n: { S: 'leaf' } } }.
 // Real DynamoDB caps document nesting at 32 levels, counting the attribute itself as
@@ -88,18 +89,24 @@ describe('Nesting depth — 32-level document limit', { tags: ['put-item', 'upda
     )
   })
 
-  it('rejects a 32-level ExpressionAttributeValue with ValidationException', async () => {
+  it('rejects a 32-level ExpressionAttributeValue with ValidationException', async (ctx) => {
+    // Split behaviour (registry row update-item-nesting-depth-expression-value):
+    // regions without the stricter validation accept the value and fail the
+    // condition instead, so what the target actually returned is recorded for
+    // per-region scoring.
     await expectDynamoError(
       () =>
-        ddb.send(
-          new UpdateItemCommand({
-            TableName: hashTableDef.name,
-            Key: { pk: { S: 'nest-cond-eav' } },
-            UpdateExpression: 'SET touched = :t',
-            ConditionExpression: '#d = :deep',
-            ExpressionAttributeNames: { '#d': 'data' },
-            ExpressionAttributeValues: { ':t': { S: 'y' }, ':deep': deepMap(32) },
-          }),
+        observeSplit(ctx.task, () =>
+          ddb.send(
+            new UpdateItemCommand({
+              TableName: hashTableDef.name,
+              Key: { pk: { S: 'nest-cond-eav' } },
+              UpdateExpression: 'SET touched = :t',
+              ConditionExpression: '#d = :deep',
+              ExpressionAttributeNames: { '#d': 'data' },
+              ExpressionAttributeValues: { ':t': { S: 'y' }, ':deep': deepMap(32) },
+            }),
+          ),
         ),
       'ValidationException',
       NEST_MSG,

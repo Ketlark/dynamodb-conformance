@@ -48,8 +48,11 @@ const rowFor = (test = TEST) => ({
       firstObserved: '2026-06-09',
       lastRefreshed: '2026-07-06',
       regions: {
-        'eu-west-2': { outcome: 'accepted' },
-        'us-east-1': { outcome: 'rejected' },
+        'eu-west-2': { outcome: 'accepted', detail: 'stored' },
+        'us-east-1': {
+          outcome: 'rejected',
+          error: { name: 'ValidationException', message: 'not here' },
+        },
       },
     },
   ],

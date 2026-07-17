@@ -3,6 +3,35 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
+## 2026-07-17
+
+2.0.0 shipped per-region scoring with its evidence half missing. The scoring
+logic could compare a target's recorded answer against each region's, but
+nothing in the pipeline ever recorded one: no test wrote the observation and
+the classifier never read it, so a fail could never be credited to a region
+the target matches, and per-region scoring could only subtract from the
+pinned score. The movement the 2.0.0 notes predicted for engines matching
+us-east-1 on the `{ NULL: false }` split could not have happened.
+
+What changed:
+
+- The split tests now record what the target actually answered
+  (`src/observation-sink.ts`), in the same shape the registry stores each
+  region's answer, and the classifier carries it onto the verdict. An engine
+  that does what us-east-1 does is now scored as passing in us-east-1.
+  Evidence only ever redeems a committed fail: a pass keeps the committed
+  assertion's deliberate wording tolerance and is never held to the
+  byte-exact recorded string. Committed results predate the capture, so
+  published scores move on each target's next run, not in this change.
+- Headline ties now prefer a region the registry characterises. A region
+  absent from every split row ties the top score by having nothing recorded
+  about it, and the Region column must not answer "conformant to what?" with
+  a region the suite knows nothing about. Only the label is affected; a
+  strictly higher score still wins whatever its source.
+- A tooling test now asserts every tracked file is text, after a raw NUL
+  byte used as a delimiter in one source file made grep classify the file as
+  binary and silently skip it.
+
 ## 2026-07-13 (2.0.0)
 
 The scores barely move in this release, but what they mean has changed.

@@ -3,6 +3,7 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { observeSplit } from '../../../src/observation-sink.js'
 
 describe('PutItem — validation ordering', { tags: ['put-item', 'data-plane', 'negative-path'] }, () => {
   it('empty TableName reports tableName constraint (stops early)', async () => {
@@ -27,14 +28,19 @@ describe('PutItem — validation ordering', { tags: ['put-item', 'data-plane', '
     }
   })
 
-  it('empty TableName with invalid ReturnValues reports only tableName', async () => {
+  it('empty TableName with invalid ReturnValues reports only tableName', async (ctx) => {
+    // Split behaviour (registry row put-item-validation-error-aggregation):
+    // the answer differs by region, so what the target actually returned is
+    // recorded for per-region scoring.
     try {
-      await ddb.send(
-        new PutItemCommand({
-          TableName: '',
-          ReturnValues: 'INVALID',
-          Item: {},
-        } as any),
+      await observeSplit(ctx.task, () =>
+        ddb.send(
+          new PutItemCommand({
+            TableName: '',
+            ReturnValues: 'INVALID',
+            Item: {},
+          } as any),
+        ),
       )
       expect.unreachable('should have thrown')
     } catch (e: unknown) {

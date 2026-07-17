@@ -15,6 +15,7 @@ import {
   recordRunLevel,
   stampIndeterminateMarker,
 } from './indeterminate-sink.js'
+import { clearObservedMarker } from './observation-sink.js'
 
 // Provision the shared tables once per run.
 //
@@ -59,12 +60,14 @@ beforeAll(async () => {
   process.env.CONFORMANCE_PROVISIONED = '1'
 }, 180_000)
 
-// Clear the indeterminate marker at the start of every attempt. task.meta lives
+// Clear both task.meta markers at the start of every attempt. task.meta lives
 // on the task, not the attempt, and the real-AWS job runs with retry enabled: a
 // marker stamped on a failing first attempt would otherwise survive into a
-// passing retry and silently demote a healthy test out of the denominator.
+// passing retry - an indeterminate marker silently demoting a healthy test out
+// of the denominator, a stale observation misreporting what the retry saw.
 beforeEach((ctx) => {
   clearIndeterminateMarker(ctx.task)
+  clearObservedMarker(ctx.task)
 })
 
 // Stamp the marker when the attempt that just finished failed on a failed

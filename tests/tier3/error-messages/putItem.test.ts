@@ -10,6 +10,7 @@ import {
   gsiBTableDef,
   cleanupItems,
 } from '../../../src/helpers.js'
+import { observeSplit, recordObserved } from '../../../src/observation-sink.js'
 
 const keysToCleanup = [
   { pk: { S: 'em-put-null-false' } },
@@ -248,15 +249,20 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
     }
   })
 
-  it('NULL attr with false is accepted and normalises to NULL true', async () => {
+  it('NULL attr with false is accepted and normalises to NULL true', async (ctx) => {
     // AWS behaviour change captured 2026-06-08 (eu-west-2): PutItem with a
     // { NULL: false } attribute is no longer rejected. The value is accepted
-    // and normalises to { NULL: true } on read.
-    await ddb.send(
-      new PutItemCommand({
-        TableName: hashTableDef.name,
-        Item: { pk: { S: 'em-put-null-false' }, attr1: { NULL: false } },
-      }),
+    // and normalises to { NULL: true } on read. This is a split behaviour
+    // (registry row put-item-null-false-attribute-value): most regions still
+    // reject it, so the target's actual answer is recorded for per-region
+    // scoring.
+    await observeSplit(ctx.task, () =>
+      ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: { pk: { S: 'em-put-null-false' }, attr1: { NULL: false } },
+        }),
+      ),
     )
     const got = await ddb.send(
       new GetItemCommand({
@@ -268,6 +274,18 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
     expect(got.Item).toEqual({
       pk: { S: 'em-put-null-false' },
       attr1: { NULL: true },
+    })
+    // The registry row records the accepting regions' answer with this exact
+    // detail, which may only be claimed once the whole committed assertion
+    // has held - recording it before the read-back assertion would let a
+    // target that normalises attr1 but corrupts the item elsewhere carry a
+    // verified-looking observation out of a failing test, and per-region
+    // scoring would credit the accepting regions with a pass the suite
+    // itself marked red. Any earlier failure leaves the provisional detail
+    // from observeSplit, which matches no region.
+    recordObserved(ctx.task, {
+      outcome: 'accepted',
+      detail: 'stored, and normalised to { NULL: true } on read',
     })
   })
 

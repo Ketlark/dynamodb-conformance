@@ -111,16 +111,20 @@ export function passRate(passed, failed) {
  * For a test with a registry row naming this region, the region's recorded
  * answer replaces the committed assertion as the expectation:
  *
- * - a verdict carrying `observed` (the target's recorded answer for the split
- *   behaviour) passes exactly when the observation matches the region's
- *   recorded answer;
- * - a pass without an observation matched the committed assertion, which
- *   encodes the row's pinned answer, so it passes here exactly when this
- *   region records that same answer;
+ * - a pass matched the committed assertion, which encodes the row's pinned
+ *   answer - deliberately tolerant of wording variance - so it passes here
+ *   exactly when this region records the pinned answer. Evidence never
+ *   revokes a committed pass: the committed assertion is the suite's own
+ *   definition of matching the pinned side, and holding a pass to the
+ *   byte-exact recorded string as well would silently tighten every split
+ *   test to a strictness the suite never asserts anywhere else;
+ * - a fail carrying `observed` (the target's recorded answer for the split
+ *   behaviour) is redeemed exactly when the observation matches this
+ *   region's recorded answer, byte-exactly - a region match is only ever
+ *   earned on evidence;
  * - a fail without an observation is evidence of nothing beyond "not the
- *   pinned answer". It stays a fail: a region match is only ever awarded on
- *   evidence, and the conservative reading can only under-score a target,
- *   never launder a non-conformance into a pass.
+ *   pinned answer". It stays a fail: the conservative reading can only
+ *   under-score a target, never launder a non-conformance into a pass.
  *
  * Skips and indeterminates pass through untouched - an absence is the same
  * absence in every region - as does any test in a region the row does not
@@ -132,14 +136,14 @@ export function verdictsForRegion(verdicts, registry, region) {
     const row = splitFor(registry, v)
     const expected = row?.regions?.[region]
     if (!expected) return v
-    if (v.observed !== undefined) {
-      return { ...v, verdict: sameObservation(v.observed, expected) ? 'pass' : 'fail' }
-    }
     if (v.verdict === 'pass') {
       return {
         ...v,
         verdict: sameObservation(expected, row.regions[row.pinned]) ? 'pass' : 'fail',
       }
+    }
+    if (v.observed !== undefined) {
+      return { ...v, verdict: sameObservation(v.observed, expected) ? 'pass' : 'fail' }
     }
     return v
   })
@@ -161,8 +165,9 @@ export function scoreAgainstRegion(verdicts, registry, region) {
  * neither is an answer.
  *
  * Returns { regions: { [region]: scored }, headline: { region, rate } }, with
- * ties broken by region name so a re-run is byte-identical (scoring is
- * deterministic and offline by requirement).
+ * ties preferring a region the registry characterises and then broken by
+ * region name, so a re-run is byte-identical (scoring is deterministic and
+ * offline by requirement).
  */
 export function scoreAcrossRegions(verdicts, registry, observedRegions) {
   if (!Array.isArray(observedRegions) || observedRegions.length === 0) {
@@ -174,11 +179,29 @@ export function scoreAcrossRegions(verdicts, registry, observedRegions) {
     regions[region] = scoreAgainstRegion(verdicts, registry, region)
   }
 
+  // Regions named in at least one split row. An observed region absent from
+  // every row is scored as if every expectation were region-invariant, so it
+  // can tie the best characterised region without the suite knowing anything
+  // region-specific about it. On a tie the headline must name a region whose
+  // recorded answers actually did the work: a Region column answering
+  // "conformant to what?" with a region the suite has never characterised is
+  // worse than no column.
+  const characterised = new Set(
+    registry.splits.flatMap((row) => Object.keys(row.regions)),
+  )
   let headline = null
   for (const region of [...observedRegions].sort()) {
     const rate = passRate(regions[region].passed, regions[region].failed)
     if (rate === null) continue
-    if (headline === null || rate > headline.rate) headline = { region, rate }
+    if (
+      headline === null ||
+      rate > headline.rate ||
+      (rate === headline.rate &&
+        characterised.has(region) &&
+        !characterised.has(headline.region))
+    ) {
+      headline = { region, rate }
+    }
   }
   // A run where nothing scored in any region has no headline rate; the first
   // region (by name) keeps the shape stable for renderers.

@@ -30,18 +30,18 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 ## Results
 
 <!-- results:start -->
-_Scored against real DynamoDB's recorded behaviour in each observed region (`eu-central-1`, `eu-west-2`, `us-east-1`); a target's Total is its best-matching region, named in the Region column. Behaviour varies by region and over time, so these are point-in-time figures. `ap-southeast-2` has been dropped from the observed set and is not scored against._
+_Scored against real DynamoDB's recorded behaviour in each observed region (`af-south-1`, `ap-east-1`, `ap-east-2`, `ap-northeast-1`, `ap-northeast-2`, `ap-northeast-3`, `ap-south-1`, `ap-south-2`, `ap-southeast-1`, `ap-southeast-2`, `ap-southeast-3`, `ap-southeast-4`, `ap-southeast-5`, `ap-southeast-6`, `ap-southeast-7`, `ca-central-1`, `ca-west-1`, `eu-central-1`, `eu-central-2`, `eu-north-1`, `eu-south-1`, `eu-south-2`, `eu-west-1`, `eu-west-2`, `eu-west-3`, `il-central-1`, `me-central-1`, `mx-central-1`, `sa-east-1`, `us-east-1`, `us-east-2`, `us-west-1`, `us-west-2`); a target's Total is its best-matching region, named in the Region column. Behaviour varies by region and over time, so these are point-in-time figures. `me-south-1` has been dropped from the observed set and is not scored against._
 
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Region | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|--------|------|------|------|---------|------|
 | [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | all | 954 | 0 | 0 | live (AWS) | 2026-07-16 |
 | [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 99.3% | 98.4% | 99.4% | eu-central-1 | 934 | 6 | 14 | 0.11.3 | 2026-07-16 |
 | [Ministack](https://github.com/ministackorg/ministack) | 89.1% | 87.4% | 79.4% | 85.5% | eu-central-1 | 816 | 138 | 0 | 0b5dba5153fc | 2026-07-16 |
-| [LocalStack](https://github.com/localstack/localstack) | 93.5% | 86.1% | 71.6% | 84.9% | eu-central-1 | 803 | 143 | 8 | 2026.6.3 | 2026-07-16 |
-| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 92.2% | 82.9% | 71.3% | 83.6% | eu-central-1 | 787 | 154 | 13 | d89f8fcc6b1a | 2026-07-16 |
+| [LocalStack](https://github.com/localstack/localstack) | 93.5% | 86.1% | 71.6% | 84.9% | af-south-1 | 803 | 143 | 8 | 2026.6.3 | 2026-07-16 |
+| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 92.2% | 82.9% | 71.3% | 83.6% | af-south-1 | 787 | 154 | 13 | d89f8fcc6b1a | 2026-07-16 |
 | [ExtendDB](https://github.com/ExtendDB/extenddb) | 85.3% | 86.2% | 78.4% | 83.0% | eu-central-1 | 756 | 155 | 43 | v0.1.1 | 2026-07-16 |
 | [Floci](https://github.com/floci-io/floci) | 91.4% | 76.0% | 71.3% | 82.1% | eu-central-1 | 776 | 169 | 9 | d2ecc8035822 | 2026-07-16 |
-| [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 70.6% | 75.8% | eu-central-1 | 672 | 214 | 68 | 4.0.0 | 2026-07-16 |
+| [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 70.6% | 75.8% | af-south-1 | 672 | 214 | 68 | 4.0.0 | 2026-07-16 |
 <!-- results:end -->
 
 **Live results:** [paritysuite.org](https://paritysuite.org) - the full table for every target, tracked run over run.

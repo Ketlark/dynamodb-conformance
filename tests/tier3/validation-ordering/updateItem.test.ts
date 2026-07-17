@@ -3,6 +3,7 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { observeSplit } from '../../../src/observation-sink.js'
 
 describe('UpdateItem — validation ordering', { tags: ['update-item', 'data-plane', 'negative-path'] }, () => {
   it('empty TableName reports only tableName constraint', async () => {
@@ -26,15 +27,20 @@ describe('UpdateItem — validation ordering', { tags: ['update-item', 'data-pla
     }
   })
 
-  it('rejects invalid ReturnValues (UpdateItem reports the first enum error)', async () => {
+  it('rejects invalid ReturnValues (UpdateItem reports the first enum error)', async (ctx) => {
+    // Split behaviour (registry row update-item-validation-error-aggregation):
+    // the answer differs by region, so what the target actually returned is
+    // recorded for per-region scoring.
     try {
-      await ddb.send(
-        new UpdateItemCommand({
-          TableName: '_conformance_valid_table_name',
-          Key: { pk: { S: 'test' } },
-          ReturnValues: 'INVALID',
-          ReturnConsumedCapacity: 'INVALID',
-        } as any),
+      await observeSplit(ctx.task, () =>
+        ddb.send(
+          new UpdateItemCommand({
+            TableName: '_conformance_valid_table_name',
+            Key: { pk: { S: 'test' } },
+            ReturnValues: 'INVALID',
+            ReturnConsumedCapacity: 'INVALID',
+          } as any),
+        ),
       )
       expect.unreachable('should have thrown')
     } catch (e: unknown) {
