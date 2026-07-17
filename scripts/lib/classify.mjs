@@ -19,8 +19,12 @@
 // the target while an indeterminate is a property of the run.
 //
 // Takes documents, not paths, so the same function serves both namespaces:
-// target results (results/<slug>.json) and per-region ground truth. Pure and
-// dependency-free, mirroring scripts/lib/drift.mjs.
+// target results (results/<slug>.json) and per-region ground truth. Pure, with
+// one import: the observation shape lives in registry.mjs next to
+// sameObservation, so both sides of that comparison validate against the same
+// definition.
+
+import { isWellFormedObservation } from './registry.mjs'
 
 const SKIP_STATUSES = new Set(['skipped', 'pending', 'todo', 'disabled'])
 
@@ -54,12 +58,7 @@ function runLevelEntries(sidecar) {
 function observedEntry(ar) {
   const observed = ar.meta?.observed
   if (observed === undefined) return {}
-  const wellFormed =
-    observed?.outcome === 'rejected'
-      ? typeof observed.error?.name === 'string' &&
-        typeof observed.error?.message === 'string'
-      : observed?.outcome === 'accepted' && typeof observed.detail === 'string'
-  if (!wellFormed) {
+  if (!isWellFormedObservation(observed)) {
     throw new Error(`malformed observed marker on ${ar.fullName}`)
   }
   return { observed }

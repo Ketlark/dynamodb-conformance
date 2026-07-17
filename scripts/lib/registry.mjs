@@ -39,6 +39,24 @@ export function sameObservation(a, b) {
   return stableKey(a ?? null) === stableKey(b ?? null)
 }
 
+/**
+ * The shape of one recorded answer, shared by a registry row's per-region
+ * observations and the observed marker a split test stamps
+ * (src/observation-sink.ts). Defined once, next to sameObservation, because
+ * both sides of that comparison must hold the same shape: a malformed answer
+ * on either side can never match anything, which silently turns region
+ * matches into misses.
+ */
+export function isWellFormedObservation(observation) {
+  if (observation?.outcome === 'rejected') {
+    return (
+      typeof observation.error?.name === 'string' &&
+      typeof observation.error?.message === 'string'
+    )
+  }
+  return observation?.outcome === 'accepted' && typeof observation.detail === 'string'
+}
+
 const DATE_SHAPE = /^\d{4}-\d{2}-\d{2}$/
 
 function fail(id, problem) {
@@ -92,6 +110,9 @@ export function validateRegistry(doc, { knownRegions } = {}) {
       const observation = row.regions[region]
       if (observation === null || typeof observation !== 'object') {
         fail(id, `region ${region} carries no observation`)
+      }
+      if (!isWellFormedObservation(observation)) {
+        fail(id, `region ${region} carries a malformed observation`)
       }
     }
 

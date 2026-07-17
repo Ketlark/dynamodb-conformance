@@ -97,6 +97,25 @@ describe('validateRegistry', () => {
     )
   })
 
+  it('rejects a malformed observation: a shape that can match nothing must not load', () => {
+    // The classifier validates the test-side observation against the same
+    // shape (scripts/lib/classify.mjs), so a mismatch cannot hide on either
+    // side of the sameObservation comparison.
+    const malformed = [
+      { outcome: 'rejected' },
+      { outcome: 'rejected', error: { name: 'ValidationException' } },
+      { outcome: 'accepted' },
+      { outcome: 'maybe', detail: 'x' },
+    ]
+    for (const observation of malformed) {
+      expect(() =>
+        validateRegistry({
+          splits: [row({ regions: { 'eu-west-2': observation, 'us-east-1': rejected } })],
+        }),
+      ).toThrow(/malformed observation/)
+    }
+  })
+
   it('rejects a row whose pinned side is absent or not a recorded region', () => {
     expect(() => validateRegistry({ splits: [row({ pinned: undefined })] })).toThrow(
       /pinned must name a region/,

@@ -2,8 +2,8 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Every tracked file must be text. A single raw control byte - one NUL is
-// enough - makes grep classify the file as binary and silently skip it, and
+// Every tracked file must be text. A single raw NUL byte is enough to make
+// grep classify the file as binary and silently skip it, and
 // file(1) report it as data, so searches for symbols defined there return
 // importers but never the definition. That failure mode is invisible in a
 // diff and in review (the byte renders as nothing), so it is asserted here
