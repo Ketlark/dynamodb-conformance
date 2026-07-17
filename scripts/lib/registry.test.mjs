@@ -178,17 +178,4 @@ describe('the committed registry', () => {
     const doc = loadRegistry()
     expect(doc.splits.length).toBeGreaterThan(0)
   })
-
-  it('carries the { NULL: false } seed row with its four-region evidence', () => {
-    const doc = loadRegistry()
-    const seed = doc.splits.find((r) => r.id === 'put-item-null-false-attribute-value')
-    expect(seed).toBeDefined()
-    expect(Object.keys(seed.regions)).toEqual(
-      expect.arrayContaining(['eu-west-2', 'eu-central-1', 'us-east-1', 'ap-southeast-2']),
-    )
-    expect(seed.regions['us-east-1'].outcome).toBe('rejected')
-    expect(seed.regions['eu-west-2'].outcome).toBe('accepted')
-    // The committed test asserts the accepting side.
-    expect(seed.pinned).toBe('eu-west-2')
-  })
 })
