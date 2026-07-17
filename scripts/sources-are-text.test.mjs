@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 // Every tracked file must be text. A single raw NUL byte is enough to make
@@ -16,7 +16,12 @@ const tracked = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' })
 
 describe('tracked files are text', () => {
   it('no tracked file contains a NUL byte', () => {
-    const binary = tracked.filter((path) => readFileSync(path).includes(0))
+    // git ls-files reads the index, so a tracked path can be absent from the
+    // worktree mid-refactor; skip it rather than crash, since the deletion
+    // is git's to report.
+    const binary = tracked.filter(
+      (path) => existsSync(path) && readFileSync(path).includes(0),
+    )
     expect(binary).toEqual([])
   })
 })

@@ -102,14 +102,10 @@ describe('classifyResults', () => {
   })
 
   it('rejects a malformed observed marker loudly rather than mis-scoring a region match', () => {
-    const cases = [
-      { outcome: 'rejected' },
-      { outcome: 'rejected', error: { name: 'ValidationException' } },
-      { outcome: 'accepted' },
-      { outcome: 'maybe', detail: 'x' },
-      'garbage',
-    ]
-    for (const observed of cases) {
+    // Exhaustive shape cases live with isWellFormedObservation in
+    // registry.test.mjs; this proves the classifier wires the check in and
+    // names the offending test.
+    for (const observed of [{ outcome: 'rejected' }, 'garbage']) {
       expect(() => classifyResults(doc([{ status: 'failed', meta: { observed } }]))).toThrow(
         /malformed observed marker/,
       )

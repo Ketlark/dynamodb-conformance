@@ -107,11 +107,7 @@ export function validateRegistry(doc, { knownRegions } = {}) {
       if (knownRegions && !knownRegions.includes(region)) {
         fail(id, `unknown region "${region}"`)
       }
-      const observation = row.regions[region]
-      if (observation === null || typeof observation !== 'object') {
-        fail(id, `region ${region} carries no observation`)
-      }
-      if (!isWellFormedObservation(observation)) {
+      if (!isWellFormedObservation(row.regions[region])) {
         fail(id, `region ${region} carries a malformed observation`)
       }
     }
