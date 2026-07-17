@@ -3,24 +3,24 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
-## 2026-07-17
+## 2026-07-17 (2.0.0)
 
-2.0.0 shipped per-region scoring with its evidence half missing. The scoring
-logic could compare a target's recorded answer against each region's, but
-nothing in the pipeline ever recorded one: no test wrote the observation and
-the classifier never read it, so a fail could never be credited to a region
-the target matches, and per-region scoring could only subtract from the
-pinned score. The movement the 2.0.0 notes predicted for engines matching
-us-east-1 on the `{ NULL: false }` split could not have happened.
+Per-region scoring lands complete. 2.0.0-pre put the scoring logic in place,
+comparing each target against every region's recorded answer, but the
+evidence half was never wired: no test recorded what a target actually
+answered and the classifier never read one, so a fail could not be credited
+to a region the target matched and the score could only ever subtract. 2.0.0
+closes that loop, and the seed split runs its whole lifecycle in the same
+release.
 
 What changed:
 
 - The split tests now record what the target actually answered
   (`src/observation-sink.ts`), in the same shape the registry stores each
   region's answer, and the classifier carries it onto the verdict. An engine
-  that does what us-east-1 does is now scored as passing in us-east-1.
-  Evidence only ever redeems a committed fail: a pass keeps the committed
-  assertion's deliberate wording tolerance and is never held to the
+  that matches a rejecting region on a split is now scored as passing in that
+  region. Evidence only ever redeems a committed fail: a pass keeps the
+  committed assertion's deliberate wording tolerance and is never held to the
   byte-exact recorded string. Committed results predate the capture, so
   published scores move on each target's next run, not in this change.
 - Headline ties now prefer a region the registry characterises. A region
@@ -28,11 +28,16 @@ What changed:
   about it, and the Region column must not answer "conformant to what?" with
   a region the suite knows nothing about. Only the label is affected; a
   strictly higher score still wins whatever its source.
+- The seeded `{ NULL: false }` split closed its own loop. eu-west-2 and
+  eu-central-1 were the last regions accepting it; by the 2026-07-17 sweep
+  both reject it again, so every region agrees, the split is retired, and its
+  test asserts the shared rejection. The detect, admit and reconcile path the
+  pre-release introduced, exercised end to end within days.
 - A tooling test now asserts every tracked file is text, after a raw NUL
   byte used as a delimiter in one source file made grep classify the file as
   binary and silently skip it.
 
-## 2026-07-13 (2.0.0)
+## 2026-07-13 (2.0.0-pre)
 
 The scores barely move in this release, but what they mean has changed.
 
