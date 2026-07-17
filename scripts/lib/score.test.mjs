@@ -116,33 +116,34 @@ describe('scoreVerdicts', () => {
   })
 })
 
-describe('per-region scoring', () => {
-  const accepted = { outcome: 'accepted', detail: 'stored and normalised' }
-  const rejected = {
-    outcome: 'rejected',
-    error: { name: 'ValidationException', message: 'must have the value of true' },
-  }
-  // One admitted split: the committed test asserts the accepting side
-  // (pinned eu-west-2), eu-central-1 agrees with it, us-east-1 rejects.
-  const registry = {
-    splits: [
-      {
-        id: 'example-split',
-        test: { file: 'tests/tier3/split.test.ts', fullName: 'suite splits' },
-        pinned: 'eu-west-2',
-        regions: { 'eu-west-2': accepted, 'eu-central-1': accepted, 'us-east-1': rejected },
-      },
-    ],
-  }
-  const REGIONS = ['eu-west-2', 'eu-central-1', 'us-east-1']
+// Shared split fixtures for the per-region describes below. One admitted
+// split: the committed test asserts the accepting side (pinned eu-west-2),
+// eu-central-1 agrees with it, us-east-1 rejects.
+const accepted = { outcome: 'accepted', detail: 'stored and normalised' }
+const rejected = {
+  outcome: 'rejected',
+  error: { name: 'ValidationException', message: 'must have the value of true' },
+}
+const registry = {
+  splits: [
+    {
+      id: 'example-split',
+      test: { file: 'tests/tier3/split.test.ts', fullName: 'suite splits' },
+      pinned: 'eu-west-2',
+      regions: { 'eu-west-2': accepted, 'eu-central-1': accepted, 'us-east-1': rejected },
+    },
+  ],
+}
+const REGIONS = ['eu-west-2', 'eu-central-1', 'us-east-1']
+const rateIn = (scored) => passRate(scored.passed, scored.failed)
 
+describe('per-region scoring', () => {
   // A suite of verdicts: `others` region-invariant passes, plus the split test.
   const suite = (splitVerdict) => [
     { file: '/repo/tests/tier1/a.test.ts', fullName: 'a', verdict: 'pass' },
     { file: '/repo/tests/tier2/b.test.ts', fullName: 'b', verdict: 'pass' },
     { file: '/repo/tests/tier3/split.test.ts', fullName: 'suite splits', ...splitVerdict },
   ]
-  const rateIn = (scored) => passRate(scored.passed, scored.failed)
 
   it('an engine matching every region scores 100% everywhere and 100% headline', () => {
     const verdicts = suite({ verdict: 'pass' })
@@ -293,23 +294,6 @@ describe('observed evidence through the pipeline', () => {
   // in the pipeline populated it. Here the observation enters through the raw
   // document's `assertionResults[].meta`, the way a run's results file
   // carries what src/observation-sink.ts stamped.
-  const rejected = {
-    outcome: 'rejected',
-    error: { name: 'ValidationException', message: 'must have the value of true' },
-  }
-  const accepted = { outcome: 'accepted', detail: 'stored and normalised' }
-  const registry = {
-    splits: [
-      {
-        id: 'example-split',
-        test: { file: 'tests/tier3/split.test.ts', fullName: 'suite splits' },
-        pinned: 'eu-west-2',
-        regions: { 'eu-west-2': accepted, 'eu-central-1': accepted, 'us-east-1': rejected },
-      },
-    ],
-  }
-  const REGIONS = ['eu-west-2', 'eu-central-1', 'us-east-1']
-  const rateIn = (scored) => passRate(scored.passed, scored.failed)
 
   // One region-invariant pass plus the split test, as a raw Vitest document
   // with the runner's absolute file path.

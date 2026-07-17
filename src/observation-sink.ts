@@ -58,28 +58,32 @@ export function recordObserved(task: TaskLike, observation: Observation): void {
 }
 
 /**
+ * The detail recorded for an acceptance before anything about it is
+ * verified. It must match no registry row's recorded answer, so a
+ * provisional stamp can never falsely claim a verified region match; a
+ * tooling test (scripts/registry-wiring.test.mjs) enforces that no
+ * hand-admitted row ever records this detail. A test that goes on to verify
+ * a row's accepted behaviour upgrades the stamp via recordObserved.
+ */
+export const PROVISIONAL_ACCEPTED_DETAIL = 'request accepted'
+
+/**
  * Run one split operation, recording what the target actually answered
  * before the committed assertion gets a chance to throw. Transparent:
  * resolves and rejects exactly as `run` does, so it wraps the operation
  * inside an existing try/catch or expectDynamoError unchanged.
  *
- * A resolved call is recorded as accepted with `acceptedDetail` (default
- * "request accepted", which deliberately matches no registry row - record a
- * row's own detail only once its claim is verified, via recordObserved). A
- * rejection is recorded with the error's name and message. A failed
- * observation (timeout, exhausted throttle, transport fault - see
+ * A resolved call is recorded as accepted with the provisional detail
+ * above. A rejection is recorded with the error's name and message. A
+ * failed observation (timeout, exhausted throttle, transport fault - see
  * src/indeterminate.ts) is not an answer and records nothing; the
  * indeterminate machinery classifies the test out of the denominator and
  * scoring ignores the region question entirely.
  */
-export async function observeSplit<T>(
-  task: TaskLike,
-  run: () => Promise<T>,
-  acceptedDetail = 'request accepted',
-): Promise<T> {
+export async function observeSplit<T>(task: TaskLike, run: () => Promise<T>): Promise<T> {
   try {
     const result = await run()
-    recordObserved(task, { outcome: 'accepted', detail: acceptedDetail })
+    recordObserved(task, { outcome: 'accepted', detail: PROVISIONAL_ACCEPTED_DETAIL })
     return result
   } catch (e: unknown) {
     if (indeterminateFrom(e) === null) {
@@ -87,7 +91,7 @@ export async function observeSplit<T>(
       recordObserved(task, {
         outcome: 'rejected',
         error: {
-          name: typeof err?.name === 'string' ? err.name : String(err?.name),
+          name: String(err?.name),
           message: typeof err?.message === 'string' ? err.message : '',
         },
       })

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   clearObservedMarker,
   observeSplit,
+  PROVISIONAL_ACCEPTED_DETAIL,
   recordObserved,
   type Observation,
 } from './observation-sink.js'
@@ -31,17 +32,14 @@ describe('observeSplit', () => {
     })
   })
 
-  it('records an acceptance with the given detail and returns the result', async () => {
+  it('records an acceptance with the provisional detail and returns the result', async () => {
     const t = task()
-    const result = await observeSplit(t, () => Promise.resolve('sent'), 'stored')
+    const result = await observeSplit(t, () => Promise.resolve('sent'))
     expect(result).toBe('sent')
-    expect(t.meta.observed).toEqual({ outcome: 'accepted', detail: 'stored' })
-  })
-
-  it('defaults the accepted detail to one matching no registry row', async () => {
-    const t = task()
-    await observeSplit(t, () => Promise.resolve())
-    expect(t.meta.observed).toEqual({ outcome: 'accepted', detail: 'request accepted' })
+    expect(t.meta.observed).toEqual({
+      outcome: 'accepted',
+      detail: PROVISIONAL_ACCEPTED_DETAIL,
+    })
   })
 
   it('records nothing for a failed observation: a throttle is not an answer', async () => {
@@ -68,7 +66,7 @@ describe('observeSplit', () => {
 describe('recordObserved', () => {
   it('replaces an earlier observation, so a verified detail can upgrade a provisional one', () => {
     const t = task()
-    recordObserved(t, { outcome: 'accepted', detail: 'request accepted' })
+    recordObserved(t, { outcome: 'accepted', detail: PROVISIONAL_ACCEPTED_DETAIL })
     recordObserved(t, {
       outcome: 'accepted',
       detail: 'stored, and normalised to { NULL: true } on read',
