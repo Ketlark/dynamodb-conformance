@@ -44,12 +44,36 @@ function runLevelEntries(sidecar) {
 }
 
 /**
+ * Validate a test's observed marker (src/observation-sink.ts): the target's
+ * actual answer for a split behaviour, in the shape the split registry
+ * records per-region answers. Returned as a spreadable fragment so absence
+ * adds no key. Malformed is loud: per-region scoring compares the
+ * observation against recorded answers, and a mangled one would silently
+ * turn matches into misses.
+ */
+function observedEntry(ar) {
+  const observed = ar.meta?.observed
+  if (observed === undefined) return {}
+  const wellFormed =
+    observed?.outcome === 'rejected'
+      ? typeof observed.error?.name === 'string' &&
+        typeof observed.error?.message === 'string'
+      : observed?.outcome === 'accepted' && typeof observed.detail === 'string'
+  if (!wellFormed) {
+    throw new Error(`malformed observed marker on ${ar.fullName}`)
+  }
+  return { observed }
+}
+
+/**
  * Classify every test in a Vitest JSON document, merging the run's
  * indeterminate sidecar (or null when the run wrote none).
  *
- * Returns [{ file, fullName, title, verdict, reason? }]. `reason` is set only
- * on indeterminate verdicts, carrying why the observation failed and whether
- * it failed at test or run level.
+ * Returns [{ file, fullName, title, verdict, observed?, reason? }].
+ * `observed` carries the target's recorded answer for a split behaviour, so
+ * per-region scoring can compare it against each region's recorded answer.
+ * `reason` is set only on indeterminate verdicts, carrying why the
+ * observation failed and whether it failed at test or run level.
  */
 export function classifyResults(resultsDoc, sidecar = null) {
   if (!Array.isArray(resultsDoc?.testResults)) {
@@ -64,6 +88,7 @@ export function classifyResults(resultsDoc, sidecar = null) {
         file: tr.name,
         fullName: ar.fullName,
         title: ar.title,
+        ...observedEntry(ar),
         ...classifyOne(ar, runLevel),
       })
     }

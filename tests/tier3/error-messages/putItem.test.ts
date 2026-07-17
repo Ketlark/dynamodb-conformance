@@ -10,6 +10,7 @@ import {
   gsiBTableDef,
   cleanupItems,
 } from '../../../src/helpers.js'
+import { observeSplit, recordObserved } from '../../../src/observation-sink.js'
 
 const keysToCleanup = [
   { pk: { S: 'em-put-null-false' } },
@@ -248,15 +249,20 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
     }
   })
 
-  it('NULL attr with false is accepted and normalises to NULL true', async () => {
+  it('NULL attr with false is accepted and normalises to NULL true', async (ctx) => {
     // AWS behaviour change captured 2026-06-08 (eu-west-2): PutItem with a
     // { NULL: false } attribute is no longer rejected. The value is accepted
-    // and normalises to { NULL: true } on read.
-    await ddb.send(
-      new PutItemCommand({
-        TableName: hashTableDef.name,
-        Item: { pk: { S: 'em-put-null-false' }, attr1: { NULL: false } },
-      }),
+    // and normalises to { NULL: true } on read. This is a split behaviour
+    // (registry row put-item-null-false-attribute-value): most regions still
+    // reject it, so the target's actual answer is recorded for per-region
+    // scoring.
+    await observeSplit(ctx.task, () =>
+      ddb.send(
+        new PutItemCommand({
+          TableName: hashTableDef.name,
+          Item: { pk: { S: 'em-put-null-false' }, attr1: { NULL: false } },
+        }),
+      ),
     )
     const got = await ddb.send(
       new GetItemCommand({
@@ -265,6 +271,16 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
         ConsistentRead: true,
       }),
     )
+    // The registry row records the accepting regions' answer with this exact
+    // detail, which may only be claimed once the read-back has proven the
+    // normalisation it asserts. Accepted-but-unnormalised keeps the
+    // provisional detail from observeSplit and matches no region.
+    if (got.Item?.attr1?.NULL === true) {
+      recordObserved(ctx.task, {
+        outcome: 'accepted',
+        detail: 'stored, and normalised to { NULL: true } on read',
+      })
+    }
     expect(got.Item).toEqual({
       pk: { S: 'em-put-null-false' },
       attr1: { NULL: true },

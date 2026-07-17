@@ -81,6 +81,41 @@ describe('classifyResults', () => {
     expect(verdicts[0].verdict).toBe('pass')
   })
 
+  it('lifts a well-formed observed marker onto the verdict for per-region scoring', () => {
+    const rejected = {
+      outcome: 'rejected',
+      error: { name: 'ValidationException', message: 'must have the value of true' },
+    }
+    const accepted = { outcome: 'accepted', detail: 'stored, and normalised' }
+    const verdicts = classifyResults(
+      doc([
+        { status: 'failed', meta: { observed: rejected } },
+        { status: 'passed', meta: { observed: accepted } },
+        { status: 'passed' },
+      ]),
+    )
+    expect(verdicts[0]).toMatchObject({ verdict: 'fail', observed: rejected })
+    expect(verdicts[1]).toMatchObject({ verdict: 'pass', observed: accepted })
+    // A test that never observed a split carries no observed key at all,
+    // which is what keeps score.mjs's evidence path off for it.
+    expect('observed' in verdicts[2]).toBe(false)
+  })
+
+  it('rejects a malformed observed marker loudly rather than mis-scoring a region match', () => {
+    const cases = [
+      { outcome: 'rejected' },
+      { outcome: 'rejected', error: { name: 'ValidationException' } },
+      { outcome: 'accepted' },
+      { outcome: 'maybe', detail: 'x' },
+      'garbage',
+    ]
+    for (const observed of cases) {
+      expect(() => classifyResults(doc([{ status: 'failed', meta: { observed } }]))).toThrow(
+        /malformed observed marker/,
+      )
+    }
+  })
+
   it('carries file and name through for downstream joins', () => {
     const [v] = classifyResults(doc([{ status: 'passed', title: 'answers' }]))
     expect(v.file).toBe('/repo/tests/tier1/x.test.ts')

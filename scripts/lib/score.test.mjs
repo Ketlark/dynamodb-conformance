@@ -240,6 +240,7 @@ describe('per-region scoring', () => {
     ])
     expect(headline.region).toBe('eu-central-1')
   })
+
 })
 
 describe('scoreTarget', () => {
@@ -258,6 +259,69 @@ describe('scoreTarget', () => {
     const doomed = scoreTarget(raw, sidecar, context)
     expect(doomed.headline.rate).toBeNull()
     expect(doomed.regions['eu-west-2'].indeterminate).toBe(5)
+  })
+})
+
+describe('observed evidence through the pipeline', () => {
+  // The regression that let 2.0.0 ship with per-region scoring only able to
+  // subtract: the per-region tests above set `observed` on verdicts by hand,
+  // proving verdictsForRegion but never the pipeline feeding it, and nothing
+  // in the pipeline populated it. Here the observation enters through the raw
+  // document's `assertionResults[].meta`, the way a run's results file
+  // carries what src/observation-sink.ts stamped.
+  const rejected = {
+    outcome: 'rejected',
+    error: { name: 'ValidationException', message: 'must have the value of true' },
+  }
+  const accepted = { outcome: 'accepted', detail: 'stored and normalised' }
+  const registry = {
+    splits: [
+      {
+        id: 'example-split',
+        test: { file: 'tests/tier3/split.test.ts', fullName: 'suite splits' },
+        pinned: 'eu-west-2',
+        regions: { 'eu-west-2': accepted, 'eu-central-1': accepted, 'us-east-1': rejected },
+      },
+    ],
+  }
+  const REGIONS = ['eu-west-2', 'eu-central-1', 'us-east-1']
+  const rateIn = (scored) => passRate(scored.passed, scored.failed)
+
+  // One region-invariant pass plus the split test, as a raw Vitest document
+  // with the runner's absolute file path.
+  const raw = (splitAssertion) => ({
+    testResults: [
+      {
+        name: '/repo/tests/tier3/split.test.ts',
+        assertionResults: [
+          { title: 'other', fullName: 'suite other', status: 'passed', meta: {} },
+          { title: 'splits', fullName: 'suite splits', ...splitAssertion },
+        ],
+      },
+    ],
+  })
+
+  it('a fail whose recorded answer matches a non-pinned region scores higher there than in the pinned one', () => {
+    const doc = raw({ status: 'failed', meta: { observed: rejected } })
+    const { regions, headline } = scoreTarget(doc, null, { registry, observed: REGIONS })
+    expect(rateIn(regions['us-east-1'])).toBe(100)
+    expect(rateIn(regions['eu-west-2'])).toBe(50)
+    expect(headline).toEqual({ region: 'us-east-1', rate: 100 })
+  })
+
+  it('a pass carrying its observation stays a pass in the pinned region and fails where regions disagree', () => {
+    const doc = raw({ status: 'passed', meta: { observed: accepted } })
+    const { regions } = scoreTarget(doc, null, { registry, observed: REGIONS })
+    expect(rateIn(regions['eu-west-2'])).toBe(100)
+    expect(rateIn(regions['eu-central-1'])).toBe(100)
+    expect(rateIn(regions['us-east-1'])).toBe(50)
+  })
+
+  it('a fail without an observation still stays a fail everywhere', () => {
+    const doc = raw({ status: 'failed', meta: {} })
+    const { regions, headline } = scoreTarget(doc, null, { registry, observed: REGIONS })
+    for (const region of REGIONS) expect(rateIn(regions[region])).toBe(50)
+    expect(headline.rate).toBe(50)
   })
 })
 
