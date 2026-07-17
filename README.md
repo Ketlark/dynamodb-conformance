@@ -420,6 +420,8 @@ Genuinely not covered, with no tests yet:
 
 When the suite surfaces a divergence in a target and you want to reference it from that target's own issue tracker, cite the suite as the independent source it is. The reference carries weight precisely because the suite is not the engine's own test harness: it scores every target against the same live-AWS baseline, so "the conformance suite flags this" says more than a self-written test can.
 
+**Disclosure.** This suite is maintained by the same person who maintains Dynoxide, one of the engines it scores. Dynoxide runs through the same automated matrix as every other target, against the same live-AWS ground truth. The tests and the results are in this repo.
+
 Fill in the bracketed parts. The block is the same whichever engine the finding concerns:
 
 > Found by [Parity Suite, the DynamoDB conformance suite](https://paritysuite.org) (paritysuite.org), an independent project that scores multiple engines against live AWS DynamoDB.
