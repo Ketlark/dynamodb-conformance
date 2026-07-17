@@ -194,6 +194,20 @@ describe('per-region scoring', () => {
     }
   })
 
+  it('evidence never revokes a committed pass: an observation matching no recorded answer leaves the pinned credit alone', () => {
+    // The committed assertions are deliberately tolerant of wording variance,
+    // so a target can pass them while its verbatim answer byte-matches no
+    // recorded string. Holding the pass to the exact string as well would
+    // silently tighten every split test the moment evidence started flowing.
+    const wordingVariant = { outcome: 'accepted', detail: 'stored, then normalised on read' }
+    const verdicts = suite({ verdict: 'pass', observed: wordingVariant })
+    const byRegion = (region) =>
+      verdictsForRegion(verdicts, registry, region).at(-1).verdict
+    expect(byRegion('eu-west-2')).toBe('pass')
+    expect(byRegion('eu-central-1')).toBe('pass')
+    expect(byRegion('us-east-1')).toBe('fail')
+  })
+
   it('indeterminate and skip pass through untouched: an absence is the same absence in every region (AE2)', () => {
     for (const verdict of ['indeterminate', 'skip']) {
       const verdicts = suite({ verdict })
@@ -257,12 +271,26 @@ describe('per-region scoring', () => {
   })
 
   it('an uncharacterised region that strictly wins still headlines: only ties are re-ordered', () => {
-    // No characterised region matches the observation, so every characterised
-    // column carries the fail while ap-east-2 passes it through. The max is
-    // the max; the tie-break must not distort a score.
-    const frankenstein = { outcome: 'accepted', detail: 'stored without normalising' }
-    const verdicts = suite({ verdict: 'pass', observed: frankenstein })
-    const { headline } = scoreAcrossRegions(verdicts, registry, ['ap-east-2', ...REGIONS])
+    // Two rows pinned to regions that disagree with each other, and a target
+    // passing both committed assertions: each pinned region fails the other
+    // row, while ap-east-2 (in no row) passes both verdicts through and
+    // strictly wins. The max is the max; the tie-break must not distort it.
+    const twoPins = {
+      splits: [
+        registry.splits[0],
+        {
+          id: 'counter-split',
+          test: { file: 'tests/tier3/counter.test.ts', fullName: 'suite counters' },
+          pinned: 'us-east-1',
+          regions: { 'eu-west-2': accepted, 'eu-central-1': accepted, 'us-east-1': rejected },
+        },
+      ],
+    }
+    const verdicts = [
+      ...suite({ verdict: 'pass' }),
+      { file: '/repo/tests/tier3/counter.test.ts', fullName: 'suite counters', verdict: 'pass' },
+    ]
+    const { headline } = scoreAcrossRegions(verdicts, twoPins, ['ap-east-2', ...REGIONS])
     expect(headline).toEqual({ region: 'ap-east-2', rate: 100 })
   })
 

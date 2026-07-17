@@ -19,8 +19,10 @@ What changed:
   (`src/observation-sink.ts`), in the same shape the registry stores each
   region's answer, and the classifier carries it onto the verdict. An engine
   that does what us-east-1 does is now scored as passing in us-east-1.
-  Committed results predate the capture, so published scores move on each
-  target's next run, not in this change.
+  Evidence only ever redeems a committed fail: a pass keeps the committed
+  assertion's deliberate wording tolerance and is never held to the
+  byte-exact recorded string. Committed results predate the capture, so
+  published scores move on each target's next run, not in this change.
 - Headline ties now prefer a region the registry characterises. A region
   absent from every split row ties the top score by having nothing recorded
   about it, and the Region column must not answer "conformant to what?" with
