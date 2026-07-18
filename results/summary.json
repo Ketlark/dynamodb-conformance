@@ -182,7 +182,7 @@
   "groundTruth": {
     "slug": "dynamodb",
     "rate": 100,
-    "runDate": "2026-07-17"
+    "runDate": "2026-07-18"
   },
   "targets": {
     "dynalite": {
@@ -1117,7 +1117,7 @@
         }
       },
       "version": "4.0.0",
-      "runDate": "2026-07-17"
+      "runDate": "2026-07-18"
     },
     "dynamodb-local": {
       "headline": {
@@ -2051,7 +2051,7 @@
         }
       },
       "version": "d89f8fcc6b1a",
-      "runDate": "2026-07-17"
+      "runDate": "2026-07-18"
     },
     "dynoxide": {
       "headline": {
@@ -2985,7 +2985,7 @@
         }
       },
       "version": "0.11.4",
-      "runDate": "2026-07-17"
+      "runDate": "2026-07-18"
     },
     "extenddb": {
       "headline": {
@@ -3919,7 +3919,7 @@
         }
       },
       "version": "v0.1.1",
-      "runDate": "2026-07-17"
+      "runDate": "2026-07-18"
     },
     "floci": {
       "headline": {
@@ -4853,7 +4853,7 @@
         }
       },
       "version": "d2ecc8035822",
-      "runDate": "2026-07-17"
+      "runDate": "2026-07-18"
     },
     "localstack": {
       "headline": {
@@ -5787,7 +5787,7 @@
         }
       },
       "version": "2026.6.3",
-      "runDate": "2026-07-17"
+      "runDate": "2026-07-18"
     },
     "ministack": {
       "headline": {
@@ -6721,7 +6721,7 @@
         }
       },
       "version": "0b5dba5153fc",
-      "runDate": "2026-07-17"
+      "runDate": "2026-07-18"
     }
   }
 }

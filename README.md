@@ -34,14 +34,14 @@ _Scored against real DynamoDB's recorded behaviour in each observed region (`af-
 
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Region | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|--------|------|------|------|---------|------|
-| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | all regions | 954 | 0 | 0 | live (AWS) | 2026-07-17 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 99.3% | 98.1% | 99.3% | eu-west-2 + 5 regions | 933 | 7 | 14 | 0.11.4 | 2026-07-17 |
-| [Ministack](https://github.com/ministackorg/ministack) | 89.1% | 87.4% | 79.7% | 85.6% | all regions | 817 | 137 | 0 | 0b5dba5153fc | 2026-07-17 |
-| [LocalStack](https://github.com/localstack/localstack) | 93.5% | 86.1% | 72.2% | 85.1% | 27 regions | 805 | 141 | 8 | 2026.6.3 | 2026-07-17 |
-| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 92.2% | 82.9% | 71.9% | 83.8% | 27 regions | 789 | 152 | 13 | d89f8fcc6b1a | 2026-07-17 |
-| [ExtendDB](https://github.com/ExtendDB/extenddb) | 85.5% | 86.2% | 78.8% | 83.2% | all regions | 758 | 153 | 43 | v0.1.1 | 2026-07-17 |
-| [Floci](https://github.com/floci-io/floci) | 91.4% | 76.0% | 71.6% | 82.2% | all regions | 777 | 168 | 9 | d2ecc8035822 | 2026-07-17 |
-| [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 71.6% | 76.2% | 27 regions | 675 | 211 | 68 | 4.0.0 | 2026-07-17 |
+| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | all regions | 954 | 0 | 0 | live (AWS) | 2026-07-18 |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 99.3% | 98.1% | 99.3% | eu-west-2 + 5 regions | 933 | 7 | 14 | 0.11.4 | 2026-07-18 |
+| [Ministack](https://github.com/ministackorg/ministack) | 89.1% | 87.4% | 79.7% | 85.6% | all regions | 817 | 137 | 0 | 0b5dba5153fc | 2026-07-18 |
+| [LocalStack](https://github.com/localstack/localstack) | 93.5% | 86.1% | 72.2% | 85.1% | 27 regions | 805 | 141 | 8 | 2026.6.3 | 2026-07-18 |
+| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 92.2% | 82.9% | 71.9% | 83.8% | 27 regions | 789 | 152 | 13 | d89f8fcc6b1a | 2026-07-18 |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) | 85.5% | 86.2% | 78.8% | 83.2% | all regions | 758 | 153 | 43 | v0.1.1 | 2026-07-18 |
+| [Floci](https://github.com/floci-io/floci) | 91.4% | 76.0% | 71.6% | 82.2% | all regions | 777 | 168 | 9 | d2ecc8035822 | 2026-07-18 |
+| [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 71.6% | 76.2% | 27 regions | 675 | 211 | 68 | 4.0.0 | 2026-07-18 |
 <!-- results:end -->
 
 **Live results:** [the Parity Suite board](https://paritysuite.org) - the full table for every target, tracked run over run.
