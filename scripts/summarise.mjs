@@ -41,9 +41,11 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import {
   GROUND_TRUTH_SLUG,
+  cohortOf,
   isPublishedTarget,
   loadScoringContext,
   passRate,
+  regionLabel,
   scoreTarget,
 } from './lib/score.mjs'
 import { isObserved, observedRegions } from './lib/observed.mjs'
@@ -238,13 +240,19 @@ const pct = (rate) => (rate === null ? '-' : `${rate.toFixed(1)}%`)
 export function tableRows(summary) {
   const rows = Object.entries(summary.targets).map(([slug, t]) => {
     const best = t.regions[t.headline.region]
+    // Name the cohort the headline was earned in, not the lone tie-break
+    // winner. Ties are read off the published per-region rates, the same
+    // numbers a viewer sees, so the label matches paritysuite.org's.
+    const cohort = cohortOf(
+      Object.entries(t.regions).map(([region, r]) => ({ region, rate: r.rate })),
+    )
     return {
       target: label(slug),
       tier1: pct(passRate(best.tiers.tier1.p, best.tiers.tier1.f)),
       tier2: pct(passRate(best.tiers.tier2.p, best.tiers.tier2.f)),
       tier3: pct(passRate(best.tiers.tier3.p, best.tiers.tier3.f)),
       total: pct(t.headline.rate),
-      region: t.headline.rate === null ? '-' : t.headline.region,
+      region: t.headline.rate === null ? '-' : regionLabel(cohort),
       passed: best.passed,
       failed: best.failed,
       skipped: best.skipped,
@@ -267,7 +275,7 @@ export function tableRows(summary) {
     total: '100%',
     // Real DynamoDB is every region's own behaviour, so its row is not pinned
     // to one region the way a target's headline is.
-    region: 'all',
+    region: 'all regions',
     passed: suiteSize,
     failed: 0,
     skipped: 0,
@@ -289,8 +297,10 @@ export function tableCaption(regions) {
   const list = (rs) => rs.map((r) => `\`${r}\``).join(', ')
   const sentences = [
     `Scored against real DynamoDB's recorded behaviour in each observed region ` +
-      `(${list(regions.observed)}); a target's Total is its best-matching region, ` +
-      `named in the Region column. Behaviour varies by region and over time, so these ` +
+      `(${list(regions.observed)}); a target's Total is its best-matching region, and ` +
+      `the Region column names the cohort tied at that rate - all regions, the ` +
+      `\`eu-west-2\` baseline plus a count, or a single region it matches that ` +
+      `eu-west-2 disagrees with. Behaviour varies by region and over time, so these ` +
       `are point-in-time figures.`,
   ]
   if (regions.unresolved.length > 0) {

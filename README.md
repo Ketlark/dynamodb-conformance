@@ -30,18 +30,18 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 ## Results
 
 <!-- results:start -->
-_Scored against real DynamoDB's recorded behaviour in each observed region (`af-south-1`, `ap-east-1`, `ap-east-2`, `ap-northeast-1`, `ap-northeast-2`, `ap-northeast-3`, `ap-south-1`, `ap-south-2`, `ap-southeast-1`, `ap-southeast-2`, `ap-southeast-3`, `ap-southeast-4`, `ap-southeast-5`, `ap-southeast-6`, `ap-southeast-7`, `ca-central-1`, `ca-west-1`, `eu-central-1`, `eu-central-2`, `eu-north-1`, `eu-south-1`, `eu-south-2`, `eu-west-1`, `eu-west-2`, `eu-west-3`, `il-central-1`, `me-central-1`, `mx-central-1`, `sa-east-1`, `us-east-1`, `us-east-2`, `us-west-1`, `us-west-2`); a target's Total is its best-matching region, named in the Region column. Behaviour varies by region and over time, so these are point-in-time figures. `me-south-1` has been dropped from the observed set and is not scored against._
+_Scored against real DynamoDB's recorded behaviour in each observed region (`af-south-1`, `ap-east-1`, `ap-east-2`, `ap-northeast-1`, `ap-northeast-2`, `ap-northeast-3`, `ap-south-1`, `ap-south-2`, `ap-southeast-1`, `ap-southeast-2`, `ap-southeast-3`, `ap-southeast-4`, `ap-southeast-5`, `ap-southeast-6`, `ap-southeast-7`, `ca-central-1`, `ca-west-1`, `eu-central-1`, `eu-central-2`, `eu-north-1`, `eu-south-1`, `eu-south-2`, `eu-west-1`, `eu-west-2`, `eu-west-3`, `il-central-1`, `me-central-1`, `mx-central-1`, `sa-east-1`, `us-east-1`, `us-east-2`, `us-west-1`, `us-west-2`); a target's Total is its best-matching region, and the Region column names the cohort tied at that rate - all regions, the `eu-west-2` baseline plus a count, or a single region it matches that eu-west-2 disagrees with. Behaviour varies by region and over time, so these are point-in-time figures. `me-south-1` has been dropped from the observed set and is not scored against._
 
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Region | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|--------|------|------|------|---------|------|
-| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | all | 954 | 0 | 0 | live (AWS) | 2026-07-17 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 99.3% | 98.1% | 99.3% | eu-central-1 | 933 | 7 | 14 | 0.11.4 | 2026-07-17 |
-| [Ministack](https://github.com/ministackorg/ministack) | 89.1% | 87.4% | 79.7% | 85.6% | af-south-1 | 817 | 137 | 0 | 0b5dba5153fc | 2026-07-17 |
-| [LocalStack](https://github.com/localstack/localstack) | 93.5% | 86.1% | 72.2% | 85.1% | af-south-1 | 805 | 141 | 8 | 2026.6.3 | 2026-07-17 |
-| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 92.2% | 82.9% | 71.9% | 83.8% | af-south-1 | 789 | 152 | 13 | d89f8fcc6b1a | 2026-07-17 |
-| [ExtendDB](https://github.com/ExtendDB/extenddb) | 85.5% | 86.2% | 78.8% | 83.2% | af-south-1 | 758 | 153 | 43 | v0.1.1 | 2026-07-17 |
-| [Floci](https://github.com/floci-io/floci) | 91.4% | 76.0% | 71.6% | 82.2% | af-south-1 | 777 | 168 | 9 | d2ecc8035822 | 2026-07-17 |
-| [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 71.6% | 76.2% | af-south-1 | 675 | 211 | 68 | 4.0.0 | 2026-07-17 |
+| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | all regions | 954 | 0 | 0 | live (AWS) | 2026-07-17 |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 99.3% | 98.1% | 99.3% | eu-west-2 + 5 regions | 933 | 7 | 14 | 0.11.4 | 2026-07-17 |
+| [Ministack](https://github.com/ministackorg/ministack) | 89.1% | 87.4% | 79.7% | 85.6% | all regions | 817 | 137 | 0 | 0b5dba5153fc | 2026-07-17 |
+| [LocalStack](https://github.com/localstack/localstack) | 93.5% | 86.1% | 72.2% | 85.1% | 27 regions | 805 | 141 | 8 | 2026.6.3 | 2026-07-17 |
+| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 92.2% | 82.9% | 71.9% | 83.8% | 27 regions | 789 | 152 | 13 | d89f8fcc6b1a | 2026-07-17 |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) | 85.5% | 86.2% | 78.8% | 83.2% | all regions | 758 | 153 | 43 | v0.1.1 | 2026-07-17 |
+| [Floci](https://github.com/floci-io/floci) | 91.4% | 76.0% | 71.6% | 82.2% | all regions | 777 | 168 | 9 | d2ecc8035822 | 2026-07-17 |
+| [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 71.6% | 76.2% | 27 regions | 675 | 211 | 68 | 4.0.0 | 2026-07-17 |
 <!-- results:end -->
 
 **Live results:** [the Parity Suite board](https://paritysuite.org) - the full table for every target, tracked run over run.
@@ -50,8 +50,11 @@ DynamoDB is the ground truth, recorded per region. Real DynamoDB disagrees
 with itself in a handful of places (the admitted cases are in
 `registry/splits.json`), so each target is scored against every observed
 region's recorded behaviour, and its published Total is its best-matching
-region - the one named in its Region column. A target fails a behaviour only
-when no observed region does what it does.
+region. Where several regions tie at that rate, the Region column names the
+cohort rather than an arbitrary member: `all regions` when they all tie,
+`eu-west-2 + N regions` when the historical baseline is among the best, or a
+single region when the best cohort is one eu-west-2 disagrees with. A target
+fails a behaviour only when no observed region does what it does.
 
 The percentage is correctness over the operations a target implements and
 the run could observe - `Pass / (Pass + Fail)`. Two kinds of test are

@@ -207,7 +207,7 @@ describe('tableRows / renderTable', () => {
     expect(rows[0]).toMatchObject({
       target: label(GROUND_TRUTH_SLUG),
       total: '100%',
-      region: 'all',
+      region: 'all regions',
       failed: 0,
       passed: 3, // the suite size: the largest count seen in a full run
     })
@@ -223,13 +223,16 @@ describe('tableRows / renderTable', () => {
     expect(rows.at(-1)).toMatchObject({ total: '-', region: '-' })
   })
 
-  it('shows the headline region and its counts on each row', () => {
+  it('names the matched cohort, not the alphabetical tie-break winner', () => {
+    // alpha matches us-east-1 alone (it beats the eu-west-2 baseline), so its
+    // cohort is a single named region.
     const alpha = rows.find((r) => r.target === 'alpha')
     expect(alpha).toMatchObject({ total: '100.0%', region: 'us-east-1', passed: 3, failed: 0 })
     // beta fails the split test everywhere (a fail without an observation is
-    // evidence of nothing beyond "not the pinned answer").
+    // evidence of nothing beyond "not the pinned answer"), so it ties across
+    // every region and reads "all regions" rather than crowning eu-west-2.
     const beta = rows.find((r) => r.target === 'beta')
-    expect(beta).toMatchObject({ total: '66.7%', region: 'eu-west-2', passed: 2, failed: 1 })
+    expect(beta).toMatchObject({ total: '66.7%', region: 'all regions', passed: 2, failed: 1 })
   })
 
   it('names the observed regions in the caption', () => {

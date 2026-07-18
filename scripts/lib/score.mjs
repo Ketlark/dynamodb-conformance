@@ -209,6 +209,64 @@ export function scoreAcrossRegions(verdicts, registry, observedRegions) {
   return { regions, headline }
 }
 
+// The historical single-region baseline. Before per-region scoring this was the
+// sole ground truth; now it is just the region a reader already knows, so a
+// headline cohort that includes it is named against it rather than an arbitrary
+// alphabetical member.
+export const PINNED_REGION = 'eu-west-2'
+
+/**
+ * Classify how a target's headline should read from its per-region rates, so
+ * the Region column names the cohort a target actually matched rather than the
+ * lone tie-break winner (which, being alphabetical, is almost always the same
+ * region and tells a reader nothing). `entries` is `[{ region, rate }]` for
+ * every observed region; `pinned` is the baseline.
+ *
+ *   - none          nothing scored                -> no label
+ *   - all           every region ties at the top  -> "all regions"
+ *   - pinned-plus   the baseline is in the top    -> "eu-west-2 + N regions"
+ *   - beats-pinned  the top cohort excludes it    -> the region, or "N regions"
+ *
+ * Ties are decided on the rates as published (rounded), so this reads the same
+ * numbers a viewer sees. Mirrors paritysuite.org's cohortOf so the board and
+ * the README label a headline identically.
+ */
+export function cohortOf(entries, pinned = PINNED_REGION) {
+  const rated = entries.filter((e) => e.rate != null)
+  if (rated.length === 0) return { kind: 'none', regions: [], rate: null, others: 0 }
+
+  const top = Math.max(...rated.map((e) => e.rate))
+  const cohort = rated
+    .filter((e) => e.rate === top)
+    .map((e) => e.region)
+    .sort()
+
+  if (cohort.length === rated.length) {
+    return { kind: 'all', regions: cohort, rate: top, others: cohort.length - 1 }
+  }
+  if (cohort.includes(pinned)) {
+    return { kind: 'pinned-plus', regions: cohort, rate: top, others: cohort.length - 1, pinned }
+  }
+  return { kind: 'beats-pinned', regions: cohort, rate: top, others: cohort.length - 1, pinned }
+}
+
+/** Display text for a cohort label. Mirrors paritysuite.org's regionLabel. */
+export function regionLabel(label) {
+  if (!label || label.kind === 'none') return '-'
+  switch (label.kind) {
+    case 'all':
+      return 'all regions'
+    case 'pinned-plus':
+      return label.others === 0
+        ? label.pinned
+        : `${label.pinned} + ${label.others} region${label.others === 1 ? '' : 's'}`
+    case 'beats-pinned':
+      return label.regions.length === 1 ? label.regions[0] : `${label.regions.length} regions`
+    default:
+      return '-'
+  }
+}
+
 /**
  * Score one target's raw Vitest JSON (plus its indeterminate sidecar, when the
  * run wrote one) across the observed region set. This is the single entry
