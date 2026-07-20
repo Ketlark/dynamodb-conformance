@@ -11,7 +11,7 @@
  *
  * The scheduled-run workflow calls this on a deterministic ground-truth failure
  * (after retries) and threads the output onto a single deduped issue, so a red
- * Monday is actionable rather than a silent X.
+ * scheduled run is actionable rather than a silent X.
  *
  * The report is classified (scripts/lib/classify.mjs) before anything is
  * listed, because a raw `status: "failed"` cannot tell a real behavioural

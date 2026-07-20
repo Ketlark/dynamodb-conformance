@@ -2,7 +2,7 @@ name: Conformance Tests
 
 on:
   schedule:
-    - cron: '0 6 * * 1' # 6am UTC every Monday
+    - cron: '0 4 * * 0' # 4am UTC every Sunday, when AWS is quieter
   push:
     branches: [main]
   pull_request:
@@ -104,8 +104,8 @@ jobs:
             --baseline captures/2026-07-13-empty-set-member.json \
             --region eu-west-2 --out "$RUNNER_TEMP/drift.json"
 
-      # File or update a single deduped issue so a red Monday is actionable, not a
-      # silent X. The drift verdict (if computed above) labels it aws-drift-confirmed
+      # File or update a single deduped issue so a red scheduled run is actionable,
+      # not a silent X. The drift verdict (if computed above) labels it aws-drift-confirmed
       # or likely-flake and fills the body's triage slot.
       - name: Report a deterministic failure as an issue
         if: failure() && github.event_name == 'schedule'

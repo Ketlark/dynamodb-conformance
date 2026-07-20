@@ -11,7 +11,7 @@ name: Ground Truth Sweep
 # file landing there would fabricate phantom targets and redden the PR gate.
 on:
   schedule:
-    - cron: '0 3 * * 6' # sweep: 3am UTC Saturday, clear of Monday's gating run
+    - cron: '0 3 * * 6' # sweep: 3am UTC Saturday, clear of Sunday's gating run
     - cron: '30 5 * * *' # cleanup: daily, catching tables a dead run stranded
   workflow_dispatch:
     inputs:
