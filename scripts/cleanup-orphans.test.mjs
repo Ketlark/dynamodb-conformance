@@ -18,9 +18,11 @@ function table(name, ageHours) {
 
 describe('selectOrphans', () => {
   it('selects stray _conformance_ tables older than the threshold', () => {
+    // Ages are relative to the threshold so this tracks the credential ceiling
+    // rather than pinning a number the workflows can move out from under it.
     const tables = [
-      table('_conformance_users_170000_1', 26),
-      table('_conformance_orders_170000_2', 4),
+      table('_conformance_users_170000_1', DEFAULT_MAX_AGE_HOURS + 23),
+      table('_conformance_orders_170000_2', DEFAULT_MAX_AGE_HOURS + 1),
     ]
     expect(selectOrphans(tables, { now: NOW, maxAgeMs })).toEqual([
       '_conformance_orders_170000_2',
@@ -29,9 +31,9 @@ describe('selectOrphans', () => {
   })
 
   it('never selects a table young enough to belong to a run still in flight', () => {
-    // A live run's tables cannot outlive its two-hour credential ceiling, so
-    // anything under the three-hour default might still be in use.
-    const tables = [table('_conformance_live_170000_3', 1.5)]
+    // A live run's tables cannot outlive its six-hour credential ceiling, so
+    // anything under the seven-hour default might still be in use.
+    const tables = [table('_conformance_live_170000_3', DEFAULT_MAX_AGE_HOURS - 1)]
     expect(selectOrphans(tables, { now: NOW, maxAgeMs })).toEqual([])
   })
 

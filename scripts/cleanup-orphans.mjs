@@ -10,11 +10,13 @@
  * the job. Per region, so one unreachable region never blocks the others.
  *
  * The one thing it must never do is delete tables out from under a run still
- * in flight, so selection is age-based: every live run holds OIDC credentials
- * capped at two hours (role-duration-seconds: 7200 in the workflows), so no
- * legitimate `_conformance_` table can be older than its run's two-hour
- * ceiling. The three-hour default adds slack on top of that hard bound; do
- * not lower it below the credential ceiling.
+ * in flight, so selection is age-based: a live run cannot outlive the OIDC
+ * credentials it holds, so no legitimate `_conformance_` table can be older
+ * than its run's credential ceiling. That ceiling is the largest
+ * role-duration-seconds across the workflows - six hours, set by the GSI
+ * lifecycle lane, whose backfills need it. The seven-hour default adds slack
+ * on top of that hard bound; do not lower it below the credential ceiling,
+ * and raise it whenever a lane raises role-duration-seconds past six hours.
  *
  * Tables without the `_conformance_` prefix are never touched, in any region,
  * under any condition - the same contract the IAM role enforces.
@@ -35,7 +37,7 @@ import { COMMERCIAL_REGIONS } from '../src/regions.ts'
 
 const TABLE_PREFIX = '_conformance_'
 
-export const DEFAULT_MAX_AGE_HOURS = 3
+export const DEFAULT_MAX_AGE_HOURS = 7
 
 /**
  * Pure selection: the table names safe to delete. A table qualifies only when
