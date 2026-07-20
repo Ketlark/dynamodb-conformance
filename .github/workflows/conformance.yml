@@ -204,6 +204,171 @@ jobs:
           name: integration-results
           path: results/
 
+  test-dynamodb-gsi:
+    name: DynamoDB GSI lifecycle (non-gating)
+    # The 14 UpdateTable GSI lifecycle tests. Every one adds or removes a GSI on
+    # an existing table, and real AWS backfills each index for minutes: a full
+    # green run was measured at 10,182s (~2h50m) in eu-west-2 on 2026-07-13, a
+    # slow backfill night. That does not fit the gating job's 2h credential
+    # window, which is why the file has been excluded from `test:gating` and
+    # left to a manual per-PR run since 2026-05-26 - the one part of the suite
+    # with no automated real-AWS observation behind it.
+    #
+    # This lane closes that: its own 6h credentials, its own timeout, off the
+    # gate. It exists so real DynamoDB's published row is evidenced across the
+    # whole suite rather than only across the gating subset.
+    needs: test-dynamodb-integrations
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    # Under GitHub's own 6h ceiling on a hosted job, so the step is killed by
+    # this timeout (leaving the cleanup below to run) rather than by the runner
+    # vanishing mid-backfill with tables still live.
+    timeout-minutes: 350
+    # Same group as the gating job: that job's cleanup deletes every
+    # _conformance_ table by prefix, and a GSI backfill running here would be
+    # deleted out from under itself. Queue, never cancel.
+    concurrency:
+      group: conformance-aws
+      cancel-in-progress: false
+    permissions:
+      id-token: write
+      contents: read
+    environment: conformance-testing
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+          # 6h, against the ~2h50m observed worst case. The margin is the point:
+          # a backfill night worse than the one on record must still finish
+          # rather than expire mid-wait, because an expired credential surfaces
+          # as an indeterminate - "not observed" - which is the exact silence
+          # this lane exists to remove.
+          role-duration-seconds: 21600
+
+      - name: Run the GSI lifecycle suite
+        continue-on-error: true
+        env:
+          # Names the run, and with it the indeterminate sidecar
+          # (src/indeterminate-sink.ts resultSlug), so the sidecar pairs with
+          # ground-truth/gsi.json rather than orphaning itself as
+          # dynamodb.indeterminate.json. Real AWS is still the endpoint:
+          # that is decided by DYNAMODB_ENDPOINT being unset, not by this.
+          CONFORMANCE_TARGET: gsi
+          CONFORMANCE_RESULTS_DIR: ground-truth
+          AWS_REGION: eu-west-2
+          # No CONFORMANCE_RETRY here, unlike the gating job. A retried GSI test
+          # re-runs a multi-minute backfill, so absorbing a flake could add
+          # tens of minutes to an already long run. A red here is non-gating
+          # and triaged from the artefact instead.
+        run: npm run test:gsi -- --reporter=json --outputFile=ground-truth/gsi.json
+
+      - name: Sanitize account IDs
+        if: always()
+        run: node scripts/sanitize-arns.mjs
+
+      - name: Cleanup conformance tables
+        if: always()
+        timeout-minutes: 10
+        run: |
+          aws dynamodb list-tables --query "TableNames[?starts_with(@, '_conformance_')]" --output text | \
+          tr '\t' '\n' | \
+          xargs -P4 -I{} aws dynamodb delete-table --table-name {} 2>/dev/null || true
+
+      # Written to ground-truth/ and uploaded under a non `results-*` name for
+      # the same reason the sweep's per-region files are: this is ground truth,
+      # not a target, and the Update Results Table overlay must never fold it
+      # into results/ as a phantom target row.
+      - name: Upload GSI ground truth
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ground-truth-gsi
+          path: ground-truth/
+
+  ground-truth-coverage:
+    name: Ground-truth coverage
+    # The published DynamoDB row is synthesised at 100% across the full suite
+    # size rather than scored from a results file, because real DynamoDB
+    # defines correctness and cannot disagree with itself. That is the design.
+    # What it assumes is that every test HAS been run against real AWS
+    # somewhere - and real-AWS coverage is split across three lanes for runtime
+    # reasons. This job unions them and checks the assumption holds.
+    #
+    # It is deliberately NOT continue-on-error. Every other real-AWS lane here
+    # is non-gating because a slow AWS call is not a conformance signal; a hole
+    # in ground truth is the opposite - it means the table is claiming
+    # something nobody observed, which is the one failure that must not be
+    # quiet.
+    needs: [test-dynamodb, test-dynamodb-integrations, test-dynamodb-gsi]
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # The emulator targets are the reference: they run the full `npm test`,
+      # so between them they define the suite size the published row claims.
+      - name: Download every run artefact
+        uses: actions/download-artifact@v7
+        with:
+          path: /tmp/artifacts
+
+      - name: Reconcile real-AWS coverage against the published suite size
+        run: |
+          shopt -s nullglob
+          refs=()
+          # Each results-<target> artefact carries that target's fresh file plus
+          # stale committed copies of every other target, so take only each
+          # artefact's own - the same rule the Update Results Table overlay
+          # applies. A stale copy would still be a full-suite run and so would
+          # not move the max, but reconciling against last week's file is not a
+          # thing to leave to luck.
+          for d in /tmp/artifacts/results-*/; do
+            target=$(basename "$d"); target=${target#results-}
+            # results-dynamodb is ground truth, not a reference full-suite run.
+            [ "$target" = "dynamodb" ] && continue
+            [ -f "$d$target.json" ] && refs+=(--reference "$d$target.json")
+          done
+
+          observed=()
+          for f in /tmp/artifacts/results-dynamodb/dynamodb.json \
+                   /tmp/artifacts/integration-results/dynamodb.json \
+                   /tmp/artifacts/ground-truth-gsi/gsi.json; do
+            [ -f "$f" ] && observed+=("$f")
+          done
+
+          # A lane that produced nothing is the gap, not a reason to skip the
+          # check: silence here is exactly what would let an unobserved test
+          # keep counting. Report which lanes are missing, then let the
+          # reconciliation fail on their tests.
+          if [ ${#observed[@]} -lt 3 ]; then
+            echo "::warning::Only ${#observed[@]} of 3 real-AWS lanes produced results."
+          fi
+          if [ ${#refs[@]} -eq 0 ] || [ ${#observed[@]} -eq 0 ]; then
+            echo "::error::No reference or no real-AWS results to reconcile."
+            exit 1
+          fi
+
+          node scripts/ground-truth-coverage.mjs "${refs[@]}" "${observed[@]}"
+
   capture-cross-region:
     name: Cross-region drift capture (non-gating)
     # Capture real AWS's negative-input wording in the candidate regions each

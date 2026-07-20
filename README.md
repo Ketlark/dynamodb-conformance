@@ -260,7 +260,27 @@ npm test
 
 The full suite includes 14 UpdateTable GSI lifecycle tests that add and remove Global Secondary Indexes from existing tables. On real DynamoDB, each GSI creation triggers a backfill that usually takes 5-15 minutes even on empty tables, and has been observed taking 25+ on a slow night. These tests are important for conformance but they dominate runtime against real AWS.
 
-`test:quick` excludes the GSI lifecycle tests for faster local iteration. CI's gating real-DynamoDB job runs `test:gating`, which drops the GSI lifecycle tests *and* the S3 and Kinesis integration suites (see "Operations no emulator implements" below), so a slow async import can't redden the build. Those integration suites still run against real AWS in a separate non-gating job via `npm run test:integrations`. Emulator targets run the full `npm test` since GSI creation is instant locally. If you're modifying GSI-related code, run the full suite against real DynamoDB manually before merging.
+`test:quick` excludes the GSI lifecycle tests for faster local iteration. CI's gating real-DynamoDB job runs `test:gating`, which drops the GSI lifecycle tests *and* the S3 and Kinesis integration suites (see "Operations no emulator implements" below), so a slow async import can't redden the build. Emulator targets run the full `npm test` since GSI creation is instant locally.
+
+Nothing is dropped from real AWS by being off the gate, only moved. Real-AWS
+coverage runs in three lanes, split by runtime rather than by importance:
+
+| Lane | Scope | Gates the build |
+|------|-------|-----------------|
+| `test:gating` | the suite minus the two below | yes |
+| `test:integrations` | S3 export/import, Kinesis | no |
+| `test:gsi` | the 14 UpdateTable GSI lifecycle tests | no |
+
+The GSI lane exists because a full green run of that file was measured at
+2h50m against real AWS on a slow backfill night, far longer than the gating
+run can absorb. It gets a lane sized for it instead of being skipped.
+
+Because the published DynamoDB row is scored across the whole suite, the
+**Ground-truth coverage** job unions the three lanes after every scheduled run
+and fails if any test in the suite has no real-AWS observation behind it. Run
+it yourself with `node scripts/ground-truth-coverage.mjs --reference
+results/<emulator>.json <ground-truth files>`. A hole in ground truth is the
+one thing here that is never allowed to be quiet.
 
 ## Design principles
 
@@ -412,7 +432,9 @@ behaviour has value - and they all carry the `cloud-only` tag, so
 
 Import/Export and Kinesis lean on slow async control-plane calls that make poor
 gate material, so they run in a separate non-gating job via
-`npm run test:integrations` rather than on the gating run.
+`npm run test:integrations` rather than on the gating run. They still run
+against real AWS every scheduled run, and the ground-truth coverage check
+fails if they don't.
 
 Genuinely not covered, with no tests yet:
 
