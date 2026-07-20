@@ -42,139 +42,139 @@
     ],
     "detail": {
       "af-south-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-east-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-east-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-northeast-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-northeast-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-northeast-3": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-south-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-south-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-southeast-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-southeast-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-southeast-3": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-southeast-4": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-southeast-5": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-southeast-6": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ap-southeast-7": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ca-central-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "ca-west-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "eu-central-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "eu-central-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "eu-north-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "eu-south-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "eu-south-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "eu-west-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "eu-west-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "eu-west-3": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "il-central-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "me-central-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "me-south-1": {
         "lastResolved": null,
-        "consecutiveUnresolved": 2
+        "consecutiveUnresolved": 3
       },
       "mx-central-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "sa-east-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "us-east-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "us-east-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "us-west-1": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       },
       "us-west-2": {
-        "lastResolved": "2026-07-17",
+        "lastResolved": "2026-07-18",
         "consecutiveUnresolved": 0
       }
     }
@@ -182,7 +182,7 @@
   "groundTruth": {
     "slug": "dynamodb",
     "rate": 100,
-    "runDate": "2026-07-18"
+    "runDate": "2026-07-20"
   },
   "targets": {
     "dynalite": {
@@ -1117,7 +1117,7 @@
         }
       },
       "version": "4.0.0",
-      "runDate": "2026-07-18"
+      "runDate": "2026-07-20"
     },
     "dynamodb-local": {
       "headline": {
@@ -2051,7 +2051,7 @@
         }
       },
       "version": "d89f8fcc6b1a",
-      "runDate": "2026-07-18"
+      "runDate": "2026-07-20"
     },
     "dynoxide": {
       "headline": {
@@ -2985,7 +2985,7 @@
         }
       },
       "version": "0.11.4",
-      "runDate": "2026-07-18"
+      "runDate": "2026-07-20"
     },
     "extenddb": {
       "headline": {
@@ -3919,7 +3919,7 @@
         }
       },
       "version": "v0.1.1",
-      "runDate": "2026-07-18"
+      "runDate": "2026-07-20"
     },
     "floci": {
       "headline": {
@@ -4853,7 +4853,7 @@
         }
       },
       "version": "d2ecc8035822",
-      "runDate": "2026-07-18"
+      "runDate": "2026-07-20"
     },
     "localstack": {
       "headline": {
@@ -5787,7 +5787,7 @@
         }
       },
       "version": "2026.6.3",
-      "runDate": "2026-07-18"
+      "runDate": "2026-07-20"
     },
     "ministack": {
       "headline": {
@@ -6720,8 +6720,8 @@
           }
         }
       },
-      "version": "0b5dba5153fc",
-      "runDate": "2026-07-18"
+      "version": "22a278f078f5",
+      "runDate": "2026-07-20"
     }
   }
 }
