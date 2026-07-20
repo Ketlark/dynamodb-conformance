@@ -8,6 +8,13 @@ sidecar - see `src/indeterminate-sink.ts`). The weekly sweep
 artifacts; `npm run test:capture-ground-truth` writes an ad-hoc local capture
 here as `latest.json`.
 
+`gsi.json` is the one non-region file: the GSI lifecycle lane
+(`test:gsi` in `.github/workflows/conformance.yml`) writes eu-west-2's
+observation of the 14 UpdateTable GSI tests here, because those run in their
+own 6h credential window rather than on the gating job. It is ground truth for
+the same reason the region files are, and it is kept out of `results/` for the
+same reason too.
+
 The JSON files are gitignored: they are run output, not curated state. Only
 this README is tracked.
 
