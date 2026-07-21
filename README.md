@@ -401,9 +401,9 @@ All test data must be synthetic. Don't use real names, emails, addresses, or any
 | UpdateTable | basic (throughput, billing mode) | GSI lifecycle | |
 | TransactWriteItems | | basic, conditions (incl. parens, non-existent key branch), idempotency, cancellation | error messages |
 | TransactGetItems | | basic, validation | error messages |
-| ExecuteStatement | | INSERT, SELECT, UPDATE, DELETE, parameterised | |
-| BatchExecuteStatement | | batch, partial failure | |
-| ExecuteTransaction | | atomic, rollback | |
+| ExecuteStatement | | INSERT, SELECT, UPDATE, DELETE, parameterised, RETURNING | error messages (RETURNING) |
+| BatchExecuteStatement | | batch, partial failure, RETURNING honoured | |
+| ExecuteTransaction | | atomic, rollback, RETURNING rejected | error messages (RETURNING) |
 | UpdateTimeToLive | | enable, validation | |
 | DescribeTimeToLive | | describe | |
 | TagResource | | add, list, remove, validation | |
