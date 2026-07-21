@@ -27,6 +27,23 @@ baseline lives in the dated snapshot below instead, and the scheduled-run drift
 verdict flags when it needs refreshing. Currently seeded from the 2026-06-09
 capture until the first scheduled run overwrites it.
 
+## 2026-07-21-null-false-envelope.json
+
+The `{ NULL: false }` rejection message, captured in every region the sweep
+observes (issue #97). With the accept/reject split retired, every region
+rejects the value, but the wording comes in two forms that differ only by the
+`1 validation error detected: ` prefix. Six regions return the prefixed form
+(ap-east-2, ap-northeast-2, ap-southeast-1, eu-central-1, eu-north-1,
+eu-west-2), twenty-seven the bare form, and me-south-1 was unreachable (#93).
+The registry had recorded only eu-north-1 on the prefixed form and the
+2026-07-17 sweep saw eu-west-2 and eu-central-1 join it, so the prefix is
+still rolling out region by region. That is why the Tier 3 assertion matches
+the invariant clause rather than the exact string, and why no envelope split
+row was admitted - a row would drift every time a region flips mid-rollout.
+The rejection is request-level validation thrown before table resolution, so
+this probe sends one PutItem per region against a nonexistent `_conformance_`
+table name and creates no tables.
+
 ## 2026-07-13-empty-set-member.json
 
 The current drift baseline (the `Compute the drift verdict` step in

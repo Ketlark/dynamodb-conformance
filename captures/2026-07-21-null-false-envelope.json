@@ -1,0 +1,176 @@
+{
+  "capturedAt": "2026-07-21T21:00:49.237Z",
+  "note": "Single-probe capture for issue #97: the exact { NULL: false } PutItem rejection message in every region the sweep observes (registry/regions.json). The rejection is request-level validation thrown before table resolution - verified in eu-west-2, where a nonexistent table name returns the same message - so the probe fires one PutItem per region against a nonexistent _conformance_ table name and creates no tables. Two message forms, differing only by the leading 1-validation-error-detected envelope: six regions prefixed, twenty-seven bare, me-south-1 unreachable (issue #93).",
+  "regions": {
+    "af-south-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-east-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-east-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "1 validation error detected: One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-northeast-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-northeast-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "1 validation error detected: One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-northeast-3": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-south-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-south-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-southeast-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "1 validation error detected: One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-southeast-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-southeast-3": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-southeast-4": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-southeast-5": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-southeast-6": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ap-southeast-7": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ca-central-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "ca-west-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "eu-central-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "1 validation error detected: One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "eu-central-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "eu-north-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "1 validation error detected: One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "eu-south-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "eu-south-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "eu-west-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "eu-west-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "1 validation error detected: One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "eu-west-3": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "il-central-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "me-central-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "me-south-1": {
+      "outcome": "indeterminate",
+      "name": "TimeoutError",
+      "message": "@smithy/node-http-handler - the request socket did not establish a connection with the server within the configured timeout of 10000 ms."
+    },
+    "mx-central-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "sa-east-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "us-east-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "us-east-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "us-west-1": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    },
+    "us-west-2": {
+      "outcome": "rejected",
+      "name": "ValidationException",
+      "message": "One or more parameter values were invalid: Null attribute value types must have the value of true"
+    }
+  }
+}
