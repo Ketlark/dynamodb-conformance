@@ -911,6 +911,25 @@ describe('ExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] }, ()
     expect(item.data.S).toBe('new')
   })
 
+  it('UPDATE on a non-existent key fails ConditionalCheckFailed (PartiQL UPDATE is not an upsert)', async () => {
+    const pk = 'pq-ret-upd-ghost'
+    // Deliberately not seeded — the key must not exist.
+
+    await expectDynamoError(
+      () => ddb.send(new ExecuteStatementCommand({
+        Statement: `UPDATE "${hashTableDef.name}" SET data = 'new' WHERE pk = '${pk}' RETURNING ALL OLD *`,
+      })),
+      'ConditionalCheckFailedException',
+      'The conditional request failed',
+    )
+
+    // Not an upsert — the rejected UPDATE did not create the item.
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item).toBeUndefined()
+  })
+
   // ── Error tests ───────────────────────────────────────────────────────
 
   it('rejects a statement with syntax error', async () => {
