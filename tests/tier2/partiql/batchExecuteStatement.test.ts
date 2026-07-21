@@ -129,6 +129,101 @@ describe('BatchExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] 
     expect(errors[0].Error!.Code).toBe('ResourceNotFound')
   })
 
+  it('honours a RETURNING clause on a member statement', async () => {
+    const pk = 'batch-ret-allold'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'batchgone' } },
+    }))
+
+    const result = await ddb.send(new BatchExecuteStatementCommand({
+      Statements: [
+        { Statement: `DELETE FROM "${hashTableDef.name}" WHERE pk = '${pk}' RETURNING ALL OLD *` },
+      ],
+    }))
+
+    // Unlike ExecuteTransaction, BatchExecuteStatement honours RETURNING — the
+    // deleted item surfaces on Responses[i].Item. Characterised against real
+    // AWS (eu-west-2). See #102.
+    expect(result.Responses).toBeDefined()
+    expect(result.Responses!.length).toBe(1)
+    expect(result.Responses![0].Item).toBeDefined()
+    expect(result.Responses![0].Item!.pk.S).toBe(pk)
+    expect(result.Responses![0].Item!.data.S).toBe('batchgone')
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: pk } },
+      ConsistentRead: true,
+    }))
+    expect(after.Item).toBeUndefined()
+  })
+
+  it('honours a RETURNING ALL NEW * clause on a member UPDATE', async () => {
+    const pk = 'batch-ret-upd-allnew'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'old' } },
+    }))
+
+    const result = await ddb.send(new BatchExecuteStatementCommand({
+      Statements: [
+        { Statement: `UPDATE "${hashTableDef.name}" SET data = 'new' WHERE pk = '${pk}' RETURNING ALL NEW *` },
+      ],
+    }))
+
+    // An UPDATE member projects the same shape as the ExecuteStatement path,
+    // onto Responses[i].Item. ALL NEW * returns the full new item incl. the key.
+    expect(result.Responses).toBeDefined()
+    expect(result.Responses!.length).toBe(1)
+    expect(result.Responses![0].Item!.pk.S).toBe(pk)
+    expect(result.Responses![0].Item!.data.S).toBe('new')
+  })
+
+  it('honours a RETURNING MODIFIED NEW * clause on a member UPDATE (only the changed attr)', async () => {
+    const pk = 'batch-ret-upd-modnew'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'old' } },
+    }))
+
+    const result = await ddb.send(new BatchExecuteStatementCommand({
+      Statements: [
+        { Statement: `UPDATE "${hashTableDef.name}" SET data = 'new' WHERE pk = '${pk}' RETURNING MODIFIED NEW *` },
+      ],
+    }))
+
+    expect(result.Responses).toBeDefined()
+    expect(result.Responses!.length).toBe(1)
+    const item = result.Responses![0].Item
+    expect(item).toBeDefined()
+    expect(Object.keys(item!)).toEqual(['data'])
+    expect(item!.data.S).toBe('new')
+  })
+
+  it('surfaces an invalid RETURNING variant on a member DELETE as a per-statement error', async () => {
+    // The batch call itself succeeds (HTTP 200, no throw); the invalid variant
+    // surfaces per-statement with Code 'ValidationError' (not the single-statement
+    // path's thrown 'ValidationException' name) and the same verbatim message.
+    const result = await ddb.send(new BatchExecuteStatementCommand({
+      Statements: [
+        { Statement: `DELETE FROM "${hashTableDef.name}" WHERE pk = 'batch-ret-badvariant' RETURNING MODIFIED OLD *` },
+      ],
+    }))
+
+    expect(result.Responses).toBeDefined()
+    expect(result.Responses!.length).toBe(1)
+    const err = result.Responses![0].Error
+    expect(err).toBeDefined()
+    expect(err!.Code).toBe('ValidationError')
+    expect(err!.Message).toBe(
+      'Invalid returning clause: RETURNING MODIFIED OLD *. Only RETURNING ALL OLD * is allowed in DELETE statements.',
+    )
+  })
+
   it('rejects an empty Statements array', async () => {
     await expectDynamoError(
       () => ddb.send(new BatchExecuteStatementCommand({

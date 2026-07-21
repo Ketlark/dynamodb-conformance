@@ -184,6 +184,37 @@ describe('ExecuteTransaction — PartiQL', { tags: ['partiql', 'data-plane'] }, 
     expect(replayEntry?.WriteCapacityUnits).toBeUndefined()
   })
 
+  it('rejects a RETURNING clause inside a transaction statement', async () => {
+    const pk = 'txn-ret-reject'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'txnold' } },
+    }))
+
+    // ExecuteTransaction rejects RETURNING up front with a top-level
+    // ValidationException (not a TransactionCanceledException), so no statement
+    // in the transaction applies. Characterised against real AWS (eu-west-2).
+    // See #102.
+    await expectDynamoError(
+      () => ddb.send(new ExecuteTransactionCommand({
+        TransactStatements: [
+          { Statement: `UPDATE "${hashTableDef.name}" SET data = 'txnnew' WHERE pk = '${pk}' RETURNING ALL NEW *` },
+        ],
+      })),
+      'ValidationException',
+      /RETURNING clause is not supported in ExecuteTransaction/,
+    )
+
+    // The write did not apply — the item is unchanged.
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: pk } },
+      ConsistentRead: true,
+    }))
+    expect(after.Item!.data.S).toBe('txnold')
+  })
+
   it('rejects empty TransactStatements', async () => {
     await expectDynamoError(
       () => ddb.send(new ExecuteTransactionCommand({
