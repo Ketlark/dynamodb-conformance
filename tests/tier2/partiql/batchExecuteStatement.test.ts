@@ -204,6 +204,35 @@ describe('BatchExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] 
     expect(item!.data.S).toBe('new')
   })
 
+  it('omits Item when a member UPDATE produces an empty MODIFIED projection', async () => {
+    const pk = 'batch-ret-upd-modempty'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'old' } },
+    }))
+
+    const result = await ddb.send(new BatchExecuteStatementCommand({
+      Statements: [
+        { Statement: `UPDATE "${hashTableDef.name}" REMOVE data WHERE pk = '${pk}' RETURNING MODIFIED NEW *` },
+      ],
+    }))
+
+    // ExecuteStatement expresses an empty MODIFIED projection as Items: [];
+    // the batch path's singular Item field cannot hold an empty row, so the
+    // field is omitted entirely (not Item: {}). TableName is still echoed.
+    expect(result.Responses).toBeDefined()
+    expect(result.Responses!.length).toBe(1)
+    expect(result.Responses![0].Item).toBeUndefined()
+    expect(result.Responses![0].TableName).toBe(hashTableDef.name)
+
+    // The member statement did apply: the attribute is gone.
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.data).toBeUndefined()
+  })
+
   it('surfaces an invalid RETURNING variant on a member DELETE as a per-statement error', async () => {
     // The batch call itself succeeds (HTTP 200, no throw); the invalid variant
     // surfaces per-statement with Code 'ValidationError' (not the single-statement
