@@ -827,6 +827,13 @@
         "negative-path"
       ]
     },
+    "tests/tier3/error-messages/partiql.test.ts": {
+      "PartiQL — exact error messages": [
+        "partiql",
+        "data-plane",
+        "negative-path"
+      ]
+    },
     "tests/tier3/error-messages/putItem.test.ts": {
       "PutItem — exact error messages": [
         "put-item",
