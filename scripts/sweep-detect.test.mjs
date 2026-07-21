@@ -143,16 +143,65 @@ describe('detectRegistryDrift', () => {
     )
     expect(findings).toHaveLength(1)
     expect(findings[0].kind).toBe('converged')
+    expect(findings[0].convergedOn).toBe('pinned')
     expect(findings[0].mismatched).toEqual(['us-east-1'])
   })
 
-  it('the pinned region no longer matching its own recorded answer is drift of kind moved', () => {
+  it('every region leaving the pinned side is convergence too, not a moved boundary', () => {
+    // The #91 shape: the accepting (pinned) region reverted to rejecting, so
+    // every named region now fails the committed assertion. No region sits on
+    // the pinned side any more - there is no split left to re-pin.
     const findings = detectRegistryDrift(
       { 'eu-west-2': [verdict('fail')], 'us-east-1': [verdict('fail')] },
       rowFor(),
     )
     expect(findings).toHaveLength(1)
+    expect(findings[0].kind).toBe('converged')
+    expect(findings[0].convergedOn).toBe('off-pinned')
+  })
+
+  it('a region changing sides while both sides remain occupied is drift of kind moved', () => {
+    const row = rowFor()
+    row.splits[0].regions['eu-central-1'] = { outcome: 'accepted', detail: 'stored' }
+    const findings = detectRegistryDrift(
+      {
+        'eu-west-2': [verdict('pass')],
+        'eu-central-1': [verdict('fail')],
+        'us-east-1': [verdict('fail')],
+      },
+      row,
+    )
+    expect(findings).toHaveLength(1)
     expect(findings[0].kind).toBe('moved')
+    expect(findings[0].convergedOn).toBeUndefined()
+    expect(findings[0].mismatched).toEqual(['eu-central-1'])
+  })
+
+  it('a named region with no definite answer blocks a convergence claim: the finding stays moved', () => {
+    // eu-west-2 contradicts the row and us-east-1 answered nothing definite.
+    // The observations do not prove the split collapsed, so the finding must
+    // not claim convergence.
+    const findings = detectRegistryDrift(
+      {
+        'eu-west-2': [verdict('fail')],
+        'us-east-1': [
+          verdict('indeterminate', { reason: { reason: 'throttle-exhausted', at: 'test' } }),
+        ],
+      },
+      rowFor(),
+    )
+    expect(findings).toHaveLength(1)
+    expect(findings[0].kind).toBe('moved')
+    expect(findings[0].convergedOn).toBeUndefined()
+  })
+
+  it('a named region wholly absent from the sweep blocks a convergence claim too', () => {
+    // us-east-1 produced no verdict at all (an unresolved region contributes
+    // nothing). Same rule as an indeterminate: absence cannot prove collapse.
+    const findings = detectRegistryDrift({ 'eu-west-2': [verdict('fail')] }, rowFor())
+    expect(findings).toHaveLength(1)
+    expect(findings[0].kind).toBe('moved')
+    expect(findings[0].convergedOn).toBeUndefined()
   })
 
   it('an indeterminate observation draws no drift conclusion', () => {
@@ -325,7 +374,38 @@ describe('issue bodies', () => {
     const issue = buildDriftIssue(finding, { date: '2026-07-11' })
     expect(issue.title).toBe('Registry drift: row-1 (converged)')
     expect(issue.labels).toEqual(['registry-drift'])
+    expect(issue.body).toContain('matching the pinned one')
     expect(issue.body).toContain('| us-east-1 | fail | pass |')
+    expect(issue.body).toContain('never writes `registry/splits.json`')
+  })
+
+  it('a convergence away from the pinned side says the split is gone, not that it healed', () => {
+    const [finding] = detectRegistryDrift(
+      { 'eu-west-2': [verdict('fail')], 'us-east-1': [verdict('fail')] },
+      rowFor(),
+    )
+    const issue = buildDriftIssue(finding, { date: '2026-07-11' })
+    expect(issue.title).toBe('Registry drift: row-1 (converged)')
+    expect(issue.body).toContain('every region has left the pinned side')
+    expect(issue.body).toContain('| eu-west-2 | pass | fail |')
+    expect(issue.body).toContain('never writes `registry/splits.json`')
+  })
+
+  it('a moved finding says the divergence moved and shows the side-changing region', () => {
+    const row = rowFor()
+    row.splits[0].regions['eu-central-1'] = { outcome: 'accepted', detail: 'stored' }
+    const [finding] = detectRegistryDrift(
+      {
+        'eu-west-2': [verdict('pass')],
+        'eu-central-1': [verdict('fail')],
+        'us-east-1': [verdict('fail')],
+      },
+      row,
+    )
+    const issue = buildDriftIssue(finding, { date: '2026-07-11' })
+    expect(issue.title).toBe('Registry drift: row-1 (moved)')
+    expect(issue.body).toContain('describing a divergence that has moved')
+    expect(issue.body).toContain('| eu-central-1 | pass | fail |')
     expect(issue.body).toContain('never writes `registry/splits.json`')
   })
 
@@ -583,11 +663,46 @@ describe('the CLI, end to end on fixtures', () => {
     )
     const registryBefore = readFileSync(registryPath, 'utf8')
 
-    const res = runCli([gt, '--registry', registryPath, '--date', '2026-07-11'], dir)
+    const res = runCli(
+      [gt, '--registry', registryPath, '--date', '2026-07-11', '--out', join(dir, 'report.json')],
+      dir,
+    )
     expect(res.status, res.stderr).toBe(0)
     expect(readFileSync(registryPath, 'utf8')).toBe(registryBefore)
     expect(res.stdout).toContain('would file: Registry drift: row-1 (converged)')
     // The converged test is not simultaneously a fresh candidate.
     expect(res.stdout).toContain('0 split candidate(s)')
+    // The persisted report carries the classification a downstream consumer
+    // reads, direction included.
+    const report = JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8'))
+    expect(report.drift).toHaveLength(1)
+    expect(report.drift[0]).toMatchObject({ kind: 'converged', convergedOn: 'pinned' })
+  })
+
+  it('a full off-pinned collapse reaches the report and the issue as converged, end to end', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'sweep-detect-'))
+    const { gt, registryPath } = writeFixtures(dir)
+    // The #91 shape through the whole pipeline: the pinned region joins the
+    // fail side, so every named region fails the committed assertion.
+    writeFileSync(registryPath, JSON.stringify(rowFor(), null, 2))
+    writeFileSync(
+      join(gt, 'eu-west-2.json'),
+      JSON.stringify(
+        resultsDoc([{ status: 'failed', failureMessages: ['ValidationException: nope'] }]),
+      ),
+    )
+    const registryBefore = readFileSync(registryPath, 'utf8')
+
+    const res = runCli(
+      [gt, '--registry', registryPath, '--date', '2026-07-11', '--out', join(dir, 'report.json')],
+      dir,
+    )
+    expect(res.status, res.stderr).toBe(0)
+    expect(readFileSync(registryPath, 'utf8')).toBe(registryBefore)
+    expect(res.stdout).toContain('would file: Registry drift: row-1 (converged)')
+    expect(res.stdout).toContain('every region has left the pinned side')
+    const report = JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8'))
+    expect(report.drift).toHaveLength(1)
+    expect(report.drift[0]).toMatchObject({ kind: 'converged', convergedOn: 'off-pinned' })
   })
 })

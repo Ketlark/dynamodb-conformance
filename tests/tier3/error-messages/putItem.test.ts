@@ -254,7 +254,9 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
     // the 2026-07-17 ground-truth sweep both had reverted and every region
     // rejects again, so the split was retired and this asserts the shared
     // rejection. The envelope prefix ("1 validation error detected: ") still
-    // varies by region, so match the invariant clause, not the exact string.
+    // varies by region and is mid-rollout - six regions prefixed, twenty-seven
+    // bare in captures/2026-07-21-null-false-envelope.json - so match the
+    // invariant clause, not the exact string.
     try {
       await ddb.send(
         new PutItemCommand({
