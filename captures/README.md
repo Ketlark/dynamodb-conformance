@@ -42,7 +42,11 @@ the invariant clause rather than the exact string, and why no envelope split
 row was admitted - a row would drift every time a region flips mid-rollout.
 The rejection is request-level validation thrown before table resolution, so
 this probe sends one PutItem per region against a nonexistent `_conformance_`
-table name and creates no tables.
+table name and creates no tables. Each region block follows the capture-block
+shape `scripts/lib/drift.mjs` reads - the observation lives on `nullRoundTrip`
+and `probes` is empty - so `scripts/drift-diff.mjs` can diff regions within
+this file; me-south-1 sits under a top-level `unreachable` key, outside
+`regions`, so its absence is never read as agreement.
 
 ## 2026-07-13-empty-set-member.json
 
