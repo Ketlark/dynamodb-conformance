@@ -129,6 +129,37 @@ describe('BatchExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] 
     expect(errors[0].Error!.Code).toBe('ResourceNotFound')
   })
 
+  it('honours a RETURNING clause on a member statement', async () => {
+    const pk = 'batch-ret-allold'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'batchgone' } },
+    }))
+
+    const result = await ddb.send(new BatchExecuteStatementCommand({
+      Statements: [
+        { Statement: `DELETE FROM "${hashTableDef.name}" WHERE pk = '${pk}' RETURNING ALL OLD *` },
+      ],
+    }))
+
+    // Unlike ExecuteTransaction, BatchExecuteStatement honours RETURNING — the
+    // deleted item surfaces on Responses[i].Item. Characterised against real
+    // AWS (eu-west-2). See #102.
+    expect(result.Responses).toBeDefined()
+    expect(result.Responses!.length).toBe(1)
+    expect(result.Responses![0].Item).toBeDefined()
+    expect(result.Responses![0].Item!.pk.S).toBe(pk)
+    expect(result.Responses![0].Item!.data.S).toBe('batchgone')
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name,
+      Key: { pk: { S: pk } },
+      ConsistentRead: true,
+    }))
+    expect(after.Item).toBeUndefined()
+  })
+
   it('rejects an empty Statements array', async () => {
     await expectDynamoError(
       () => ddb.send(new BatchExecuteStatementCommand({
