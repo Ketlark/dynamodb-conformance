@@ -296,7 +296,7 @@ one thing here that is never allowed to be quiet.
 
 ```
 tests/
-  tier1/                    # ~300 tests
+  tier1/                    # ~475 tests
     createTable/            # basic, gsi, lsi
     putItem/                # basic, conditions, validation, expressions, dataTypes, ...
     getItem/                # basic, validation, projection, consumedCapacity
@@ -310,14 +310,14 @@ tests/
     describeTable/          # basic
     listTables/             # basic
     updateTable/            # basic
-  tier2/                    # ~100 tests
+  tier2/                    # ~180 tests
     transactions/           # transactWrite, transactGet
     partiql/                # executeStatement, batchExecuteStatement, executeTransaction
     ttl/                    # basic
     streams/                # basic
     tags/                   # basic
     updateTable/            # gsi
-  tier3/                    # ~195 tests
+  tier3/                    # ~324 tests
     validation-ordering/    # per-operation validation error ordering
     error-messages/         # exact error message strings
     limits/                 # itemSize, batchLimits, responseSize, transactionLimits,
