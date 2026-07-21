@@ -911,6 +911,55 @@ describe('ExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] }, ()
     expect(item.data.S).toBe('new')
   })
 
+  it('UPDATE RETURNING MODIFIED NEW * on a list index returns only the changed element', async () => {
+    const pk = 'pq-ret-upd-lidx-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[0] = 'x' WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    // The list analogue of the nested-map changed-leaf rule: only the changed
+    // element comes back, in list shape, its index collapsed to 0. No key, no
+    // untouched sibling elements.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.length).toBe(1)
+    expect(item.tags.L![0].S).toBe('x')
+
+    // And the write is a genuine list-index SET: the untouched element survives.
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['x', 'b'])
+  })
+
+  it('UPDATE RETURNING MODIFIED OLD * on a list index returns only the prior element', async () => {
+    const pk = 'pq-ret-upd-lidx-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[0] = 'x' WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.length).toBe(1)
+    expect(item.tags.L![0].S).toBe('a')
+  })
+
   it('UPDATE on a non-existent key fails ConditionalCheckFailed (PartiQL UPDATE is not an upsert)', async () => {
     const pk = 'pq-ret-upd-ghost'
     // Deliberately not seeded — the key must not exist.
