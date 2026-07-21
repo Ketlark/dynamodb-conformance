@@ -147,9 +147,16 @@ export function detectSplitCandidates(verdictsByRegion, registry) {
  * conclusion.
  *
  * Findings are `converged` (every named region gave a definite answer and all
- * now match the pinned answer: the split may have healed) or `moved` (the
- * disagreement is no longer the recorded one). Either way the outcome is an
- * issue for a human - reality moving is never a silent registry edit.
+ * gave the SAME one, so no region remains on the other side of the recorded
+ * split - the row should be retired) or `moved` (a definite answer contradicts
+ * the row but the observations do not collapse to one side: either regions
+ * remain on both sides, or a named region gave no definite answer and the
+ * collapse cannot be claimed). Convergence has two directions - all-pass is
+ * convergence onto the pinned answer; all-fail means every region left the
+ * pinned side, and whether the off-side answers coincide is for the
+ * adjudicator to read from the evidence, since a fail only says "not the
+ * pinned answer". Either way the outcome is an issue for a human - reality
+ * moving is never a silent registry edit.
  */
 export function detectRegistryDrift(verdictsByRegion, registry) {
   const tests = byTest(verdictsByRegion)
@@ -171,10 +178,13 @@ export function detectRegistryDrift(verdictsByRegion, registry) {
     const mismatched = Object.keys(actual).filter((r) => actual[r] !== expected[r])
     if (mismatched.length === 0) continue
 
-    const converged = Object.keys(row.regions).every((r) => actual[r] === 'pass')
+    const definite = Object.keys(row.regions).every((r) => r in actual)
+    const answers = new Set(Object.values(actual))
+    const converged = definite && answers.size === 1
     findings.push({
       row: { id: row.id, test: row.test, pinned: row.pinned, behaviour: row.behaviour },
       kind: converged ? 'converged' : 'moved',
+      ...(converged ? { convergedOn: answers.has('pass') ? 'pinned' : 'off-pinned' } : {}),
       expected,
       actual,
       mismatched,
@@ -402,10 +412,12 @@ export function buildCandidateIssue(candidate, { date, runUrl, evidence = {} }) 
 }
 
 export function buildDriftIssue(finding, { date, runUrl }) {
-  const { row, kind, expected, actual } = finding
+  const { row, kind, convergedOn, expected, actual } = finding
   const explanation =
     kind === 'converged'
-      ? 'Every region named in the row now returns a definite answer matching the pinned one. The split may have healed; if so, the row should be retired.'
+      ? convergedOn === 'pinned'
+        ? 'Every region named in the row now returns a definite answer matching the pinned one. The split may have healed; if so, the row should be retired.'
+        : 'Every region named in the row now returns a definite answer, and none matches the pinned one: every region has left the pinned side, so the recorded split no longer exists. The row should be retired and the committed assertion re-pointed at what regions now return, not re-pinned.'
       : 'At least one region named in the row no longer answers the way the row records. The registry may be describing a divergence that has moved.'
   const lines = [
     `## Registry drift: \`${row.id}\``,
