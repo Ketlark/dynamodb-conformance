@@ -789,6 +789,128 @@ describe('ExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] }, ()
     expect(after.Item!.data.S).toBe('new')
   })
 
+  // ── RETURNING clause: MODIFIED projection edges ───────────────────────
+  // MODIFIED returns Items: [] (no row) when the projection would be empty —
+  // a removed attribute under NEW, or a never-existed attribute under OLD —
+  // and returns only the changed leaf for a nested SET path (the untouched
+  // sibling and the key are excluded). Characterised against real AWS
+  // (eu-west-2). See #102.
+
+  it('UPDATE RETURNING MODIFIED NEW * over a nested path returns only the changed leaf', async () => {
+    const pk = 'pq-ret-upd-nested-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, profile: { M: { sub: { S: 'old' }, sib: { S: 'keep' } } } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET profile.sub = 'new' WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    // Only the changed leaf comes back — no untouched sibling, no key.
+    expect(Object.keys(item)).toEqual(['profile'])
+    expect(Object.keys(item.profile.M!)).toEqual(['sub'])
+    expect(item.profile.M!.sub.S).toBe('new')
+  })
+
+  it('UPDATE RETURNING MODIFIED OLD * over a nested path returns only the changed leaf at its old value', async () => {
+    const pk = 'pq-ret-upd-nested-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, profile: { M: { sub: { S: 'old' }, sib: { S: 'keep' } } } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET profile.sub = 'new' WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['profile'])
+    expect(Object.keys(item.profile.M!)).toEqual(['sub'])
+    expect(item.profile.M!.sub.S).toBe('old')
+  })
+
+  it('UPDATE REMOVE RETURNING MODIFIED OLD * returns the removed attribute at its old value', async () => {
+    const pk = 'pq-ret-rem-modold'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'old' }, keep: { S: 'same' } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" REMOVE data WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['data'])
+    expect(item.data.S).toBe('old')
+  })
+
+  it('UPDATE REMOVE RETURNING MODIFIED NEW * returns an empty Items list', async () => {
+    const pk = 'pq-ret-rem-modnew'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'old' }, keep: { S: 'same' } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" REMOVE data WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    // The removed attribute has no new value to project, so AWS returns no row
+    // (Items: []) rather than a row holding an empty object.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(0)
+  })
+
+  it('UPDATE RETURNING MODIFIED OLD * on a newly-set attribute returns an empty Items list', async () => {
+    const pk = 'pq-ret-upd-noprior-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, keep: { S: 'same' } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET data = 'new' WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    // The changed attribute had no old value, so the MODIFIED OLD projection is
+    // empty and AWS returns no row (Items: []), not a row with an empty object.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(0)
+  })
+
+  it('UPDATE RETURNING MODIFIED NEW * on a newly-set attribute returns the new value', async () => {
+    const pk = 'pq-ret-upd-noprior-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, keep: { S: 'same' } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET data = 'new' WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['data'])
+    expect(item.data.S).toBe('new')
+  })
+
   // ── Error tests ───────────────────────────────────────────────────────
 
   it('rejects a statement with syntax error', async () => {
