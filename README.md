@@ -310,7 +310,7 @@ tests/
     describeTable/          # basic
     listTables/             # basic
     updateTable/            # basic
-  tier2/                    # ~180 tests
+  tier2/                    # ~196 tests
     transactions/           # transactWrite, transactGet
     partiql/                # executeStatement, batchExecuteStatement, executeTransaction
     ttl/                    # basic

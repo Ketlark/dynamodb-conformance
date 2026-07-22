@@ -960,6 +960,368 @@ describe('ExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] }, ()
     expect(item.tags.L![0].S).toBe('a')
   })
 
+  // ── RETURNING clause: MODIFIED over list-index edges ──────────────────
+  // Extends the single-index-0 case above. MODIFIED projects each path named
+  // in the statement against the relevant item (new item for NEW, old item for
+  // OLD): a path that still resolves contributes its element, one that no longer
+  // resolves contributes nothing, and contributed list elements come back as a
+  // dense list in ascending index order (positions are not preserved). So a
+  // non-zero index collapses to a single element, multiple indices pack densely,
+  // an out-of-range append projects nothing, and a REMOVE shifts rather than
+  // clears the index. Characterised against real AWS (eu-west-2). See #102.
+
+  it('UPDATE RETURNING MODIFIED NEW * on a non-zero list index returns only the changed element', async () => {
+    const pk = 'pq-ret-upd-lidx-nz-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[2] = 'y' WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    // The changed element comes back as a single-element list whatever its source
+    // index — index 2 collapses to projection index 0, the same as index 0 did.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['y'])
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['a', 'b', 'y'])
+  })
+
+  it('UPDATE RETURNING MODIFIED OLD * on a non-zero list index returns the prior element', async () => {
+    const pk = 'pq-ret-upd-lidx-nz-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[2] = 'y' WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['c'])
+  })
+
+  it('UPDATE RETURNING MODIFIED NEW * over multiple list indices returns a dense pack of the changed elements', async () => {
+    const pk = 'pq-ret-upd-lidx-multi-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[0] = 'x', tags[2] = 'y' WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    // Both changed elements come back, packed into a dense list in ascending
+    // index order. The untouched element at index 1 is dropped and 'y' sits at
+    // projection index 1, not 2 — this is not a positional or sparse projection.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['x', 'y'])
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['x', 'b', 'y'])
+  })
+
+  it('UPDATE RETURNING MODIFIED OLD * over multiple list indices returns the prior elements densely', async () => {
+    const pk = 'pq-ret-upd-lidx-multi-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[0] = 'x', tags[2] = 'y' WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['a', 'c'])
+  })
+
+  it('UPDATE RETURNING MODIFIED NEW * packs changed indices in ascending index order, not statement order', async () => {
+    const pk = 'pq-ret-upd-lidx-order'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    // The statement lists the higher index first, but the projection still comes
+    // back in ascending index order ('x' from index 0 before 'y' from index 2),
+    // so the dense pack is ordered by index, not by the order of the SET clauses.
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[2] = 'y', tags[0] = 'x' WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['x', 'y'])
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['x', 'b', 'y'])
+  })
+
+  it('UPDATE RETURNING MODIFIED OLD * packs changed indices in ascending index order, not statement order', async () => {
+    const pk = 'pq-ret-upd-lidx-order-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    // OLD sorts by index too: the statement lists tags[2] before tags[0], but the
+    // prior values come back ['a','c'] (index 0 then index 2), not ['c','a'].
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[2] = 'y', tags[0] = 'x' WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['a', 'c'])
+  })
+
+  it('UPDATE RETURNING MODIFIED NEW * on an out-of-range list index (append) returns an empty Items list', async () => {
+    const pk = 'pq-ret-upd-lidx-append-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[5] = 'c' WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    // The write appends at the end (the index is clamped to the length), but the
+    // projection resolves the literal path tags[5] against the new 3-element list,
+    // where it is out of range — so nothing is projected and AWS returns no row.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(0)
+
+    // The append still applied.
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('UPDATE RETURNING MODIFIED OLD * on an out-of-range list index (append) returns an empty Items list', async () => {
+    const pk = 'pq-ret-upd-lidx-append-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[5] = 'c' WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    // tags[5] is out of range on the old 2-element list too, so the OLD
+    // projection is also empty.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(0)
+  })
+
+  it('UPDATE RETURNING MODIFIED NEW * appending at exactly the list length returns the appended element', async () => {
+    const pk = 'pq-ret-upd-lidx-applen-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[2] = 'c' WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    // Same append as the tags[5] case (stored ['a','b','c']), but here the literal
+    // index equals the old length, so tags[2] DOES resolve on the new 3-element
+    // list and the projection returns the appended element rather than Items: [].
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['c'])
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('UPDATE RETURNING MODIFIED OLD * appending at exactly the list length returns an empty Items list', async () => {
+    const pk = 'pq-ret-upd-lidx-applen-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" SET tags[2] = 'c' WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    // tags[2] is out of range on the OLD 2-element list, so the OLD projection is
+    // empty even though the NEW projection returns the appended element.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(0)
+  })
+
+  it('UPDATE REMOVE RETURNING MODIFIED OLD * on a list index returns the removed element at its old value', async () => {
+    const pk = 'pq-ret-rem-lidx-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" REMOVE tags[1] WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['b'])
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['a', 'c'])
+  })
+
+  it('UPDATE REMOVE RETURNING MODIFIED NEW * on a list index returns the shifted element, not an empty list', async () => {
+    const pk = 'pq-ret-rem-lidx-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" REMOVE tags[1] WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    // Removing a list index shifts the tail down rather than deleting a key, so
+    // the path tags[1] still resolves on the new list ['a','c'] and points at 'c'.
+    // This is why the map-REMOVE rule (removed attribute -> Items: []) does not
+    // carry to list indices: the index is not gone, it now holds the shifted tail.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['c'])
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['a', 'c'])
+  })
+
+  it('UPDATE REMOVE RETURNING MODIFIED NEW * on the last list index returns an empty Items list', async () => {
+    const pk = 'pq-ret-rem-lidx-last-new'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" REMOVE tags[2] WHERE pk = '${pk}' RETURNING MODIFIED NEW *`,
+    }))
+
+    // Removing the LAST index leaves no tail to shift up, so tags[2] no longer
+    // resolves on the new 2-element list and the NEW projection is empty — unlike
+    // a middle-index REMOVE, where the shifted element keeps the path resolvable.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(0)
+
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.tags.L!.map(v => v.S)).toEqual(['a', 'b'])
+  })
+
+  it('UPDATE REMOVE RETURNING MODIFIED OLD * on the last list index returns the removed element', async () => {
+    const pk = 'pq-ret-rem-lidx-last-old'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, tags: { L: [{ S: 'a' }, { S: 'b' }, { S: 'c' }] } },
+    }))
+
+    const result = await ddb.send(new ExecuteStatementCommand({
+      Statement: `UPDATE "${hashTableDef.name}" REMOVE tags[2] WHERE pk = '${pk}' RETURNING MODIFIED OLD *`,
+    }))
+
+    // tags[2] is in range on the OLD list, so the OLD projection still returns the
+    // removed element.
+    expect(result.Items).toBeDefined()
+    expect(result.Items!.length).toBe(1)
+    const item = result.Items![0]
+    expect(Object.keys(item)).toEqual(['tags'])
+    expect(item.tags.L!.map(v => v.S)).toEqual(['c'])
+  })
+
+  it('UPDATE SET on a list index of an absent attribute is rejected, not auto-created', async () => {
+    const pk = 'pq-ret-upd-lidx-absent'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, marker: { S: 'present' } },
+    }))
+
+    // A write-path gap, not RETURNING-specific: DynamoDB does not auto-create a
+    // parent for a nested write, so setting an index on an attribute that does
+    // not exist is rejected the same as a map key on a missing parent. It does
+    // not create the list. Characterised against real AWS (eu-west-2).
+    await expectDynamoError(
+      () => ddb.send(new ExecuteStatementCommand({
+        Statement: `UPDATE "${hashTableDef.name}" SET newlist[0] = 'x' WHERE pk = '${pk}'`,
+      })),
+      'ValidationException',
+      'The document path provided in the update expression is invalid for update',
+    )
+
+    // The rejected statement created nothing.
+    const after = await ddb.send(new GetItemCommand({
+      TableName: hashTableDef.name, Key: { pk: { S: pk } }, ConsistentRead: true,
+    }))
+    expect(after.Item!.newlist).toBeUndefined()
+    expect(after.Item!.marker.S).toBe('present')
+  })
+
   it('UPDATE on a non-existent key fails ConditionalCheckFailed (PartiQL UPDATE is not an upsert)', async () => {
     const pk = 'pq-ret-upd-ghost'
     // Deliberately not seeded — the key must not exist.
