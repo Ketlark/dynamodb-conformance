@@ -253,6 +253,42 @@ describe('BatchExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] 
     )
   })
 
+  it('surfaces a malformed member statement as a per-statement ValidationError without failing the batch', async () => {
+    const pk = 'batch-parse-ok'
+    keysToCleanup.push({ pk: { S: pk } })
+    await ddb.send(new PutItemCommand({
+      TableName: hashTableDef.name,
+      Item: { pk: { S: pk }, data: { S: 'valid' } },
+    }))
+
+    // A member that fails to parse (SLECT) surfaces per-statement with the short
+    // Code 'ValidationError' — the same Code as an execution error, not the
+    // single-statement path's thrown 'ValidationException'. The batch call itself
+    // returns 200 and a valid sibling member still executes. Characterised against
+    // real AWS (eu-west-2). See #102.
+    const result = await ddb.send(new BatchExecuteStatementCommand({
+      Statements: [
+        { Statement: `SLECT * FROM "${hashTableDef.name}" WHERE pk = '${pk}'` },
+        { Statement: `SELECT * FROM "${hashTableDef.name}" WHERE pk = '${pk}'` },
+      ],
+    }))
+
+    expect(result.Responses).toBeDefined()
+    expect(result.Responses!.length).toBe(2)
+
+    const err = result.Responses![0].Error
+    expect(err).toBeDefined()
+    expect(err!.Code).toBe('ValidationError')
+    expect(err!.Message).toBe(
+      "Statement wasn't well formed, can't be processed: Expected data manipulation",
+    )
+
+    // The valid sibling still executed — a malformed member does not poison the batch.
+    expect(result.Responses![1].Error).toBeUndefined()
+    expect(result.Responses![1].Item).toBeDefined()
+    expect(result.Responses![1].Item!.data.S).toBe('valid')
+  })
+
   it('rejects an empty Statements array', async () => {
     await expectDynamoError(
       () => ddb.send(new BatchExecuteStatementCommand({
