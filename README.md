@@ -273,11 +273,15 @@ policy plus an access key (ExtendDB getting-started guide, "Post-init
 workflow"), then start it and point the suite at it:
 
 ```bash
+# ExtendDB 0.1.2 defaults to port 18443, so pin the suite's 8000 explicitly.
+# Env vars prefixed EXTENDDB__ layer over the config file (the same mechanism
+# scripts/run-extenddb.sh uses), so this makes serve bind 8000.
+export EXTENDDB__SERVER__PORT=8000
 ./target/release/extenddb serve --config extenddb.toml   # https://127.0.0.1:8000
 
 # The JS SDK ignores AWS_CA_BUNDLE; trust the self-signed cert via NODE_EXTRA_CA_CERTS.
 export NODE_EXTRA_CA_CERTS=~/.extenddb/tls/cert.pem
-export AWS_ACCESS_KEY_ID=<access-key-id>        # a real key — ExtendDB verifies the signature
+export AWS_ACCESS_KEY_ID=<access-key-id>        # a real key - ExtendDB verifies the signature
 export AWS_SECRET_ACCESS_KEY=<secret-access-key>
 export AWS_REGION=us-east-1                      # SigV4 signing region for the local endpoint; ground truth is recorded per region, so no single region needs matching
 export DYNAMODB_ENDPOINT=https://127.0.0.1:8000
