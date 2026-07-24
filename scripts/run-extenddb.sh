@@ -32,6 +32,15 @@ EXTENDDB_PORT=${EXTENDDB_PORT:-8000}
 ACCOUNT_ID=${ACCOUNT_ID:-123456789012}
 IAM_USER=${IAM_USER:-conformance}
 
+# Force the port the harness expects rather than inheriting ExtendDB's default,
+# which is not ours to pin: 0.1.2 moved it from 8000 to 18443, which left this
+# script health-checking a port ExtendDB no longer bound. ExtendDB layers env
+# over the config file (config::Environment with the EXTENDDB__ prefix and __
+# separator, added after the file source), and every subcommand loads config the
+# same way, so exporting this makes serve bind EXTENDDB_PORT and the health
+# check, endpoint and manage calls below all agree on it.
+export EXTENDDB__SERVER__PORT="$EXTENDDB_PORT"
+
 command -v jq >/dev/null || { echo "ERROR: jq is required" >&2; exit 1; }
 
 # 40 hex chars from 20 random bytes. Avoids `tr </dev/urandom | head`, which
