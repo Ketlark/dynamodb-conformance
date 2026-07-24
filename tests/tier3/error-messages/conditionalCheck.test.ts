@@ -8,6 +8,7 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { supportsControlPlaneOp } from '../../../src/infra.js'
 import {
   hashTableDef,
   cleanupItems,
@@ -127,7 +128,15 @@ describe('Conditional check — exact error messages', { tags: ['put-item', 'upd
     }
   })
 
-  it('TransactionCanceledException message format', async () => {
+  // Probed per test rather than per block: this describe covers PutItem,
+  // UpdateItem and DeleteItem as well, and those must still run on a target
+  // that lacks transactions.
+  it('TransactionCanceledException message format', async ({ skip }) => {
+    if (!(await supportsControlPlaneOp(() =>
+      ddb.send(new TransactWriteItemsCommand({ TransactItems: [] }))))) {
+      return skip()
+    }
+
     await ddb.send(
       new PutItemCommand({
         TableName: hashTableDef.name,

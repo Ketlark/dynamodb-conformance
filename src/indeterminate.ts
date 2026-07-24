@@ -11,7 +11,10 @@
 //
 // Dependency-light and duck-typed on purpose: the error objects inspected in
 // afterEach hooks have been cloned into plain objects by the test runner, so
-// nothing in this file may rely on instanceof for detection.
+// nothing in this file may rely on instanceof for detection. The one import is
+// the unsupported-fault predicate, which is dependency-free for this reason.
+
+import { isUnsupportedFault } from './unsupported.js'
 
 export const INDETERMINATE_REASONS = [
   /** A table (or one of its GSIs) never reached ACTIVE within its ceiling. */
@@ -129,6 +132,10 @@ export function indeterminateFrom(error: unknown): IndeterminateError | null {
   const e = asErrorLike(error)
   if (!e) return null
 
+  // A carried indeterminate reason (a serialised IndeterminateError the runner
+  // cloned past `instanceof`) is honoured before anything else, so an already
+  // classified observation keeps its reason even if its message would match a
+  // later check.
   const carried = indeterminateReasonOf(error)
   if (carried) {
     return new IndeterminateError(
@@ -137,6 +144,20 @@ export function indeterminateFrom(error: unknown): IndeterminateError | null {
       { cause: error },
     )
   }
+
+  // "Not implemented" is a definite answer about scope, so it is never a failed
+  // observation. isUnsupportedFault recognises it in any shape - an
+  // UnknownOperationException name, a "not implemented" / "is not supported"
+  // message, or HTTP 501 - and 501 is the one that matters here: it sits inside
+  // the 5xx range isTransport reads as "the request may never have been
+  // evaluated", so without this a target signalling unimplemented operations
+  // with 501 would have every one of those answers dropped from its denominator
+  // as unknowable, which flatters it. Caught here rather than in isTransport so
+  // the rule holds however the fault is shaped. A test that meets one of these
+  // without a capability probe stays a real failure, which is the honest
+  // outcome: the suite asked a question the target declined, and nothing has
+  // recorded that as deliberate scope.
+  if (isUnsupportedFault(error)) return null
 
   // Node's syscall failures (e.g. ECONNREFUSED as an AggregateError) can carry
   // an empty message; fall back to the code or name so the record says something.

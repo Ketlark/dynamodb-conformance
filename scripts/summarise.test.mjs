@@ -252,6 +252,96 @@ describe('tableRows / renderTable', () => {
   })
 })
 
+describe('tableRows tie-break', () => {
+  // A target scoring identically to the engine it is a variant of must sort
+  // below it, never above. The two Dynoxide rows are the live case: a partial
+  // wasm preview can tie native on the surface it implements, and the table
+  // must not read as the preview outranking the engine.
+  const tied = (rate) => ({
+    headline: { region: 'eu-west-2', rate },
+    regions: {
+      'eu-west-2': {
+        rate,
+        passed: 785,
+        failed: 0,
+        skipped: 10,
+        indeterminate: 0,
+        count: 795,
+        tiers: {
+          tier1: { p: 1, f: 0, s: 0, i: 0 },
+          tier2: { p: 1, f: 0, s: 0, i: 0 },
+          tier3: { p: 1, f: 0, s: 0, i: 0 },
+        },
+      },
+    },
+    version: '-',
+    runDate: '2026-07-24',
+  })
+
+  it('sorts a base engine above its parenthetical variant on an equal total', () => {
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      // wasm listed first, so a broken tie-break (or none) would leave it first.
+      targets: { 'dynoxide-wasm': tied(100), dynoxide: tied(100) },
+    }
+    const rows = tableRows(summary)
+    const order = rows.map((r) => r.target)
+    expect(order.indexOf(label('dynoxide'))).toBeLessThan(order.indexOf(label('dynoxide-wasm')))
+  })
+})
+
+describe('renderTable preview footnote', () => {
+  // A parenthetical-variant row (a partial-coverage preview) can post a high
+  // percentage over a small implemented surface, so the table marks it and
+  // explains the caveat. Generated, not hand-maintained, so it survives every
+  // regeneration.
+  const one = (rate) => ({
+    headline: { region: 'eu-west-2', rate },
+    regions: {
+      'eu-west-2': {
+        rate,
+        passed: 785,
+        failed: 0,
+        skipped: 213,
+        indeterminate: 0,
+        count: 998,
+        tiers: {
+          tier1: { p: 1, f: 0, s: 0, i: 0 },
+          tier2: { p: 1, f: 0, s: 0, i: 0 },
+          tier3: { p: 1, f: 0, s: 0, i: 0 },
+        },
+      },
+    },
+    version: '-',
+    runDate: '2026-07-24',
+  })
+
+  it('marks the parenthetical-variant row and appends a caveat footnote', () => {
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: { 'dynoxide-wasm': one(100), dynoxide: one(96.3) },
+    }
+    const table = renderTable(summary)
+    // The variant row carries the marker; the base engine row does not.
+    expect(table).toMatch(/\[Dynoxide \(wasm\)\]\([^)]+\) †/)
+    expect(table).not.toMatch(/\[Dynoxide\]\([^)]+\) †/)
+    // The caveat is present and names the row.
+    expect(table).toContain('_† Dynoxide (wasm) is a browser/OPFS preview')
+  })
+
+  it('adds no footnote when no variant row is present', () => {
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: { dynoxide: one(96.3) },
+    }
+    const table = renderTable(summary)
+    expect(table).not.toContain('†')
+    expect(table).not.toContain('preview')
+  })
+})
+
 // ── The committed artefacts: freshness, no-drift, and the shape contract ────
 
 describe('committed results pipeline', () => {
