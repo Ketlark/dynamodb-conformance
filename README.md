@@ -36,7 +36,7 @@ _Scored against real DynamoDB's recorded behaviour in each observed region (`af-
 |--------|--------|--------|--------|-------|--------|------|------|------|---------|------|
 | [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | all regions | 998 | 0 | 0 | live (AWS) | 2026-07-22 |
 | [Dynoxide](https://github.com/nubo-db/dynoxide) | 100.0% | 100.0% | 100.0% | 100.0% | eu-west-2 + 5 regions | 984 | 0 | 14 | 0.12.0 | 2026-07-24 |
-| [Dynoxide (wasm)](https://github.com/nubo-db/dynoxide) † | 100.0% | 100.0% | 100.0% | 100.0% | eu-west-2 + 5 regions | 785 | 0 | 213 | 0.11.4-preview | 2026-07-24 |
+| [Dynoxide (wasm)](https://github.com/nubo-db/dynoxide) † | 100.0% | 100.0% | 100.0% | 100.0% | eu-west-2 + 5 regions | 785 | 0 | 213 | 0.12.0 | 2026-07-24 |
 | [ExtendDB](https://github.com/ExtendDB/extenddb) | 100.0% | 94.0% | 97.2% | 98.2% | all regions | 895 | 16 | 87 | v0.1.2 | 2026-07-24 |
 | [Dynalite](https://github.com/architect/dynalite) | 91.4% | 30.0% | 80.9% | 84.6% | 27 regions | 675 | 123 | 200 | 4.0.0 | 2026-07-24 |
 | [LocalStack](https://github.com/localstack/localstack) | 93.5% | 81.2% | 72.5% | 84.2% | 27 regions | 834 | 156 | 8 | 2026.7.0 | 2026-07-24 |
