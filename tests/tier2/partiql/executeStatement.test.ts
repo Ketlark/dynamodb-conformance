@@ -6,6 +6,7 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { isUnsupportedFault } from '../../../src/infra.js'
 import { hashTableDef, compositeTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
 import type { AttributeValue } from '@aws-sdk/client-dynamodb'
 
@@ -21,7 +22,12 @@ describe('ExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] }, ()
         Statement: `SELECT * FROM "${hashTableDef.name}" WHERE pk = 'partiql-canary'`,
       }))
     } catch (e: unknown) {
-      if (e instanceof Error && (e.name === 'UnknownOperationException' || e.name === 'UnrecognizedClientException')) {
+      // isUnsupportedFault is the suite's definition of "not implemented", so a
+      // target signalling it any recognised way (including HTTP 501) skips here
+      // rather than failing every PartiQL test. UnrecognizedClientException is
+      // kept alongside it: it is a credentials rejection, not an unsupported
+      // fault, but it is how at least one target declines PartiQL.
+      if (isUnsupportedFault(e) || (e instanceof Error && e.name === 'UnrecognizedClientException')) {
         supported = false
       }
     }

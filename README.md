@@ -4,7 +4,7 @@
 [![Licence: Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
 [![Live results](https://img.shields.io/badge/live%20results-paritysuite.org-brightgreen)](https://paritysuite.org)
 
-An independent test suite that validates any DynamoDB-compatible endpoint against real DynamoDB behaviour. It works against DynamoDB, DynamoDB Local, Dynoxide, Dynalite, LocalStack, ExtendDB, Floci, Ministack, or anything else that implements the DynamoDB HTTP API.
+An independent test suite that validates any DynamoDB-compatible endpoint against real DynamoDB behaviour. It works against DynamoDB, DynamoDB Local, Dynoxide, Dynoxide (wasm), Dynalite, LocalStack, ExtendDB, Floci, Ministack, or anything else that implements the DynamoDB HTTP API.
 
 ## Why this exists
 
@@ -35,6 +35,7 @@ _Scored against real DynamoDB's recorded behaviour in each observed region (`af-
 | Target | Tier 1 | Tier 2 | Tier 3 | Total | Region | Pass | Fail | Skip | Version | Date |
 |--------|--------|--------|--------|-------|--------|------|------|------|---------|------|
 | [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | all regions | 998 | 0 | 0 | live (AWS) | 2026-07-22 |
+| [Dynoxide (wasm)](https://github.com/nubo-db/dynoxide) † | 100.0% | 100.0% | 100.0% | 100.0% | eu-west-2 + 5 regions | 785 | 0 | 213 | 0.11.4-preview | 2026-07-24 |
 | [Dynoxide](https://github.com/nubo-db/dynoxide) | 99.8% | 77.8% | 96.9% | 94.7% | eu-west-2 + 5 regions | 932 | 52 | 14 | 0.11.4 | 2026-07-22 |
 | [LocalStack](https://github.com/localstack/localstack) | 93.5% | 81.2% | 72.5% | 84.2% | 27 regions | 834 | 156 | 8 | 2026.7.0 | 2026-07-22 |
 | [ExtendDB](https://github.com/ExtendDB/extenddb) | 85.5% | 86.2% | 78.8% | 83.2% | all regions | 758 | 153 | 87 | v0.1.1 | 2026-07-22 |
@@ -42,6 +43,8 @@ _Scored against real DynamoDB's recorded behaviour in each observed region (`af-
 | [Ministack](https://github.com/ministackorg/ministack) | 89.1% | 70.4% | 78.7% | 82.0% | all regions | 818 | 180 | 0 | 7485cab02cd8 | 2026-07-22 |
 | [Floci](https://github.com/floci-io/floci) | 91.4% | 61.6% | 70.7% | 78.9% | all regions | 780 | 209 | 9 | d2ecc8035822 | 2026-07-22 |
 | [Dynalite](https://github.com/architect/dynalite) | 91.4% | 13.2% | 71.6% | 76.2% | 27 regions | 675 | 211 | 112 | 4.0.0 | 2026-07-22 |
+
+_† Dynoxide (wasm) is a browser/OPFS preview, scored over the operations it implements. Its Skip count is unimplemented surface (PartiQL, transactions, tags, TTL), not passing behaviour, so read its percentage as correctness on what it implements - not a like-for-like comparison with an engine that implements everything._
 <!-- results:end -->
 
 **Live results:** [the Parity Suite board](https://paritysuite.org) - the full table for every target, tracked run over run.
@@ -182,6 +185,46 @@ dynoxide --port 8001 &
 DYNAMODB_ENDPOINT=http://localhost:8001 npm test
 kill %1
 ```
+
+### Dynoxide (wasm)
+
+A separate engine from the native build above, scored as its own row. The same
+query layer compiles to `wasm32-unknown-unknown` and runs against the official
+SQLite-wasm build over OPFS, in a browser Web Worker. Both engines issue the
+same SQL, so the two rows differ only where the backends do.
+
+The engine has no HTTP server of its own - it answers a `postMessage` RPC
+(`open`, `execute`, `capabilities`). Reaching it needs a shim that speaks the
+DynamoDB HTTP API on a port and forwards each request into a headless browser
+running the shipped `dist/` bundle. Dynoxide ships that shim as a repo script,
+so the suite sees a port like every other target. The script is test-only and
+deliberately undistributed - it is not a way to run dynoxide, and getting it
+means cloning the repo.
+
+```bash
+# in a dynoxide checkout: build the bundle, then serve it
+npm ci && npm run build:wasm
+npm run wasm:serve &        # http://127.0.0.1:8003, installs its own browser
+
+# back in this repo
+DYNAMODB_ENDPOINT=http://127.0.0.1:8003 CONFORMANCE_TARGET=dynoxide-wasm npm test
+```
+
+Port 8003 keeps it clear of the native build on 8001; the script also takes a
+second port for its internal static server, defaulting to 8004. `--port` and
+`--asset-port` override both.
+
+It's a preview with deliberate gaps. PartiQL, `TransactWriteItems`, tags and TTL
+aren't implemented, so those tests skip rather than fail and the row carries a
+far higher skip count than any other target. Read the row as "correct on what it
+implements", not as a like-for-like comparison with a target that implements
+everything.
+
+One scope caveat worth knowing. The shim opens the engine `ephemeral`, which
+forces an in-memory database so no OPFS state can leak between runs. That keeps
+the run clean, but it means the conformance path does not exercise OPFS
+persistence, which is the wasm build's actual storage layer. Dynoxide covers
+persistence in its own browser tests.
 
 ### Dynalite
 
@@ -377,6 +420,18 @@ the first such target), two extra steps apply: trust its certificate with
 `AWS_CA_BUNDLE`), and pass a real `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
 whose policy allows the operations the suite exercises. Before committing the
 results JSON, grep it for your key to be sure no credential leaked into it.
+
+If the engine doesn't speak DynamoDB HTTP at all - a browser or embedded engine
+reached over its own RPC - it can still be tracked, provided the vendor fronts
+it with a shim exposing the HTTP API on a port (Dynoxide wasm is the first such
+target). The suite stays endpoint-agnostic either way. Two things the shim has
+to get right. It must start from clean state, because the suite creates its
+shared tables in `beforeAll` and never resets the target. And for any operation
+the engine doesn't implement it must return `UnknownOperationException`, a
+message matching `unknown operation` / `not implemented` / `unsupported
+operation` / `is not supported`, or HTTP 501. That's what `isUnsupportedFault`
+in `src/infra.ts` looks for; anything else arrives as an ordinary error and the
+operation is scored as a failure instead of a skip.
 
 ### Test data
 

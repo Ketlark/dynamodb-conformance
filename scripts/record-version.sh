@@ -7,12 +7,16 @@
 #   scripts/record-version.sh <target>
 #
 # Per-target inputs:
-#   EXTENDDB_REF   extenddb — the release tag/ref that was built
-#   TARGET_IMAGE   container targets — the image ref, used to resolve a digest
+#   EXTENDDB_REF       extenddb - the release tag/ref that was built
+#   DYNOXIDE_WASM_REF  dynoxide-wasm - the dynoxide release the bundle came from
+#   TARGET_IMAGE       container targets - the image ref, used to resolve a digest
 #
 # Sources, by target:
 #   dynamodb              live AWS service (no version)
 #   dynoxide / dynalite   npm published version (`npm view`)
+#   dynoxide-wasm         the triggering dynoxide release, else the npm version;
+#                         the wasm preview ships inside the dynoxide release
+#                         rather than as its own published package
 #   localstack            its /_localstack/info version endpoint
 #   extenddb              the built release tag
 #   container `:latest`   the resolved image digest (pins what latest was)
@@ -26,6 +30,10 @@ case "$target" in
   dynamodb)   ver="live (AWS)" ;;
   extenddb)   ver="${EXTENDDB_REF:-}" ;;
   dynoxide)   ver=$(npm view dynoxide version 2>/dev/null) ;;
+  dynoxide-wasm)
+    ver="${DYNOXIDE_WASM_REF:-}"
+    [ -z "$ver" ] && ver=$(npm view dynoxide version 2>/dev/null)
+    ;;
   dynalite)   ver=$(npm view dynalite version 2>/dev/null) ;;
   localstack)
     ver=$(curl -fsS http://localhost:4566/_localstack/info 2>/dev/null | jq -r '.version // empty')

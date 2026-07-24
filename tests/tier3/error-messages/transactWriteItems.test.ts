@@ -6,6 +6,7 @@ import {
   TransactionCanceledException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { skipUnlessSupported } from '../../../src/infra.js'
 import {
   hashTableDef,
   hashBTableDef,
@@ -39,6 +40,10 @@ afterAll(async () => {
 })
 
 describe('TransactWriteItems — exact error messages', { tags: ['transactions', 'data-plane', 'negative-path'] }, () => {
+  // An empty TransactItems is rejected by any target that implements the
+  // operation, so this separates "not implemented" from "implemented".
+  skipUnlessSupported(() => ddb.send(new TransactWriteItemsCommand({ TransactItems: [] })))
+
   it('empty TransactItems: full minimum-length error', async () => {
     try {
       await ddb.send(new TransactWriteItemsCommand({ TransactItems: [] }))

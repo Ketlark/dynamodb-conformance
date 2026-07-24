@@ -13,6 +13,7 @@ import {
   GetRecordsCommand,
 } from '@aws-sdk/client-dynamodb-streams'
 import { uniqueTableName, waitUntilActive, deleteTable } from '../../../src/helpers.js'
+import { isUnsupportedFault } from '../../../src/infra.js'
 
 async function getAllStreamRecords(streamArn: string, maxRetries = 30): Promise<any[]> {
   const allRecords: any[] = []
@@ -74,7 +75,15 @@ describe('DynamoDB Streams — basic', { tags: ['streams', 'control-plane'] }, (
       streamArn = desc.Table!.LatestStreamArn!
       await waitForStreamEnabled(streamArn)
     } catch (e: unknown) {
-      if (e instanceof Error && (e.name === 'UnknownOperationException' || e.name === 'ValidationException')) {
+      // Use the suite's shared "not implemented" classifier so streams follows
+      // the same skip rule as every other feature: only an unsupported fault
+      // (UnknownOperationException / a "not implemented" message / HTTP 501)
+      // skips. A bare ValidationException is a real answer - the target
+      // rejecting a request real DynamoDB accepts - and must score as a fail,
+      // not vanish as a skip. dynalite, the only streams-less target, drops the
+      // StreamSpecification and answers DescribeStream with
+      // UnknownOperationException, so it still skips correctly.
+      if (isUnsupportedFault(e)) {
         supported = false
       } else {
         throw e
@@ -320,7 +329,7 @@ describe('DynamoDB Streams — basic', { tags: ['streams', 'control-plane'] }, (
         newImageStreamArn = desc.Table!.LatestStreamArn!
         await waitForStreamEnabled(newImageStreamArn)
       } catch (e: unknown) {
-        if (e instanceof Error && (e.name === 'UnknownOperationException' || e.name === 'ValidationException')) {
+        if (isUnsupportedFault(e)) {
           viewTypeSupported = false
         } else {
           throw e
@@ -384,7 +393,7 @@ describe('DynamoDB Streams — basic', { tags: ['streams', 'control-plane'] }, (
         keysOnlyStreamArn = desc.Table!.LatestStreamArn!
         await waitForStreamEnabled(keysOnlyStreamArn)
       } catch (e: unknown) {
-        if (e instanceof Error && (e.name === 'UnknownOperationException' || e.name === 'ValidationException')) {
+        if (isUnsupportedFault(e)) {
           viewTypeSupported = false
         } else {
           throw e

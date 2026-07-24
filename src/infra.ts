@@ -40,6 +40,7 @@ import {
 import { s3, kinesis } from './aws-aux.js'
 import { isEmulator, region } from './aws-config.js'
 import { IndeterminateError } from './indeterminate.js'
+import { isUnsupportedFault } from './unsupported.js'
 import { ceilingsFor } from './regions.js'
 
 let resourceCounter = 0
@@ -58,18 +59,13 @@ function sleep(ms: number): Promise<void> {
  * error (validation, not-found, access-denied) means the operation *is*
  * implemented and the test should assert, not skip. The characterisation tests
  * refine the exact fault shapes each target uses.
+ *
+ * Defined in src/unsupported.ts and re-exported here, because indeterminate.ts
+ * needs the same predicate and cannot import this module (this one imports it).
+ * Re-exported rather than moved so the many tests importing it from here keep
+ * working.
  */
-export function isUnsupportedFault(err: unknown): boolean {
-  const e = err as { name?: string; message?: string; $metadata?: { httpStatusCode?: number } }
-  const name = e?.name ?? ''
-  const message = e?.message ?? ''
-  const status = e?.$metadata?.httpStatusCode
-  return (
-    name === 'UnknownOperationException' ||
-    /unknown operation|not implemented|unsupported operation|is not supported/i.test(message) ||
-    status === 501
-  )
-}
+export { isUnsupportedFault }
 
 /**
  * Probe whether the target implements a control-plane operation. Returns true
@@ -86,6 +82,42 @@ export async function supportsControlPlaneOp(
   } catch (e) {
     return !isUnsupportedFault(e)
   }
+}
+
+/**
+ * Register the feature-probe skip pattern for the enclosing describe block:
+ * run `probe` once in `beforeAll`, and if the target says it does not
+ * implement the operation, skip every test in the block.
+ *
+ * The pattern is the same one written out by hand in the PartiQL and account
+ * suites; this exists because the transaction, tag and TTL suites need it
+ * across a dozen describe blocks and the hook pair is identical in each. A
+ * probe must be side-effect free and must distinguish "unimplemented" from
+ * "implemented and rejecting", so prefer a read, or a write the target is
+ * bound to reject on its arguments (an empty TransactItems, a well-formed ARN
+ * for a resource the target can't own).
+ *
+ * Some suites keep their bespoke probe on purpose rather than adopt this: the
+ * account and control-plane suites bundle the probe into a `beforeAll` that
+ * also provisions state or keeps the probe's return value for the tests, and
+ * the PartiQL probe additionally accepts `UnrecognizedClientException` (a
+ * credentials rejection, not an unsupported fault, that one target uses to
+ * decline PartiQL). Those cannot collapse to this two-line helper without
+ * losing behaviour, so they stay hand-rolled.
+ *
+ * Support is decided by `supportsControlPlaneOp`, so a real error - a
+ * validation rejection, a not-found - counts as implemented and the block
+ * runs. Only an unsupported fault skips. That way a probe cannot quietly skip
+ * a block just because the target disliked the arguments.
+ */
+export function skipUnlessSupported(probe: () => Promise<unknown>): void {
+  let supported = true
+  beforeAll(async () => {
+    supported = await supportsControlPlaneOp(probe)
+  })
+  beforeEach(({ skip }) => {
+    if (!supported) skip()
+  })
 }
 
 // ── S3 (export / import) ────────────────────────────────────────────────────
