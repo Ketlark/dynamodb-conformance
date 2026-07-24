@@ -4,6 +4,7 @@ import {
   UpdateTimeToLiveCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { skipUnlessSupported } from '../../../src/infra.js'
 import {
   uniqueTableName,
   waitUntilActive,
@@ -25,6 +26,10 @@ async function createSimpleTable(name: string): Promise<void> {
 }
 
 describe('TTL — basic', { tags: ['ttl', 'control-plane'] }, () => {
+  // A missing table is a rejection on an implementing target; read-only.
+  skipUnlessSupported(() =>
+    ddb.send(new DescribeTimeToLiveCommand({ TableName: 'ttl-support-probe' })))
+
   const tablesToCleanup: string[] = []
 
   afterAll(async () => {
@@ -116,6 +121,10 @@ describe('TTL — basic', { tags: ['ttl', 'control-plane'] }, () => {
 })
 
 describe('TTL — validation', { tags: ['ttl', 'control-plane', 'negative-path'] }, () => {
+  // A missing table is a rejection on an implementing target; read-only.
+  skipUnlessSupported(() =>
+    ddb.send(new DescribeTimeToLiveCommand({ TableName: 'ttl-support-probe' })))
+
   const tablesToCleanup: string[] = []
 
   afterAll(async () => {

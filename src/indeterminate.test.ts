@@ -170,6 +170,65 @@ describe('indeterminateFrom', () => {
     expect(indeterminateFrom(notFound)).toBeNull()
   })
 
+  it('never classifies an HTTP 501 unsupported operation, despite it being a 5xx', () => {
+    // 501 sits inside the range isTransport reads as "may never have been
+    // evaluated", but it means "not implemented" - a definite answer about
+    // scope. A target signalling unimplemented operations this way would
+    // otherwise have every one of those answers silently dropped from its
+    // denominator, flattering its score. Regression cover for exactly that.
+    const unsupported = new DynamoDBServiceException({
+      name: 'UnsupportedOperation',
+      $fault: 'server',
+      $metadata: { httpStatusCode: 501 },
+      message: "Operation 'TransactWriteItems' is not supported by the wasm preview engine",
+    } as ConstructorParameters<typeof DynamoDBServiceException>[0])
+    expect(indeterminateFrom(unsupported)).toBeNull()
+  })
+
+  it('never classifies an UnknownOperationException, even when it arrives as a 5xx', () => {
+    // Exercises the guard's name arm specifically: a 5xx server fault would be
+    // classified 'transport' by isTransport, so this only returns null because
+    // isUnsupportedFault recognises the name and short-circuits first. Reverting
+    // the guard would regress this to a transport indeterminate. (The canonical
+    // 400 shape falls through to null with or without the guard, so it would not
+    // catch a regression - hence the deliberate 5xx here.)
+    const unknown = new DynamoDBServiceException({
+      name: 'UnknownOperationException',
+      $fault: 'server',
+      $metadata: { httpStatusCode: 500 },
+      message: 'Unknown operation',
+    } as ConstructorParameters<typeof DynamoDBServiceException>[0])
+    expect(indeterminateFrom(unknown)).toBeNull()
+  })
+
+  it('still classifies a genuine 500 as transport, so the 501 carve-out is narrow', () => {
+    // The carve-out must not become "any 5xx is a real answer". A 500 with no
+    // unsupported wording stays indeterminate.
+    const ise = new DynamoDBServiceException({
+      name: 'InternalServerError',
+      $fault: 'server',
+      $metadata: { httpStatusCode: 500 },
+      message: 'Internal server error',
+    } as ConstructorParameters<typeof DynamoDBServiceException>[0])
+    expect(indeterminateFrom(ise)?.reason).toBe('transport')
+  })
+
+  it('treats a 5xx whose message says "not implemented" as unsupported, not transport', () => {
+    // The precise edge that defines the carve-out's width: isUnsupportedFault
+    // matches the message anywhere, so a 5xx carrying unsupported wording (not
+    // just a 501) is a scored fail, never a dropped observation. This is the
+    // honest direction - a would-be-dropped answer becomes a real result, so it
+    // can only count against a target, never flatter it - but pin it so the
+    // width is deliberate rather than incidental.
+    const oddball = new DynamoDBServiceException({
+      name: 'InternalServerError',
+      $fault: 'server',
+      $metadata: { httpStatusCode: 500 },
+      message: "Operation 'Foo' is not supported by this engine",
+    } as ConstructorParameters<typeof DynamoDBServiceException>[0])
+    expect(indeterminateFrom(oddball)).toBeNull()
+  })
+
   it('is null for a plain error and for an assertion failure', () => {
     expect(indeterminateFrom(new Error('expected 1 to be 2'))).toBeNull()
     expect(

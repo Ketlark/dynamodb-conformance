@@ -5,6 +5,7 @@ import {
   PutItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { skipUnlessSupported } from '../../../src/infra.js'
 import {
   uniqueTableName,
   createTable,
@@ -29,6 +30,10 @@ afterAll(async () => {
 
 // no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('TransactWriteItems limits', { tags: ['transactions', 'data-plane'] }, () => {
+  // An empty TransactItems is rejected by any target that implements the
+  // operation, so this separates "not implemented" from "implemented".
+  skipUnlessSupported(() => ddb.send(new TransactWriteItemsCommand({ TransactItems: [] })))
+
   it('TransactWriteItems with exactly 100 Put actions succeeds', async () => {
     const items = Array.from({ length: 100 }, (_, i) => ({
       Put: {
@@ -103,6 +108,9 @@ describe('TransactWriteItems limits', { tags: ['transactions', 'data-plane'] }, 
 
 // no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('TransactGetItems limits', { tags: ['transactions', 'data-plane'] }, () => {
+  // As above: an empty TransactItems is a rejection on an implementing target.
+  skipUnlessSupported(() => ddb.send(new TransactGetItemsCommand({ TransactItems: [] })))
+
   // Seed 101 items for TransactGetItems tests
   beforeAll(async () => {
     for (let batch = 0; batch < 5; batch++) {

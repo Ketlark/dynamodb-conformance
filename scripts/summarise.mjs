@@ -62,6 +62,7 @@ const DISPLAY = {
   dynamodb: 'DynamoDB',
   'dynamodb-local': 'DynamoDB Local',
   dynoxide: 'Dynoxide',
+  'dynoxide-wasm': 'Dynoxide (wasm)',
   dynalite: 'Dynalite',
   localstack: 'LocalStack',
   ministack: 'Ministack',
@@ -71,12 +72,15 @@ const DISPLAY = {
 const display = (slug) => DISPLAY[slug] ?? slug.replace(/-/g, ' ')
 
 // Project home for each target, linked from its name in the table. The two AWS
-// targets have no source repo, so they point at their AWS pages.
+// targets have no source repo, so they point at their AWS pages. The two
+// Dynoxide rows are separate engines shipped from one project, so they share a
+// home; the display name is what tells them apart.
 const REPO = {
   dynamodb: 'https://aws.amazon.com/dynamodb/',
   'dynamodb-local':
     'https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html',
   dynoxide: 'https://github.com/nubo-db/dynoxide',
+  'dynoxide-wasm': 'https://github.com/nubo-db/dynoxide',
   dynalite: 'https://github.com/architect/dynalite',
   localstack: 'https://github.com/localstack/localstack',
   ministack: 'https://github.com/ministackorg/ministack',
@@ -263,7 +267,17 @@ export function tableRows(summary) {
   })
 
   const num = (t) => (t === '-' ? -1 : parseFloat(t))
-  rows.sort((a, b) => num(b.total) - num(a.total) || a.target.localeCompare(b.target))
+  // Tie-break on the display name, not the `[name](url)` label. Comparing the
+  // label sorts on the first character after the name - a `]` for a bare name,
+  // a space for a parenthetical one - so `[Dynoxide (wasm)]` would sort above
+  // `[Dynoxide]` on an equal total, putting the preview above the engine it is
+  // a variant of. Comparing names makes a base engine a prefix of its variant,
+  // so `Dynoxide` sorts above `Dynoxide (wasm)`.
+  const sortName = (row) => {
+    const m = row.target.match(/^\[([^\]]+)\]/)
+    return m ? m[1] : row.target
+  }
+  rows.sort((a, b) => num(b.total) - num(a.total) || sortName(a).localeCompare(sortName(b)))
 
   // Suite size: the largest test count seen, i.e. a full-suite run.
   const suiteSize = Math.max(0, ...rows.map((r) => r.count))
@@ -321,15 +335,39 @@ export function tableCaption(regions) {
 }
 
 /** Render the full table block: caption plus Markdown table. */
+// A row whose display name carries a parenthetical is a partial-coverage
+// variant of another engine (currently only "Dynoxide (wasm)"): it can post a
+// high percentage over a small implemented surface while skipping the rest, so
+// the raw number invites a false like-for-like read against a full engine. A
+// generated footnote marks such rows and explains the caveat, so it survives
+// every table regeneration rather than being hand-maintained.
+const PREVIEW_FOOTNOTE_MARK = ' †'
+const isPreviewVariant = (row) => / \(/.test(displayNameOf(row.target))
+const displayNameOf = (target) => {
+  const m = target.match(/^\[([^\]]+)\]/)
+  return m ? m[1] : target
+}
+const previewFootnote = (name) =>
+  `_† ${name} is a browser/OPFS preview, scored over the operations it ` +
+  `implements. Its Skip count is unimplemented surface (PartiQL, transactions, ` +
+  `tags, TTL), not passing behaviour, so read its percentage as correctness on ` +
+  `what it implements - not a like-for-like comparison with an engine that ` +
+  `implements everything._`
+
 export function renderTable(summary) {
+  const rows = tableRows(summary)
+  const previews = rows.filter(isPreviewVariant)
   const fmt = (r) =>
-    `| ${r.target} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.total} | ${r.region} | ${r.passed} | ${r.failed} | ${r.skipped} | ${r.version} | ${r.runDate} |`
+    `| ${r.target}${isPreviewVariant(r) ? PREVIEW_FOOTNOTE_MARK : ''} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.total} | ${r.region} | ${r.passed} | ${r.failed} | ${r.skipped} | ${r.version} | ${r.runDate} |`
   const body = [
     '| Target | Tier 1 | Tier 2 | Tier 3 | Total | Region | Pass | Fail | Skip | Version | Date |',
     '|--------|--------|--------|--------|-------|--------|------|------|------|---------|------|',
-    ...tableRows(summary).map(fmt),
+    ...rows.map(fmt),
   ].join('\n')
-  return `${tableCaption(summary.regions)}\n\n${body}`
+  const footnotes = previews
+    .map((r) => `\n\n${previewFootnote(displayNameOf(r.target))}`)
+    .join('')
+  return `${tableCaption(summary.regions)}\n\n${body}${footnotes}`
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────

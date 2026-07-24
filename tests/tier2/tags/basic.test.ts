@@ -6,6 +6,7 @@ import {
   ListTagsOfResourceCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { skipUnlessSupported } from '../../../src/infra.js'
 import {
   uniqueTableName,
   waitUntilActive,
@@ -34,6 +35,15 @@ async function waitForTagCount(arn: string, expectedCount: number, timeoutMs = 1
 }
 
 describe('Tags — basic', { tags: ['resource-tags', 'control-plane'] }, () => {
+  // A well-formed ARN naming a table the target can't own (foreign account,
+  // never created) is rejected by an implementing target - AccessDenied or a
+  // not-found, not an unsupported fault - and the call reads nothing, so the
+  // probe leaves no trace.
+  skipUnlessSupported(() =>
+    ddb.send(new ListTagsOfResourceCommand({
+      ResourceArn: 'arn:aws:dynamodb:us-east-1:000000000000:table/probe',
+    })))
+
   const tableName = uniqueTableName('tags')
   let tableArn: string
 
@@ -165,6 +175,15 @@ describe('Tags — basic', { tags: ['resource-tags', 'control-plane'] }, () => {
 })
 
 describe('Tags — validation', { tags: ['resource-tags', 'control-plane', 'negative-path'] }, () => {
+  // A well-formed ARN naming a table the target can't own (foreign account,
+  // never created) is rejected by an implementing target - AccessDenied or a
+  // not-found, not an unsupported fault - and the call reads nothing, so the
+  // probe leaves no trace.
+  skipUnlessSupported(() =>
+    ddb.send(new ListTagsOfResourceCommand({
+      ResourceArn: 'arn:aws:dynamodb:us-east-1:000000000000:table/probe',
+    })))
+
   it('rejects TagResource with an invalid ARN format', async () => {
     await expectDynamoError(
       () =>
