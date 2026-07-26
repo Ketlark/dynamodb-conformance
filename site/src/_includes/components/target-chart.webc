@@ -1,0 +1,45 @@
+<figure class="mt-2">
+  <svg
+    :viewBox="'0 0 ' + geo.W + ' ' + geo.H"
+    class="w-full h-auto"
+    role="img"
+    :aria-label="charttitle"
+    preserveAspectRatio="xMidYMid meet">
+    <title id="history-chart-title" @text="charttitle"></title>
+
+    <!-- gridlines + y-axis labels -->
+    <g webc:for="g of geo.grid">
+      <line :x1="geo.x0" :x2="geo.x1" :y1="g.y" :y2="g.y" stroke="currentColor" stroke-width="1" class="text-zinc-200 dark:text-white/10" />
+      <text :x="geo.x0 - 6" :y="g.y + 3" text-anchor="end" class="fill-zinc-400 dark:fill-zinc-500 text-[10px] font-mono" @text="g.v + '%'"></text>
+    </g>
+
+    <!-- trend line -->
+    <polyline :points="geo.polyline" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" class="text-brand-500 dark:text-brand-400" />
+
+    <!-- points, and the thinned date axis: every run gets a dot, only the
+         points the axis has room for get a label -->
+    <g webc:for="p of geo.pts">
+      <circle :cx="p.x" :cy="p.y" r="3.5" class="fill-brand-600 dark:fill-brand-300" />
+      <text webc:if="p.showDate" :x="p.x" :y="geo.labelY" text-anchor="middle" class="fill-zinc-400 dark:fill-zinc-500 text-[10px]" @text="p.dateShort"></text>
+    </g>
+
+    <!-- only the latest run is labelled in-plot, so the eye lands on where the
+         target stands now; the rest of the figures are in the caption below -->
+    <text
+      webc:if="geo.latest"
+      :x="geo.latest.x"
+      :y="geo.latest.y - 9"
+      text-anchor="end"
+      class="fill-zinc-700 dark:fill-zinc-200 text-[10px] font-mono font-semibold"
+      @text="geo.latest.label"></text>
+  </svg>
+
+  <!-- Stated in HTML rather than inside the SVG: it renders at real text size
+       on a phone, and role="img" would otherwise hide it from screen readers. -->
+  <figcaption webc:if="geo.latest" class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+    Now <span class="tnum font-medium text-zinc-700 dark:text-zinc-200" @text="geo.latest.label"></span>
+    on <span @text="geo.latest.dateShort"></span><span webc:if="!geo.low">.</span><span webc:if="geo.low">,
+    lowest <span class="tnum font-medium text-zinc-700 dark:text-zinc-200" @text="geo.low.label"></span>
+    on <span @text="geo.low.dateShort"></span>.</span>
+  </figcaption>
+</figure>

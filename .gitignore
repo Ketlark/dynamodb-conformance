@@ -15,7 +15,10 @@ ground-truth/*.json
 .claude/settings.local.json
 .claude/*.lock
 
-# Knowledge-os link: local only, not for the public repo
+# Eleventy build output for the site workspace.
+site/_site/
+
+# Local-only link file. Never committed.
 .kos
 
 # Local scratch run output (DYNAMODB_ENDPOINT set, no CONFORMANCE_TARGET - see

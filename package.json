@@ -21,6 +21,9 @@
   "author": "Martin Hicks <hello@martinhicks.dev>",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "site"
+  ],
   "engines": {
     "node": ">=24"
   },
@@ -41,7 +44,12 @@
     "results:table": "node scripts/summarise.mjs",
     "results:tags": "node scripts/tag-manifest.mjs",
     "results:badges": "node scripts/badges.mjs",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "site:dev": "npm run dev --workspace site",
+    "site:build": "npm run build --workspace site",
+    "site:test": "npm test --workspace site",
+    "site:check-build": "npm run check:build --workspace site",
+    "site:snapshot": "npm run snapshot --workspace site"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1077.0",

@@ -379,6 +379,18 @@ tests/
 - `src/setup.ts` - global beforeAll/afterAll that creates 5 shared tables
 - `src/types.ts` - `TestTableDef` and `KeyDef` types
 
+## The site
+
+[paritysuite.org](https://paritysuite.org) is built from `site/`, an npm workspace in this repository. It renders the files in `results/` as current standings, a page per target with its score over time, and a browsable archive of every recorded run. It imports the suite's own target maps and pass-rate arithmetic, so the board and the table above can't disagree about a target's name, its link, or its score.
+
+```bash
+npm run site:dev     # http://localhost:8080
+npm run site:build   # writes site/_site/
+npm run site:test
+```
+
+`site/README.md` covers the data flow and the build; `AGENTS.md` covers the architecture and the invariants.
+
 ## Generating results
 
 ```bash

@@ -1,0 +1,25 @@
+<script webc:setup>
+  function band(v) {
+    if (v == null) return "none";
+    if (v >= 95) return "pass";
+    if (v >= 75) return "partial";
+    return "fail";
+  }
+  function barClass(v) { return "bar-" + band(v); }
+  function widthPct(v) { return (v == null ? 0 : v) + "%"; }
+</script>
+<div>
+  <div class="flex items-center justify-between mb-1">
+    <span class="text-[0.7rem] uppercase tracking-wide text-zinc-500 dark:text-zinc-400" @text="name"></span>
+    <span class="text-[0.7rem] font-mono tnum text-zinc-600 dark:text-zinc-400" @text="tier.pct"></span>
+  </div>
+  <div
+    class="h-1.5 rounded-full bg-zinc-200 dark:bg-white/10 overflow-hidden"
+    role="meter"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    :aria-valuenow="tier.value == null ? 0 : tier.value"
+    :aria-label="display + ' ' + name + ': ' + tier.pct">
+    <div class="h-full rounded-full" :class="barClass(tier.value)" :style="'width:' + widthPct(tier.value)"></div>
+  </div>
+</div>

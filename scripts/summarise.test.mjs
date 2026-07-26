@@ -6,13 +6,17 @@ import { join } from 'node:path'
 import { buildBadge } from './badges.mjs'
 import { GROUND_TRUTH_SLUG, loadScoringContext, scoreTarget } from './lib/score.mjs'
 import {
+  DISPLAY,
+  REPO,
   SUMMARY_PATH,
   SUMMARY_SCHEMA_VERSION,
   buildSummary,
+  display,
   label,
   readTargets,
   regionStanding,
   renderTable,
+  repoUrl,
   tableCaption,
   tableRows,
   writeSummaryFile,
@@ -425,5 +429,49 @@ describe('readTargets', () => {
       runDate: '2026-07-06',
       sidecar: { runLevel: [{ reason: 'table-active-timeout' }] },
     })
+  })
+})
+
+// The surface the site workspace imports. It used to keep its own copies of
+// these maps and they drifted, so the site now imports them from here and the
+// two can only disagree if one of these exports goes missing or changes shape.
+// A rename that looks harmless on this side breaks a build nobody ran, so the
+// contract is pinned here rather than left to the site's own tests.
+describe('the shared target surface', () => {
+  it('exports the maps and helpers the site imports', () => {
+    for (const [name, value] of [
+      ['DISPLAY', DISPLAY],
+      ['REPO', REPO],
+    ]) {
+      expect(value, `${name} must stay exported`).toBeTypeOf('object')
+      expect(Object.keys(value).length, `${name} must not be empty`).toBeGreaterThan(0)
+    }
+    for (const [name, fn] of [
+      ['display', display],
+      ['repoUrl', repoUrl],
+      ['label', label],
+    ]) {
+      expect(fn, `${name} must stay exported`).toBeTypeOf('function')
+    }
+  })
+
+  it('names and links every target it scores', () => {
+    // Every slug the table can render must be nameable and linkable, so a
+    // target added to one map and not the other is caught here rather than
+    // showing up on the published board as a bare slug.
+    for (const slug of Object.keys(DISPLAY)) {
+      expect(display(slug), `${slug} needs a display name`).toBe(DISPLAY[slug])
+      expect(repoUrl(slug), `${slug} needs a project URL`).toBeTruthy()
+      expect(label(slug)).toBe(`[${DISPLAY[slug]}](${REPO[slug]})`)
+    }
+    expect(Object.keys(REPO).sort()).toEqual(Object.keys(DISPLAY).sort())
+  })
+
+  it('degrades predictably for a slug it has never seen', () => {
+    // The site renders whatever the results directory contains, so an unknown
+    // slug has to produce something printable rather than undefined.
+    expect(display('some-new-thing')).toBe('some new thing')
+    expect(repoUrl('some-new-thing')).toBeNull()
+    expect(label('some-new-thing')).toBe('some new thing')
   })
 })

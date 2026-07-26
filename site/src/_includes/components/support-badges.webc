@@ -1,0 +1,18 @@
+<div webc:if="supports.length" class="mb-12">
+  <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">Fully supports</h2>
+  <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-4 max-w-2xl">
+    Operation areas this target implements completely - every test passes, nothing skipped. Areas it only partly
+    implements, or gets wrong, are in &ldquo;Where it falls short&rdquo; below.
+  </p>
+  <ul class="flex flex-wrap gap-2">
+    <li
+      webc:for="a of supports"
+      class="inline-flex items-center gap-1.5 rounded-full border border-pass-500/30 bg-pass-500/10 px-3 py-1 text-sm text-zinc-700 dark:text-zinc-200">
+      <svg class="w-3.5 h-3.5 shrink-0 text-pass-700 dark:text-pass-400" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+      <span class="font-mono" @text="a.group"></span>
+      <span class="text-[0.6rem] uppercase tracking-wide text-zinc-600 dark:text-zinc-400" @text="a.tier.replace('tier', 'tier ')"></span>
+    </li>
+  </ul>
+</div>

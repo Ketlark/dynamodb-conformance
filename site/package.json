@@ -1,0 +1,44 @@
+{
+  "name": "paritysuite-site",
+  "version": "1.0.0",
+  "description": "paritysuite.org - how faithfully each DynamoDB emulator matches the real thing, scored over time",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npm run dev",
+    "dev:css": "npx @tailwindcss/cli -i ./src/css/main.css -o ./_site/css/style.css -w",
+    "dev:11ty": "npx @11ty/eleventy --serve",
+    "dev": "run-p dev:*",
+    "build": "run-s build:site build:css build:fingerprint",
+    "build:site": "npx @11ty/eleventy",
+    "build:css": "npx @tailwindcss/cli -i ./src/css/main.css -o ./_site/css/style.css --minify",
+    "build:fingerprint": "node scripts/fingerprint-css.mjs",
+    "snapshot": "node scripts/snapshot.mjs",
+    "test": "node --test",
+    "check:build": "node scripts/check-build.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "keywords": [
+    "dynamodb",
+    "conformance",
+    "emulator",
+    "11ty"
+  ],
+  "author": "Martin Hicks <hello@martinhicks.dev>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.1",
+    "@tailwindcss/typography": "^0.5.19",
+    "npm-run-all2": "^8.0.4",
+    "tailwindcss": "^4.2.1"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.1.2",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
+    "@11ty/eleventy-plugin-webc": "^0.11.2",
+    "dynamodb-conformance": "file:..",
+    "markdown-it": "^14.1.1"
+  }
+}

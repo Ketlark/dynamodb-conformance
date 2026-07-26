@@ -1,10 +1,18 @@
 name: CI
 
-# Suite-health gate: checks that the suite itself compiles and its own tooling
-# tests pass. Target-free and credential-free - it never runs the conformance
-# suite against a target, never needs AWS, and never writes to main. The
-# target-capture jobs live in conformance.yml and are expected to vary by
-# target, so they stay off this gate.
+# Cheap gate for both workspaces: the suite itself compiles and its tooling
+# tests pass, and the site's unit tests and hermetic build hold. Target-free
+# and credential-free - it never runs the conformance suite against a target,
+# never needs AWS, and never writes to main. The target-capture jobs live in
+# conformance.yml and are expected to vary by target, so they stay off this
+# gate.
+#
+# Deliberately unfiltered by path. Every job here is seconds of compute, and it
+# is the only thing checking that the automated commits to main (results table,
+# region health) left the tree self-consistent - the tooling tests read
+# results/ and registry/ directly. Filtering it by path would save nothing and
+# would let a bad bot commit through. The expensive filtering belongs in
+# conformance.yml, which is where the real-AWS and emulator time is spent.
 on:
   pull_request:
   push:
@@ -28,6 +36,32 @@ jobs:
         run: npm run typecheck
       - name: Tooling unit tests
         run: npm run test:tooling
+
+  site-health:
+    name: Site health (unit tests + hermetic build)
+    runs-on: ubuntu-latest
+    # Every figure on the site is derived from results/, so the site's lib/
+    # tests are what stand between a scoring or history change and a wrong
+    # number on the page.
+    #
+    # The build check exists because those tests stop at the lib/ boundary:
+    # nothing there loads eleventy.config.js, resolves a permalink, or renders
+    # a template. Bugs have shipped that were plain in the built HTML and green
+    # in the unit tests. It builds with the network stubbed out, so every data
+    # file takes its committed fallback and the result is a function of the
+    # repo alone - a red run here means the code broke, never that an API had
+    # a bad minute.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Site unit tests
+        run: npm run site:test
+      - name: Hermetic build check
+        run: npm run site:check-build
 
   dependency-review:
     name: Dependency review

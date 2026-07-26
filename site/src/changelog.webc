@@ -1,0 +1,44 @@
+---js
+{
+  layout: "layouts/base.webc",
+  meta: {
+    title: "Suite history",
+    description: "How the DynamoDB conformance test suite itself has grown over time - tests added, tiers broadened, and targets brought into the run.",
+  },
+  // Shows per-run test counts and the dated change log, so freshness is the
+  // later of the newest run and the newest log entry, not this file's git date.
+  eleventyComputed: {
+    lastmod: (data) =>
+      [data.conformance?.latest?.date, data.changelog?.entries?.[0]?.date]
+        .filter(Boolean)
+        .sort()
+        .pop(),
+  },
+}
+---
+<section class="max-w-6xl mx-auto px-6 py-12">
+  <h1 class="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white mb-2">Suite history</h1>
+  <p class="text-zinc-600 dark:text-zinc-300 mb-10 max-w-2xl">
+    How the conformance suite itself has grown: tests added, tiers broadened, and targets brought into the run.
+    Test counts are derived from each run; the notes are a hand-kept record of what changed behind them.
+  </p>
+
+  <ol class="relative border-l border-zinc-200 dark:border-white/10 ml-2">
+    <li webc:for="entry of $data.changelog.entries" class="ml-6 pb-10 last:pb-0">
+      <span class="absolute -left-[6.5px] mt-1.5 h-3 w-3 rounded-full bg-brand-500 dark:bg-brand-400 ring-4 ring-white dark:ring-surface-950"></span>
+      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-2">
+        <time class="font-mono font-semibold text-zinc-900 dark:text-zinc-100" :datetime="entry.date" @text="entry.dateLabel"></time>
+        <span
+          webc:if="entry.version"
+          class="font-mono text-xs text-zinc-500 dark:text-zinc-400"
+          @text="entry.version"></span>
+        <a
+          webc:if="entryRuns[entry.date]"
+          :href="'/runs/' + entryRuns[entry.date].id"
+          class="inline-flex items-center rounded-full bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/30 px-2.5 py-0.5 text-xs font-mono tnum text-brand-700 dark:text-brand-300 hover:border-brand-400 transition-colors"
+          @text="entryRuns[entry.date].size + ' tests'"></a>
+      </div>
+      <div class="prose prose-sm prose-zinc dark:prose-invert max-w-none prose-a:text-brand-700 dark:prose-a:text-brand-300" @html="entry.bodyHtml"></div>
+    </li>
+  </ol>
+</section>

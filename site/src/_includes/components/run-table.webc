@@ -1,0 +1,5 @@
+<ol class="space-y-3">
+  <!-- The run this table belongs to, so each row links to that target's results
+       for this date rather than to its current page. -->
+  <standings-row webc:for="row of run.standings" :row="row" :run-id="run.id"></standings-row>
+</ol>
