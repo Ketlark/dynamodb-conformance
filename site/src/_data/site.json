@@ -1,0 +1,52 @@
+{
+  "url": "https://paritysuite.org",
+  "title": "Parity Suite",
+  "descriptor": "DynamoDB conformance suite",
+  "description": "How faithfully does each DynamoDB emulator match the real thing? An independent conformance suite, scored against live AWS DynamoDB and tracked run over run.",
+  "repo": "https://github.com/paritysuite/dynamodb-conformance",
+  "sourceRepo": "https://github.com/paritysuite/dynamodb-conformance",
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "dataLicense": "https://creativecommons.org/licenses/by/4.0/",
+  "dataLicenseName": "CC BY 4.0",
+  "dataAttribution": "paritysuite.org",
+  "ogImage": "/images/og.png",
+  "ogImageAlt": "Parity Suite: how faithfully each DynamoDB emulator matches the real thing, scored against live AWS DynamoDB",
+  "twitterCreator": "@martinhicks",
+  "nav": [
+    { "title": "Capabilities", "url": "/capabilities" },
+    { "title": "Matrix", "url": "/support" },
+    { "title": "Runs", "url": "/runs" },
+    { "title": "Ground truth", "url": "/ground-truth" },
+    { "title": "Methodology", "url": "/methodology" },
+    { "title": "Changelog", "url": "/changelog" },
+    { "title": "About", "url": "/about" },
+    { "title": "GitHub", "url": "https://github.com/paritysuite/dynamodb-conformance", "external": true }
+  ],
+  "person": {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": "https://martinhicks.dev/#martin-person",
+    "name": "Martin Hicks",
+    "url": "https://martinhicks.dev",
+    "jobTitle": "Software Developer and AWS Consultant",
+    "description": "Software developer and AWS consultant in Manchester. Creator of Dynoxide and other DynamoDB tooling.",
+    "image": { "@type": "ImageObject", "url": "https://martinhicks.dev/images/martin-hicks-4.jpeg", "width": 1579, "height": 1579 },
+    "knowsAbout": ["Amazon Web Services", "DynamoDB", "AWS CDK", "Serverless", "TypeScript", "Node.js", "Rust"],
+    "sameAs": [
+      "https://www.linkedin.com/in/martin-hicks-8061748",
+      "https://github.com/hicksy",
+      "https://hachyderm.io/@martinhicks",
+      "https://bsky.app/profile/martinhicks.dev",
+      "https://twitter.com/martinhicks"
+    ]
+  },
+  "publisher": {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://paritysuite.org/#parity-suite",
+    "name": "Parity Suite",
+    "alternateName": "DynamoDB conformance suite",
+    "url": "https://paritysuite.org",
+    "founder": { "@id": "https://martinhicks.dev/#martin-person" }
+  }
+}

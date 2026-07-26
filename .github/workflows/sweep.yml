@@ -276,7 +276,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "Region health unchanged."
           else
-            git commit -m "chore: update region health [skip ci]"
+            git commit -m "chore: update region health"
             pushed=0
             for i in 1 2 3; do
               if git pull --rebase && git push; then pushed=1; break; fi

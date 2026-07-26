@@ -57,8 +57,10 @@ export const SUMMARY_SCHEMA_VERSION = 1
 export const SUMMARY_PATH = 'results/summary.json'
 
 // Display names for the published table. Unlisted slugs fall back to a
-// hyphen-stripped form.
-const DISPLAY = {
+// hyphen-stripped form. Exported because the site workspace renders the same
+// targets and must name them identically; adding a target here is the single
+// edit that puts it on both the README table and paritysuite.org.
+export const DISPLAY = {
   dynamodb: 'DynamoDB',
   'dynamodb-local': 'DynamoDB Local',
   dynoxide: 'Dynoxide',
@@ -69,13 +71,13 @@ const DISPLAY = {
   floci: 'Floci',
   extenddb: 'ExtendDB',
 }
-const display = (slug) => DISPLAY[slug] ?? slug.replace(/-/g, ' ')
+export const display = (slug) => DISPLAY[slug] ?? slug.replace(/-/g, ' ')
 
 // Project home for each target, linked from its name in the table. The two AWS
 // targets have no source repo, so they point at their AWS pages. The two
 // Dynoxide rows are separate engines shipped from one project, so they share a
 // home; the display name is what tells them apart.
-const REPO = {
+export const REPO = {
   dynamodb: 'https://aws.amazon.com/dynamodb/',
   'dynamodb-local':
     'https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html',
@@ -87,6 +89,7 @@ const REPO = {
   floci: 'https://github.com/floci-io/floci',
   extenddb: 'https://github.com/ExtendDB/extenddb',
 }
+export const repoUrl = (slug) => REPO[slug] ?? null
 export const label = (slug) =>
   REPO[slug] ? `[${display(slug)}](${REPO[slug]})` : display(slug)
 

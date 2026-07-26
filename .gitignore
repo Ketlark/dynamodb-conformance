@@ -15,11 +15,15 @@ ground-truth/*.json
 .claude/settings.local.json
 .claude/*.lock
 
-# Knowledge-os link: local only, not for the public repo
+# Eleventy build output for the site workspace.
+site/_site/
+
+# Local-only link file. Never committed.
 .kos
 
-# Local scratch run output (DYNAMODB_ENDPOINT set, no CONFORMANCE_TARGET - see
-# vitest.config.ts). A reserved non-target slug, never committed; see
+# Scratch run output: where any run that doesn't name a CONFORMANCE_TARGET
+# lands, including a bare `npm test` (see scripts/lib/result-target.mjs). A
+# reserved non-target slug, never committed and never scored; see
 # scripts/lib/score.mjs RESERVED_SLUGS.
 /results/local.json
 /results/local.badge.json

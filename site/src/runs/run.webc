@@ -1,0 +1,63 @@
+<section class="max-w-6xl mx-auto px-6 py-12">
+  <nav class="text-sm text-zinc-500 dark:text-zinc-400 mb-8 flex items-center gap-2">
+    <a href="/" class="hover:text-brand-700 dark:hover:text-brand-300">Results</a>
+    <span aria-hidden="true">/</span>
+    <a href="/runs" class="hover:text-brand-700 dark:hover:text-brand-300">Runs</a>
+    <span aria-hidden="true">/</span>
+    <time class="text-zinc-700 dark:text-zinc-300" :datetime="$data.run.date" @text="dateLabel($data.run.date)"></time>
+  </nav>
+
+  <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 mb-2">
+    <h1 class="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+      Run <time :datetime="$data.run.date" @text="dateLabel($data.run.date)"></time>
+    </h1>
+    <p class="text-sm text-zinc-500 dark:text-zinc-400">
+      <span @text="$data.run.emulatorCount + ' emulators'"></span>
+      <span aria-hidden="true">·</span>
+      <span @text="$data.run.suiteSize + ' tests'"></span>
+    </p>
+  </div>
+  <p class="text-zinc-600 dark:text-zinc-300 mb-4 max-w-2xl leading-relaxed">
+    Results as of this run. The arrow shows each target's movement since the previous run it was tested in.<span webc:if="$data.hasCarried"> Targets marked &ldquo;carried&rdquo; weren't re-run this time, so their most recent result is shown instead.</span><span webc:if="$data.run.suiteGrew"> The suite grew this run, so a downward arrow can be the new tests biting rather than a target regressing.</span>
+  </p>
+
+  <!-- Suite-growth callout: the suite expanding under a target is the usual
+       reason a run-over-run score dips, so say so before the arrows mislead. -->
+  <div webc:if="$data.run.suiteGrew" class="mb-8 rounded-xl border border-brand-200 dark:border-brand-500/30 bg-brand-50 dark:bg-brand-500/10 px-4 py-3">
+    <p class="text-sm font-semibold text-brand-800 dark:text-brand-200">
+      Suite grew from <span @text="$data.run.prevSuiteSize"></span> to <span @text="$data.run.suiteSize"></span> tests this run.
+    </p>
+    <p class="mt-1 text-sm text-brand-700 dark:text-brand-200/80 max-w-2xl">
+      That's <span @text="$data.run.suiteGrowth"></span> new tests measured against every target. Movement below compares to the previous run, so a fall here is as likely to be the stricter suite as a real regression.
+    </p>
+  </div>
+
+  <div webc:if="$data.changelog.byDate[$data.run.date]" class="mb-8">
+    <change-note :entry="$data.changelog.byDate[$data.run.date]" :label="'What changed in the suite this run'"></change-note>
+  </div>
+
+  <region-health webc:if="$data.regionHealth" :@health="$data.regionHealth" class="mb-6"></region-health>
+
+  <run-table :run="$data.run"></run-table>
+
+  <!-- Older / newer navigation -->
+  <nav class="mt-10 flex items-center justify-between gap-4 text-sm" aria-label="Run navigation">
+    <a webc:if="$data.neighbours.older" :href="'/runs/' + $data.neighbours.older.id" class="group inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-white/10 px-4 py-2.5 hover:border-brand-300 dark:hover:border-brand-500/40 transition-colors">
+      <span aria-hidden="true">←</span>
+      <span>
+        <span class="block text-xs text-zinc-500 dark:text-zinc-400">Older run</span>
+        <time class="text-zinc-800 dark:text-zinc-200" :datetime="$data.neighbours.older.date" @text="dateLabel($data.neighbours.older.date)"></time>
+      </span>
+    </a>
+    <span webc:else></span>
+
+    <a webc:if="$data.neighbours.newer" :href="'/runs/' + $data.neighbours.newer.id" class="group inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-white/10 px-4 py-2.5 hover:border-brand-300 dark:hover:border-brand-500/40 transition-colors text-right">
+      <span>
+        <span class="block text-xs text-zinc-500 dark:text-zinc-400">Newer run</span>
+        <time class="text-zinc-800 dark:text-zinc-200" :datetime="$data.neighbours.newer.date" @text="dateLabel($data.neighbours.newer.date)"></time>
+      </span>
+      <span aria-hidden="true">→</span>
+    </a>
+    <span webc:else></span>
+  </nav>
+</section>

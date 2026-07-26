@@ -135,6 +135,200 @@ alongside others, and the reference only carries weight if it reads
 that way. The fuller convention, with a copyable block, is "Citing
 a finding" in the README.
 
+## The site workspace (`site/`)
+
+[paritysuite.org](https://paritysuite.org) is built from `site/`, an npm
+workspace holding an Eleventy v3 site with WebC templates and Tailwind v4 via
+the standalone CLI. No client-side framework; charts are inline SVG generated
+at build time. It deploys as a static site to S3 + CloudFront.
+
+The suite and the site live in one repo so the scoring exists once. They were
+separate repos with hand-copied scoring maps until the copies drifted, and for
+a day the board scored a target it could not name.
+
+Commands, all from the repo root:
+
+```bash
+npm run site:dev          # Tailwind watch + eleventy --serve, http://localhost:8080
+npm run site:build        # writes site/_site/
+npm run site:test         # the site's unit tests
+npm run site:check-build  # build with the network stubbed, then assert on the HTML
+npm run site:snapshot     # re-fetch upstream history, rewrite the committed fallback
+```
+
+`site/` depends on the root package as `dynamodb-conformance` (a `file:..`
+dependency), so it imports suite modules by package specifier rather than by
+relative path.
+
+### The rule everything else follows
+
+Every figure on the site is derived from `results/*.json` at build time. None
+of them are hand-authored. Duplicating a number anywhere is how the site and
+the README drift apart, so there is a single data seam and everything renders
+from it. Typing a percentage into a template is the signal something is wrong.
+
+### How the data reaches the templates
+
+Data flows one way: `site/src/_data/*.js` (async 11ty global data, at build
+time) into `site/lib/*.mjs` (pure, testable functions) into WebC templates. The
+`lib/` modules know nothing about Eleventy, which is what makes them testable
+outside it.
+
+Four data files fetch from the published repo at build time, each with a
+committed fallback so builds stay green offline and without a token:
+
+| Data file | Source | Fallback |
+| --- | --- | --- |
+| `conformance.js` | commits touching `results/`, plus each changed `results/<slug>.json` | `data/conformance-history.json`, and `data/tag-manifest.json` for the capability tags |
+| `summary.js` | commits touching `results/summary.json` (`lib/summary-fetch.mjs`) | `data/summary-history.json` |
+| `changelog.js` | `CHANGELOG.md` | `data/changelog-fallback.md` |
+| `splits.js` | `registry/splits.json` | `data/splits-fallback.json` |
+
+These still go over the network even though the files now sit in the same tree.
+Collapsing that into local `git log` reads is deliberate follow-up work, not an
+oversight: the scorer is pure functions over raw Vitest JSON, so sharing it
+never depended on where the JSON came from.
+
+`summary.js` carries the per-region model. The conformance model reads it to
+source each target's best-match headline region, so the two are fetched once
+and joined rather than fetched twice.
+
+The conformance pipeline is the substantial one. `lib/fetch.mjs` lists the
+commits that touched `results/`, works out which target files each one changed,
+pulls those files at that ref from the raw CDN (which doesn't count against the
+API limit), and scores each into a snapshot. `lib/history.mjs` assembles those
+snapshots into the model the templates consume: runs, standings, movement,
+per-target series. `scripts/snapshot.mjs` runs the same two modules to
+regenerate the fallback, so the fallback is always the derived model rather
+than raw API responses. It thins the per-failure `findings` records: kept for
+the most recent measurement, dropped for the history. Keeping all of them takes
+the file from ~1.3 MB to ~30 MB, because every run repeats each failing test's
+name, tags and path. Four references point at the same standings objects
+(`runs[].standings[]`, `latest.standings[]`, `perTarget[].current`,
+`perTarget[].series[]`), so the strip has to handle each or the whole set leaks
+back in. Only the two the site renders from are kept: `perTarget[].findings`
+for the target page, and the newest `series[]` point for that target's newest
+per-run page. A build that falls back therefore itemises the newest run's
+failures and, for older runs, says the detail isn't retained for that snapshot.
+
+### Four invariants worth knowing before you change anything
+
+**Scoring has one definition, and it is the suite's.** `site/lib/scoring.mjs`
+imports `DISPLAY`, `REPO`, `display`, `repoUrl` and `label` from
+`scripts/summarise.mjs`, and `tierOf`, `passRate` and `scoreResults` from
+`scripts/lib/score.mjs`. Adding a target to the suite's maps puts it on both
+the README table and the site with no site-side edit, and `scoreEmulator`
+tallies through the suite's classifier rather than reading
+`assertionResults[].status` itself, so a test the suite counts one way cannot
+be counted another way here. Do not reintroduce a local copy of either.
+
+What remains site-side is the model the templates consume: `dynamodbRow`,
+`sortRows` and `suiteSizeOf` assemble scored rows into runs, standings and
+movement, which the suite has no equivalent of and no use for.
+
+The headline figure is not derived here at all. `enrichSnapshot` in
+`lib/history.mjs` overlays each run's total with the best-matching region rate
+from the suite's published `summary.json`, keeping the locally derived score
+only as `portTotalValue`. That is what makes the board and the README agree by
+construction. The guard that can still catch drift is the numeric check in
+`scoring.test.mjs` that `portTotalValue` equals `summary.json`'s `eu-west-2`
+rate for every target; keep it alive through any refactor.
+
+**Runs are grouped by the results' `startTime`, never by commit.** A single
+commit often refreshes only some targets, and one commit can carry targets
+whose `startTime`s belong to different runs, so grouping by commit would invent
+runs that never happened. Within a run date the latest `startTime` per target
+wins, and a target that wasn't re-tested carries forward at its last measured
+value.
+
+**DynamoDB is never fetched.** Its row is synthesised as a definitional
+flat-100% baseline per run in `lib/history.mjs`. A real `dynamodb.json` scored
+as if it were an emulator would only mislead.
+
+**A changelog entry's test-count badge is paired with a run, and the pairing
+can be corrected by hand.** `entryRunBadges` in `lib/changelog.mjs` takes the
+nearest run on or after each entry. A run can start before that day's commits
+land, so that isn't always the run that measured the entry: 2026-07-13's prose
+describes 954 beside a run that measured 873. No rule fixes this from the data.
+An entry that grew the suite after its run and one that added a target and no
+tests (2026-05-23) are identical in dates and sizes, and only the prose tells
+them apart. So the correction is an explicit `MEASURED_BY` entry naming the
+right run. It names a run, never a figure, so the count still comes from that
+run's results and the derived-figures rule holds. Keep it to genuine
+corrections the suite's own prose evidences; it isn't a place to author
+numbers. Entry headings are `## YYYY-MM-DD` with an optional release tag;
+anything else comes back as `skipped` and is reported rather than dropped.
+
+### Templates
+
+Filters in `site/eleventy.config.js` that do real work (`chartGeometry`,
+`supportMatrix`, `supportCards`, `targetOperations`, `capabilityGrid`,
+`capabilityCards`, `regionGroups`, `splitEvidence`, `regionLabel`,
+`isSelfMaintained`, `targetLinks`, `targetRunHref`, `areaFailures`,
+`findingSource`) are one-line wrappers delegating to `lib/`, which is what
+keeps that logic testable outside 11ty. Anything genuinely trivial (date
+labels, title formatting, cache-busting) stays inline. The rest of the file is
+JSON-LD assembly.
+
+Three things look inconsistent with everything else and have reasons:
+
+- WebC can't nest a `webc:for` over a property of an outer loop variable. The
+  support matrix and capability grid both need that shape, so `lib/matrix.mjs`
+  and `lib/capabilities.mjs` export `render*` helpers returning HTML strings
+  for the card views, and `buildMatrix` returns the same data twice: a flat
+  `items` list for the one-loop desktop grid, and nested `sections` for the
+  helpers.
+- Paginated pages (`src/targets/`, `src/runs/`) compute permalink, meta,
+  breadcrumbs and `lastmod` in `*.11tydata.js` under `eleventyComputed`, not in
+  WebC front matter. `webc:setup` runs once at parse time, so per-page
+  resolution has to happen in computed data. `src/changelog.11tydata.js` uses
+  the same escape hatch for a different reason: it joins two global data sets,
+  which `webc:setup` can't do per page.
+- A component takes props with `:prop`, which also renders them as attributes
+  on the root element. That only shows when the root carries
+  `webc:root="override"`, which merges the host's attributes onto it, as
+  `region-health.webc` does deliberately for a margin class. A component that
+  doesn't need that (`target-links.webc`) uses a plain root, or the props leak
+  into the markup.
+
+`addUrlTransform` strips trailing slashes to pair with a CloudFront URL-rewrite
+function. `lastmod` is a plain field rather than `date` because 11ty resolves
+`date` too early for `eleventyComputed`.
+
+### Deploy
+
+`.github/workflows/deploy.yml` builds and syncs to S3 + CloudFront over OIDC on
+a push to main touching `site/`, `results/`, `registry/` or `CHANGELOG.md`, on
+a daily cron, or on demand. `src/history-meta.njk` emits `/history-meta.json`
+carrying a content hash of the derived history (`lib/digest.mjs`); the
+scheduled run compares it against the deployed copy and skips the sync and
+invalidation entirely when the data hasn't moved.
+
+Two things there will catch you out. The workflow syncs assets and HTML
+separately, and the two prefix lists are complements, so a new asset directory
+has to be added to both or the second pass reclaims it. And the build sets
+`FAIL_ON_FALLBACK=1` because the syncs delete what they don't find: a build
+that quietly fell back to the committed snapshot would publish fewer pages and
+take the rest down with it.
+
+The hosting itself is defined outside this repo.
+
+### Presentation constraints
+
+Score state must never be carried by colour alone. The delta text and an
+`aria-label` always carry the meaning too (WCAG 1.4.1). Coloured text uses the
+`-700` shades in light mode, because the `-600`s fall below 4.5:1 on the
+near-white cards, and the `-400`s in dark. Bar fills and movement colours are
+plain classes in `src/css/main.css` rather than Tailwind utilities, so
+dynamically composed class names always resolve. Figures render with `.tnum`
+(tabular numerals) so score columns align.
+
+Every target is presented on the same terms. Copy that names one target should
+read the same way if a different one were top of the table, and any target
+whose author also maintains part of this project is marked as such at its own
+score (`SELF_MAINTAINED` in `site/lib/scoring.mjs`) rather than in prose
+elsewhere.
+
 ## Commit style
 
 Short subject, lower-case, imperative where possible. A Conventional

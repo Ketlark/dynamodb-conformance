@@ -1,0 +1,24 @@
+<!-- Prev/next between a target's dated run pages. Rendered top and bottom of the
+     dated page, so the same markup lives here once. `slug`, `neighbours` and an
+     optional `label` come from the host as data-only props (:@). Mirrors the
+     older/newer nav on the whole-run page (src/runs/run.webc). webc:root="override"
+     merges a host `class` (the top instance's margin) onto the nav. -->
+<nav webc:root="override" class="flex items-center justify-between gap-4 text-sm" :aria-label="label || 'Run navigation'">
+  <a webc:if="neighbours.older" :href="'/targets/' + slug + '/' + neighbours.older.runId" class="group inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-white/10 px-4 py-2.5 hover:border-brand-300 dark:hover:border-brand-500/40 transition-colors">
+    <span aria-hidden="true">←</span>
+    <span>
+      <span class="block text-xs text-zinc-500 dark:text-zinc-400">Older run</span>
+      <time class="text-zinc-800 dark:text-zinc-200" :datetime="neighbours.older.date" @text="dateLabel(neighbours.older.date)"></time>
+    </span>
+  </a>
+  <span webc:else></span>
+
+  <a webc:if="neighbours.newer" :href="'/targets/' + slug + '/' + neighbours.newer.runId" class="group inline-flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-white/10 px-4 py-2.5 hover:border-brand-300 dark:hover:border-brand-500/40 transition-colors text-right">
+    <span>
+      <span class="block text-xs text-zinc-500 dark:text-zinc-400">Newer run</span>
+      <time class="text-zinc-800 dark:text-zinc-200" :datetime="neighbours.newer.date" @text="dateLabel(neighbours.newer.date)"></time>
+    </span>
+    <span aria-hidden="true">→</span>
+  </a>
+  <span webc:else></span>
+</nav>

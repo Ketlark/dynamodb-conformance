@@ -5,7 +5,26 @@ on:
     - cron: '0 4 * * 0' # 4am UTC every Sunday, when AWS is quieter
   push:
     branches: [main]
+    # Never re-run real-AWS conformance on the suite's own bot output. These
+    # are the four paths the automated jobs write back to main: the results
+    # table and its artefacts (results-table.yml), the region health record
+    # (sweep.yml), and the cross-region capture this workflow commits itself.
+    # Without the last one it would re-trigger on its own commit. The cheap
+    # gate in ci.yml deliberately does NOT ignore these - it is what checks the
+    # bots wrote self-consistent output - so only the expensive run is filtered.
+    paths-ignore:
+      - 'results/**'
+      - 'README.md'
+      - 'registry/regions.json'
+      - 'captures/**'
+      - 'site/**'
   pull_request:
+    # The site workspace cannot change how a target behaves, so a site-only PR
+    # has no reason to spin up an emulator per target and run the suite against
+    # each. This is where the repo merge would otherwise cost real time; the
+    # cheap gate in ci.yml still runs on every PR.
+    paths-ignore:
+      - 'site/**'
   workflow_dispatch:
     inputs:
       extenddb_ref:
@@ -429,7 +448,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "Cross-region capture unchanged."
           else
-            git commit -m "chore: update cross-region capture [skip ci]"
+            git commit -m "chore: update cross-region capture"
             pushed=0
             for i in 1 2 3; do
               if git pull --rebase && git push; then pushed=1; break; fi

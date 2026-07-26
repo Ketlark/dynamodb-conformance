@@ -1,0 +1,94 @@
+<script webc:setup>
+  function band(v) {
+    if (v == null) return "none";
+    if (v >= 95) return "pass";
+    if (v >= 75) return "partial";
+    return "fail";
+  }
+  function barClass(v) { return "bar-" + band(v); }
+  function widthPct(v) { return (v == null ? 0 : v) + "%"; }
+</script>
+<li :class="'rounded-xl border p-4 sm:p-5 ' + (row.synthesised ? 'bg-brand-50 dark:bg-brand-500/10 border-brand-200 dark:border-brand-500/30' : 'bg-zinc-50/70 dark:bg-white/[0.03] border-zinc-200 dark:border-white/10')">
+  <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+    <!-- Name + version + scope -->
+    <div class="sm:w-52 sm:shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 sm:block">
+      <div class="flex items-center min-w-0">
+        <!-- Name and arrow are one link to the target page. The arrow is the
+             affordance; the engine's own site and source live on that page,
+             where each is named rather than left to an anonymous icon. -->
+        <a :href="targetRunHref(row, runId)"
+          class="group inline-flex items-baseline gap-1 min-w-0 font-semibold text-zinc-900 dark:text-zinc-50 hover:text-brand-700 dark:hover:text-brand-300 transition-colors rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 dark:focus-visible:outline-brand-400">
+          <span class="truncate" @text="row.display"></span>
+          <svg class="w-3 h-3 shrink-0 self-center text-zinc-400 group-hover:text-brand-600 dark:group-hover:text-brand-300 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7m0 0H8m9 0v9" /></svg>
+        </a>
+      </div>
+      <div class="mt-0.5 flex items-center gap-2 min-w-0">
+        <span class="font-mono tnum text-xs text-zinc-500 dark:text-zinc-400 truncate" :title="row.version" @text="row.version"></span>
+        <!-- Scope: a high score is correctness over what a target implements, so an
+             unsupported count is surfaced here as a caveat, not buried. A dotted link
+             through to the operation matrix shows which operations are missing. -->
+        <a webc:if="row.unsupported > 0"
+          href="/support"
+          class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400 underline decoration-dotted underline-offset-2 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
+          :title="row.display + ' scores the ' + row.implemented + ' of ' + row.count + ' tests it implements; ' + row.unsupported + ' cover operations it does not support. ' + row.coverage + ' of the suite.'">
+          <span @text="row.unsupported + ' unsupported'"></span>
+          <span class="sr-only">; covers <span @text="row.coverage"></span> of the suite</span>
+        </a>
+        <span webc:else class="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">full coverage</span>
+      </div>
+      <!-- Conflict-of-interest disclosure, at the score: this engine is
+           maintained by the person who runs the board. Shown here so a reader
+           sees it with the number, not only on a page they might not open. -->
+      <p webc:if="isSelfMaintained(row.slug)" class="basis-full mt-1 text-[0.7rem] leading-snug text-zinc-500 dark:text-zinc-400">
+        Disclosure: <a :href="'/targets/' + row.slug" class="underline decoration-dotted underline-offset-2 hover:text-brand-700 dark:hover:text-brand-300">maintained by this board's author</a>
+      </p>
+    </div>
+
+    <!-- Total bar + percentage + movement -->
+    <div class="flex-1 flex items-center gap-3">
+      <div
+        class="flex-1 h-3 rounded-full bg-zinc-200 dark:bg-white/10 overflow-hidden"
+        role="meter"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-valuenow="row.totalValue == null ? 0 : row.totalValue"
+        :aria-label="row.display + ' total conformance: ' + row.total">
+        <div class="h-full rounded-full transition-[width]" :class="barClass(row.totalValue)" :style="'width:' + widthPct(row.totalValue)"></div>
+      </div>
+      <span class="w-14 text-right font-mono font-bold tnum text-zinc-900 dark:text-zinc-100" @text="row.total"></span>
+
+      <!-- Movement -->
+      <span webc:if="row.synthesised" class="w-20 text-right text-xs text-brand-700 dark:text-brand-300 font-medium">ground truth</span>
+      <span webc:elseif="row.movement.state === 'new'" class="w-20 text-right">
+        <span class="inline-flex items-center rounded-full bg-brand-100 dark:bg-brand-500/20 px-2 py-0.5 text-xs font-medium text-brand-700 dark:text-brand-200">new</span>
+      </span>
+      <span webc:elseif="row.movement.state === 'carried'" class="w-20 text-right text-xs italic text-zinc-500 dark:text-zinc-400" :title="'Not re-tested this run; last tested ' + dateLabel(row.runDate)">
+        carried
+        <span class="sr-only" @text="'not re-tested this run, last tested ' + dateLabel(row.runDate)"></span>
+      </span>
+      <span webc:else :class="'w-20 text-right inline-flex items-center justify-end gap-1 text-xs font-medium tnum move-' + row.movement.state">
+        <span aria-hidden="true" @text="row.movement.arrow"></span>
+        <span @text="row.movement.deltaLabel"></span>
+        <span class="sr-only" @text="row.movement.label"></span>
+      </span>
+    </div>
+  </div>
+
+  <!-- The region(s) the headline matched, following the honest-cohort rule:
+       "all regions" when it ties everywhere, "eu-west-2 + N" when eu-west-2 is
+       in the best cohort, a named region when it beats eu-west-2 there. Hidden
+       when the per-region overlay isn't available. -->
+  <div webc:if="row.regionLabel" class="mt-2 sm:pl-56 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+    <span class="text-zinc-400 dark:text-zinc-500">region</span>
+    <span class="font-medium text-zinc-600 dark:text-zinc-300" @text="regionLabel(row.regionLabel)"></span>
+    <span webc:if="row.regionLabel.kind === 'beats-pinned'" class="move-up font-medium" aria-hidden="true">▲ vs eu-west-2</span>
+    <span webc:if="row.regionLabel.kind === 'beats-pinned'" class="sr-only">scores higher here than in eu-west-2</span>
+  </div>
+
+  <!-- Tier breakdown -->
+  <div class="mt-3 grid grid-cols-3 gap-3 sm:gap-4 sm:pl-56">
+    <tier-bar :name="'Tier 1'" :display="row.display" :tier="row.tiers.tier1"></tier-bar>
+    <tier-bar :name="'Tier 2'" :display="row.display" :tier="row.tiers.tier2"></tier-bar>
+    <tier-bar :name="'Tier 3'" :display="row.display" :tier="row.tiers.tier3"></tier-bar>
+  </div>
+</li>

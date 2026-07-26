@@ -7,6 +7,11 @@ Portions were previously distributed under the MIT License and are
 incorporated here under the Apache License 2.0 by permission of that
 license.
 
+The site workspace under site/ vendors two font subsets that the Apache
+License 2.0 does not cover. Inter and JetBrains Mono are licensed under the
+SIL Open Font License 1.1; their copyright notices and the full licence text
+are in site/src/fonts/OFL.txt.
+
 DynamoDB is a trademark of Amazon.com, Inc. or its affiliates. This software
 is an independent project and is not affiliated with, endorsed by, or
 sponsored by Amazon. The license does not grant permission to use those

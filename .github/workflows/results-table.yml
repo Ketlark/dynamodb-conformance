@@ -105,7 +105,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "Results table already up to date."
           else
-            git commit -m "chore: update results table [skip ci]"
+            git commit -m "chore: update results table"
             git pull --rebase
             git push
           fi

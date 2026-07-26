@@ -1,0 +1,34 @@
+---
+permalink: /llms.txt
+eleventyExcludeFromCollections: true
+---
+# Parity Suite
+
+> {{ site.description }}
+
+Parity Suite runs one conformance suite against live AWS DynamoDB (the baseline, 100% by definition) and against each DynamoDB-compatible emulator, then scores how closely each one matches. Scores are correctness over implemented operations, split into three tiers, with coverage reported alongside. Every figure is derived at build time from the suite's own results, so the pages and the data below never disagree.
+
+## Pages
+- [Results]({{ site.url }}/): the latest run's standings, with run-over-run movement.
+- [About]({{ site.url }}/about): why the suite exists and what the tiers mean.
+- [Methodology]({{ site.url }}/methodology): how a score is worked out, how runs are reconstructed, and what it doesn't tell you.
+- [Regional ground truth]({{ site.url }}/ground-truth): why the suite scores against every region, and how a target's best-matching region becomes its headline.
+- [For agents]({{ site.url }}/for-agents): how to read the scores, and where the machine-readable data is.
+- [Capabilities]({{ site.url }}/capabilities): every target against the same capability columns (GSI, PartiQL, transactions, streams, TTL and more).
+- [Matrix]({{ site.url }}/support): per-operation support across targets.
+- [Runs]({{ site.url }}/runs): every recorded run, browsable.
+- [Changelog]({{ site.url }}/changelog): how the suite has changed over time.
+
+## Targets
+{%- for slug in conformance.targets %}
+- [{{ conformance.perTarget[slug].display }}]({{ site.url }}/targets/{{ slug }}): conformance over time for {{ conformance.perTarget[slug].display }}.
+{%- endfor %}
+
+## Data
+- [Latest run (JSON)]({{ site.url }}/data/latest.json): per target, per tier, coverage, capabilities and operation areas.
+- [All runs (JSON)]({{ site.url }}/data/runs.json): the full history, newest first.
+- [Data index (JSON)]({{ site.url }}/data/index.json): the tier and capability vocabularies, the endpoints and the licence.
+- [Runs feed (Atom)]({{ site.url }}/feed.xml): one entry per run.
+- [Full text corpus]({{ site.url }}/llms-full.txt): About, Methodology, the agent guide and the latest results in one file.
+
+Data is published under CC BY 4.0; credit {{ site.dataAttribution }}.

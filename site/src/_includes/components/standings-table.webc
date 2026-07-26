@@ -1,0 +1,63 @@
+<section class="max-w-6xl mx-auto px-6 py-12 sm:py-16">
+  <div class="mb-8">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+      <h1 class="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">Latest results</h1>
+      <p class="text-sm text-zinc-500 dark:text-zinc-400">
+        Run <a :href="'/runs/' + $data.conformance.latest.id" class="text-brand-700 dark:text-brand-300 hover:underline"><time :datetime="$data.conformance.latest.date" @text="dateLabel($data.conformance.latest.date)"></time></a>
+        <span aria-hidden="true">·</span>
+        <span @text="$data.conformance.latest.suiteSize + ' tests'"></span>
+      </p>
+    </div>
+    <p class="mt-3 text-zinc-600 dark:text-zinc-300 max-w-2xl leading-relaxed">
+      Every emulator runs the same suite as live AWS DynamoDB, the 100% ground truth at the top. Real DynamoDB
+      doesn't behave identically in every region, so the suite scores each target against every region it can reach and
+      takes its best-matching region as the headline, named beside the score. DynamoDB is 100% because each region agrees
+      with itself. The percentage is correctness over the operations a target implements; the scope tag by its version (its
+      unsupported count, or &ldquo;full coverage&rdquo;) shows how much of the suite it attempts, so a high score on a
+      narrow surface reads as narrow. The arrow shows movement since the previous run a target was tested in.
+    </p>
+  </div>
+
+  <!-- Legend and region health share a wrapper so they read as one
+       how-to-read-this block: a tight gap between the two lines, and the
+       wrapper's margin keeps the standings clear of them whether or not the
+       per-region overlay is available. -->
+  <div class="mb-6 space-y-3">
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-zinc-500 dark:text-zinc-400">
+      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-4 rounded-full swatch-pass"></span>95%+</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-4 rounded-full swatch-partial"></span>75–95%</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-4 rounded-full swatch-fail"></span>under 75%</span>
+      <span class="hidden sm:inline text-zinc-300 dark:text-zinc-700" aria-hidden="true">|</span>
+      <span class="inline-flex items-center gap-x-5">
+        <span class="inline-flex items-center gap-1"><span class="move-up font-medium">▲</span> rose</span>
+        <span class="inline-flex items-center gap-1"><span class="move-down font-medium">▼</span> fell</span>
+      </span>
+    </div>
+    <region-health webc:if="$data.summary.available" :@health="$data.summary.latest.regions"></region-health>
+  </div>
+
+  <!-- Biggest movers since the previous run -->
+  <div webc:if="$data.conformance.movers.length" class="mb-6 flex flex-wrap items-center gap-2 text-sm">
+    <span class="text-zinc-500 dark:text-zinc-400">Biggest moves:</span>
+    <a
+      webc:for="m of $data.conformance.movers"
+      :href="'/targets/' + m.slug"
+      :class="'inline-flex items-center gap-1.5 rounded-full border border-zinc-200 dark:border-white/10 bg-zinc-50/70 dark:bg-white/[0.03] px-3 py-1 hover:border-brand-300 dark:hover:border-brand-500/40 transition-colors move-' + m.state">
+      <span class="text-zinc-700 dark:text-zinc-200 font-medium" @text="m.display"></span>
+      <span aria-hidden="true" @text="m.arrow"></span>
+      <span class="font-mono tnum text-xs" @text="m.deltaLabel"></span>
+      <span class="sr-only" @text="m.label"></span>
+    </a>
+  </div>
+
+  <!-- On a run where the suite grew, the biggest moves partly reflect new tests
+       rather than changed behaviour, so caveat them rather than read as drama. -->
+  <p webc:if="$data.conformance.movers.length && $data.conformance.latest.suiteGrew" class="-mt-3 mb-6 text-xs text-zinc-500 dark:text-zinc-400 max-w-2xl">
+    The suite grew by <span @text="$data.conformance.latest.suiteGrowth"></span> tests this run, so some of these moves are the new tests biting, not a target regressing. The
+    <a :href="'/runs/' + $data.conformance.latest.id" class="underline hover:text-brand-700 dark:hover:text-brand-300">run page</a> has the detail.
+  </p>
+
+  <ol class="space-y-3">
+    <standings-row webc:for="row of $data.conformance.latest.standings" :row="row"></standings-row>
+  </ol>
+</section>

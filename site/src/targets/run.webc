@@ -1,0 +1,82 @@
+<section class="max-w-6xl mx-auto px-6 py-12">
+  <!-- Prev/next between this target's runs, above the breadcrumb so the date
+       reads as one of a sequence first thing; repeated at the foot for after a
+       read-through. -->
+  <run-nav :@slug="$data.pair.slug" :@neighbours="$data.neighbours" class="mb-5"></run-nav>
+
+  <nav class="text-sm text-zinc-500 dark:text-zinc-400 mb-8 flex items-center gap-2">
+    <a href="/" class="hover:text-brand-700 dark:hover:text-brand-300">Results</a>
+    <span aria-hidden="true">/</span>
+    <a href="/targets" class="hover:text-brand-700 dark:hover:text-brand-300">Targets</a>
+    <span aria-hidden="true">/</span>
+    <a :href="'/targets/' + $data.pair.slug" class="hover:text-brand-700 dark:hover:text-brand-300" @text="$data.target.display"></a>
+    <span aria-hidden="true">/</span>
+    <span class="text-zinc-700 dark:text-zinc-300" @text="dateLabel($data.pair.date)"></span>
+  </nav>
+
+  <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 mb-8">
+    <div class="min-w-0 basis-full sm:basis-0 sm:grow">
+      <h1 class="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+        <span @text="$data.target.display"></span>
+        <span class="text-zinc-400 dark:text-zinc-500 font-normal">on</span>
+        <time :datetime="$data.pair.date" @text="dateLabel($data.pair.date)"></time>
+      </h1>
+      <!-- Same project links as the target's own page: where the engine lives is
+           a fact about the engine, not about the run being viewed. -->
+      <target-links :links="targetLinks($data.pair.slug, $data.target.repoUrl)" :name="$data.target.display"></target-links>
+      <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <span class="font-mono" @text="$data.point.version"></span>
+        <span aria-hidden="true">·</span>
+        <span>as measured in this run</span>
+      </p>
+    </div>
+    <div class="shrink-0 text-left sm:text-right">
+      <div class="text-4xl font-bold tnum text-zinc-900 dark:text-white" @text="$data.point.total"></div>
+      <div class="text-sm text-zinc-500 dark:text-zinc-400">
+        correct, across <span class="tnum" @text="$data.point.passed + $data.point.failed"></span> of <span class="tnum" @text="$data.point.count"></span> operations<span webc:if="$data.point.skipped"> · <span class="tnum" @text="$data.point.skipped"></span> unsupported</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- This run's tier breakdown, rendered by the same component the target page
+       uses, so a figure means the same thing on both. -->
+  <div class="grid grid-cols-3 gap-4 sm:gap-6 mb-12 p-5 rounded-xl bg-zinc-50/70 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/10">
+    <tier-bar :name="'Tier 1'" :display="$data.target.display" :tier="$data.point.tiers.tier1"></tier-bar>
+    <tier-bar :name="'Tier 2'" :display="$data.target.display" :tier="$data.point.tiers.tier2"></tier-bar>
+    <tier-bar :name="'Tier 3'" :display="$data.target.display" :tier="$data.point.tiers.tier3"></tier-bar>
+  </div>
+
+  <!-- What this run found. Same list treatment as the target page's gaps, so a
+       reader moving between them isn't relearning the layout. -->
+  <div class="mb-12">
+    <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Where it fell short on this date</h2>
+    <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-4 max-w-2xl">
+      The tests this run recorded as failing, each linked to its source at the commit that measured it. For the current picture, see <a :href="'/targets/' + $data.pair.slug" class="text-brand-700 dark:text-brand-300 underline" >this target's latest results</a>, or <a :href="'/runs/' + $data.pair.runId" class="text-brand-700 dark:text-brand-300 underline">every target in this run</a>.
+    </p>
+
+    <p webc:if="!($data.point.findings || []).length" class="text-sm text-zinc-500 dark:text-zinc-400">
+      <span webc:if="!$data.point.failed">Nothing failed in this run.</span>
+      <span webc:elseif="true">The <span class="tnum" @text="$data.point.failed"></span> failures this run recorded aren't itemised here, because per-test detail isn't retained for this snapshot.</span>
+    </p>
+
+    <ul class="space-y-2">
+      <li webc:for="f of ($data.point.findings || [])" :id="'f-' + f.id" class="rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50/70 dark:bg-white/[0.03] p-4 scroll-mt-24">
+        <div class="flex items-start gap-2">
+          <span class="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 swatch-fail" aria-hidden="true"></span>
+          <div class="min-w-0">
+            <p class="text-sm text-zinc-700 dark:text-zinc-200" @text="tidyDashes(f.fullName)"></p>
+            <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+              <span class="text-[0.65rem] uppercase tracking-wide rounded px-1.5 py-0.5 bg-zinc-200/70 dark:bg-white/10 text-zinc-600 dark:text-zinc-300" @text="f.tier.replace('tier', 'Tier ')"></span>
+              <span class="font-mono" @text="f.group"></span>
+              <a :href="findingSource(f, $data.site.sourceRepo)" target="_blank" rel="noopener noreferrer" class="text-brand-700 dark:text-brand-300 hover:underline" :aria-label="'Test source for ' + tidyDashes(f.fullName)">
+                <span @text="f.file + (f.line ? ':' + f.line : '')"></span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <run-nav :@slug="$data.pair.slug" :@neighbours="$data.neighbours" @label="Run navigation (foot)"></run-nav>
+</section>

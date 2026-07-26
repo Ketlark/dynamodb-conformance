@@ -1,0 +1,22 @@
+<!-- Region health for a run: how many regions scored, and any that fell out.
+     A dropped or unresolved region is named, never silently omitted, so an
+     absent region can't read as one that agreed. Colour is backed by a word in
+     every case. Expects a `health` prop of { observed, unresolved, dropped }.
+     webc:root="override" merges host attributes (e.g. a margin class) onto this
+     div; without it WebC drops them and the line loses its spacing. -->
+<div webc:root="override" class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+  <span>
+    Scored against <span class="font-semibold text-zinc-700 dark:text-zinc-300 tnum" @text="health.observed.length"></span>
+    real <span @text="health.observed.length === 1 ? 'region' : 'regions'"></span>.
+  </span>
+  <span webc:if="health.unresolved.length" class="inline-flex items-center gap-1.5">
+    <span class="h-1.5 w-1.5 rounded-full bg-partial-500 dark:bg-partial-400" aria-hidden="true"></span>
+    <span><span class="tnum" @text="health.unresolved.length"></span> unresolved this sweep, still trusted:</span>
+    <span class="font-mono text-zinc-600 dark:text-zinc-300" @text="health.unresolved.join(', ')"></span>
+  </span>
+  <span webc:if="health.dropped.length" class="inline-flex items-center gap-1.5">
+    <span class="h-1.5 w-1.5 rounded-full bg-fail-500 dark:bg-fail-400" aria-hidden="true"></span>
+    <span><span class="tnum" @text="health.dropped.length"></span> dropped, out of scoring until it returns:</span>
+    <span class="font-mono text-zinc-600 dark:text-zinc-300" @text="health.dropped.join(', ')"></span>
+  </span>
+</div>
