@@ -15,7 +15,7 @@ import {
   repoUrl,
   label,
 } from "dynamodb-conformance/scripts/summarise.mjs";
-import { passRate, tierOf } from "dynamodb-conformance/scripts/lib/score.mjs";
+import { passRate, scoreResults, tierOf } from "dynamodb-conformance/scripts/lib/score.mjs";
 
 export { DISPLAY, REPO, display, repoUrl, label, tierOf };
 
@@ -192,47 +192,54 @@ export const pct = (passed, failed) => {
 export const runDateOf = (raw) =>
   raw?.startTime ? new Date(raw.startTime).toISOString().slice(0, 10) : "-";
 
-// Flatten Vitest testResults into {file, status} and tally by tier.
-function tallyTiers(raw) {
-  const tests =
-    raw?.testResults?.flatMap(
-      (tr) => tr.assertionResults?.map((ar) => ({ file: tr.name, status: ar.status })) ?? [],
-    ) ?? [];
+// A document with no testResults array scores nothing. The suite's scorer says
+// so by returning null; the site still has to render a row, so an empty tally
+// stands in and the target shows "-" rather than vanishing from the board.
+const NOTHING_SCORED = {
+  summary: {
+    tier1: { p: 0, f: 0, s: 0, i: 0 },
+    tier2: { p: 0, f: 0, s: 0, i: 0 },
+    tier3: { p: 0, f: 0, s: 0, i: 0 },
+  },
+  passed: 0,
+  failed: 0,
+  skipped: 0,
+  indeterminate: 0,
+  count: 0,
+};
 
-  const summary = {
-    tier1: { p: 0, f: 0, s: 0 },
-    tier2: { p: 0, f: 0, s: 0 },
-    tier3: { p: 0, f: 0, s: 0 },
-  };
-  for (const t of tests) {
-    const key = tierOf(t.file);
-    if (!(key in summary)) continue;
-    if (t.status === "passed") summary[key].p++;
-    else if (t.status === "failed") summary[key].f++;
-    else summary[key].s++; // anything not passed/failed counts as a skip
-  }
-  return summary;
-}
+const tierTotal = (t) => t.p + t.f + t.s + t.i;
 
-const tierTotal = (s) => s.p + s.f + s.s;
-
-// Score one emulator target's Vitest JSON into the canonical row the rest of
-// the site builds on. Not used for the synthesised DynamoDB ground-truth row.
+// Score one target's Vitest JSON into the canonical row the rest of the site
+// builds on. Not used for the synthesised DynamoDB ground-truth row.
+//
+// The tallying is the suite's (scoreResults -> classifyResults), so a test the
+// suite counts one way cannot be counted another way here. That matters most
+// for the verdict the raw status cannot express: a timeout or an exhausted
+// throttle records as "failed" but means nobody observed an answer, and the
+// suite excludes it from the score rather than holding it against the target.
+// Tallying it here from `status` alone would have scored those runs lower than
+// the published table does.
+//
+// No sidecar is passed. The site reads historical results one file at a time
+// from the published tree and has no run-level indeterminate document to go
+// with them, so only per-test markers are honoured. That is the same input the
+// site has always had; it is now read through the shared classifier.
 export function scoreEmulator(slug, raw, version) {
-  const s = tallyTiers(raw);
+  const scored = scoreResults(raw, null) ?? NOTHING_SCORED;
+  const s = scored.summary;
+
   const tier = (t) => ({
     passed: t.p,
     failed: t.f,
     skipped: t.s,
+    indeterminate: t.i,
     total: tierTotal(t),
     pct: pct(t.p, t.f),
     value: value(t.p, t.f),
   });
 
-  const passed = s.tier1.p + s.tier2.p + s.tier3.p;
-  const failed = s.tier1.f + s.tier2.f + s.tier3.f;
-  const skipped = s.tier1.s + s.tier2.s + s.tier3.s;
-  const count = tierTotal(s.tier1) + tierTotal(s.tier2) + tierTotal(s.tier3);
+  const { passed, failed, skipped, indeterminate, count } = scored;
   // Scope axis, distinct from correctness: how much of the suite the target
   // actually implements. Always shown beside the correctness percentage so a
   // high score on a narrow surface can't read as broad conformance.
@@ -248,6 +255,7 @@ export function scoreEmulator(slug, raw, version) {
     passed,
     failed,
     skipped,
+    indeterminate,
     count,
     implemented,
     unsupported: skipped,
@@ -316,31 +324,10 @@ export function sortRows(rows) {
   );
 }
 
-// Reproduce summarize.mjs's exact markdown table from {slug, raw, version}
-// entries. Exists so the parity test can fail the build on any divergence.
-export function summariseToMarkdown(entries) {
-  const rows = [];
-  let groundTruthDate = "-";
-
-  for (const { slug, raw, version } of entries) {
-    if (slug === "dynamodb") {
-      // Scores are synthesised; keep the real-AWS run date so the row isn't dateless.
-      groundTruthDate = runDateOf(raw);
-      continue;
-    }
-    rows.push(scoreEmulator(slug, raw, version));
-  }
-
-  const suiteSize = suiteSizeOf(rows);
-  const sorted = sortRows(rows);
-  const ordered = [dynamodbRow(suiteSize, groundTruthDate), ...sorted];
-
-  const fmt = (r) =>
-    `| ${r.target} | ${r.tiers.tier1.pct} | ${r.tiers.tier2.pct} | ${r.tiers.tier3.pct} | ${r.total} | ${r.passed} | ${r.failed} | ${r.skipped} | ${r.version} | ${r.runDate} |`;
-
-  return [
-    "| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |",
-    "|--------|--------|--------|--------|-------|------|------|------|---------|------|",
-    ...ordered.map(fmt),
-  ].join("\n");
-}
+// The site used to carry a second markdown-table renderer here, reproducing the
+// suite's published table so a test could diff the two and catch drift. The
+// suite has since rewritten its table per region, and the fixtures that pinned
+// this one dated from before that, so it was pinning the site against its own
+// past rather than against the suite. The scoring it shared with the suite is
+// now imported outright, and the guard that does real work is the numeric check
+// in scoring.test.mjs against the published summary.

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -16,7 +16,7 @@ import {
   DISPLAY,
   REPO,
   scoreEmulator,
-  summariseToMarkdown,
+  dynamodbRow,
   isSelfMaintained,
 } from "./scoring.mjs";
 import * as suite from "dynamodb-conformance/scripts/summarise.mjs";
@@ -24,21 +24,6 @@ import * as suiteScore from "dynamodb-conformance/scripts/lib/score.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "..", "test", "fixtures");
-
-// Read a fixture run directory into the {slug, raw, version} entries that both
-// summarise.mjs and our renderer consume.
-function readRun(name) {
-  const dir = join(fixtures, name);
-  return readdirSync(dir)
-    .filter((f) => f.endsWith(".json"))
-    .map((f) => {
-      const slug = f.replace(/\.json$/, "");
-      const raw = JSON.parse(readFileSync(join(dir, f), "utf8"));
-      const versionFile = join(dir, `${slug}.version`);
-      const version = existsSync(versionFile) ? readFileSync(versionFile, "utf8").trim() : "-";
-      return { slug, raw, version };
-    });
-}
 
 test("tierOf classifies by /tierN/ regardless of path prefix", () => {
   assert.equal(tierOf("/home/runner/work/x/tests/tier1/foo.test.ts"), "tier1");
@@ -214,37 +199,33 @@ test("areaTallies keeps every area with counts + state, sorted by tier then grou
   assert.equal(a.find((x) => x.group === "transactions").state, "unsupported");
 });
 
-// Reproduce summarise.mjs's exact table for verbatim fixtures from the real
-// results. These fixtures are pinned pre-2.0.0 (single-region ground truth, no
-// Region column). Since 2.0.0 the suite's own table gained a Region column and
-// a best-matching-region Total, so summariseToMarkdown no longer reproduces the
-// current suite table, and these fixtures must not be regenerated from a current
-// run without updating summariseToMarkdown or retiring these two assertions. The
-// live consistency guarantee for the region-aware era is the numeric parity
-// test below (port eu-west-2 score == summary.json eu-west-2 rate).
-test("parity: newest run reproduces summarise.mjs output exactly", () => {
-  const expected = readFileSync(join(fixtures, "newest.expected.txt"), "utf8").trim();
-  const actual = summariseToMarkdown(readRun("newest")).trim();
-  assert.equal(actual, expected);
+// The ground-truth row is synthesised, never scored from a file, so it must
+// appear at a definitional 100% across the full suite size even on a run that
+// never reached AWS. Asserted against the row itself: the markdown table this
+// used to be read out of was a second renderer of the suite's own, and it is
+// gone.
+test("the DynamoDB row is synthesised at 100% across the suite size", () => {
+  const row = dynamodbRow(526, "-");
+  assert.equal(row.total, "100%");
+  assert.equal(row.totalValue, 100);
+  assert.equal(row.passed, 526);
+  assert.equal(row.failed, 0);
+  assert.equal(row.skipped, 0);
+  assert.equal(row.count, 526);
+  assert.equal(row.version, "live (AWS)");
+  assert.equal(row.runDate, "-");
+  assert.equal(row.baseline, true);
+  for (const t of ["tier1", "tier2", "tier3"]) {
+    assert.equal(row.tiers[t].pct, "100%", `${t} must read 100%`);
+  }
 });
 
-test("parity: oldest run (local paths, no versions, smaller suite) reproduces summarise.mjs output exactly", () => {
-  const expected = readFileSync(join(fixtures, "oldest.expected.txt"), "utf8").trim();
-  const actual = summariseToMarkdown(readRun("oldest")).trim();
-  assert.equal(actual, expected);
-});
-
-test("parity: DynamoDB row is synthesised at 100% across suite size even when no dynamodb.json is present", () => {
-  // The oldest fixture set has no dynamodb.json, yet the row must appear.
-  const table = summariseToMarkdown(readRun("oldest"));
-  assert.match(table, /\| \[DynamoDB\]\([^)]+\) \| 100% \| 100% \| 100% \| 100% \| 526 \| 0 \| 0 \| live \(AWS\) \| - \|/);
-});
-
-// The region-aware parity guard. The headline number now comes from the suite's
-// summary.json, so it can't disagree by construction; what can drift is the
-// number the port still owns - the eu-west-2 column. This pins the port's score
-// for each target to summary.json's eu-west-2 rate for the same run, reading a
-// captured post-2.0.0 summary plus its matching results verbatim.
+// The live consistency guard, and the only one that can observe a suite-side
+// change. The headline number comes from the suite's summary.json so it cannot
+// disagree by construction; what can drift is the number the site still derives
+// itself, the eu-west-2 column. This pins that score for each target to
+// summary.json's eu-west-2 rate for the same run, reading a captured summary
+// plus its matching results verbatim. Keep it through any refactor.
 test("parity: the port's score equals summary.json's eu-west-2 rate for every target", () => {
   const dir = join(fixtures, "regions");
   const summary = JSON.parse(readFileSync(join(dir, "summary.json"), "utf8"));

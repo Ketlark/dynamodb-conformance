@@ -6,7 +6,7 @@ The suite publishes its latest results as a markdown table in the root README, w
 
 One rule holds the whole thing together: **every figure is derived from `results/*.json` at build time, never hand-authored.** Hardcoding the same numbers in more than one place is exactly how conformance figures drift apart, so there's a single data seam and everything renders from it.
 
-The scoring is shared with the suite rather than copied from it. The target maps, display names, project links, tier classification and pass-rate arithmetic are imported from `scripts/summarise.mjs` and `scripts/lib/score.mjs`, so adding a target happens once. `AGENTS.md` at the repository root covers the architecture in full, including the invariants worth reading before changing anything.
+The scoring is shared with the suite rather than copied from it. The target maps, display names, project links, tier classification, pass-rate arithmetic and the tallying itself are imported from `scripts/summarise.mjs` and `scripts/lib/score.mjs`, so adding a target happens once and a test the suite counts one way can't be counted another way here. `AGENTS.md` at the repository root covers the architecture in full, including the invariants worth reading before changing anything.
 
 ## Stack
 
@@ -30,7 +30,7 @@ At build time, `src/_data/conformance.js` reconstructs the full timeline:
 
 1. List the commits that touched `results/` (GitHub commits API).
 2. Fetch each target's `results/<target>.json` and `.version` at the commits where it changed (raw GitHub, no API limit).
-3. Score each snapshot with `lib/scoring.mjs`, which imports the suite's own maps and pass-rate maths.
+3. Score each snapshot with `lib/scoring.mjs`, which tallies through the suite's own classifier and maps.
 4. Group the snapshots into runs by their `startTime` (a single commit often refreshes only some targets, and one commit can carry targets from different runs, so grouping by commit would invent runs that never happened), then derive per-target series, the latest standings, and run-over-run movement.
 
 Those fetches still go over the network even though the files now sit in the same tree. Replacing them with local `git log` reads is follow-up work rather than an oversight, and it will retire the fallbacks below along with it.

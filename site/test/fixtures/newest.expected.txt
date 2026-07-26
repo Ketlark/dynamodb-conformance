@@ -1,6 +1,0 @@
-| Target | Tier 1 | Tier 2 | Tier 3 | Total | Pass | Fail | Skip | Version | Date |
-|--------|--------|--------|--------|-------|------|------|------|---------|------|
-| [DynamoDB](https://aws.amazon.com/dynamodb/) | 100% | 100% | 100% | 100% | 625 | 0 | 0 | live (AWS) | 2026-05-24 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) | 97.8% | 100.0% | 97.1% | 97.9% | 612 | 13 | 0 | 0.9.13 | 2026-05-24 |
-| [Floci](https://github.com/floci-io/floci) | 96.8% | 98.1% | 95.2% | 96.5% | 603 | 22 | 0 | efa6922b024a | 2026-05-24 |
-| [Dynalite](https://github.com/architect/dynalite) | 98.4% | 16.7% | 83.7% | 84.7% | 493 | 89 | 43 | 4.0.0 | 2026-05-24 |

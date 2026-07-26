@@ -213,23 +213,26 @@ failures and, for older runs, says the detail isn't retained for that snapshot.
 
 ### Four invariants worth knowing before you change anything
 
-**The target maps have one definition, and the table renderer does not yet.**
-`site/lib/scoring.mjs` imports `DISPLAY`, `REPO`, `display`, `repoUrl` and
-`label` from `scripts/summarise.mjs`, and `tierOf` and `passRate` from
+**Scoring has one definition, and it is the suite's.** `site/lib/scoring.mjs`
+imports `DISPLAY`, `REPO`, `display`, `repoUrl` and `label` from
+`scripts/summarise.mjs`, and `tierOf`, `passRate` and `scoreResults` from
 `scripts/lib/score.mjs`. Adding a target to the suite's maps puts it on both
-the README table and the site with no site-side edit; do not reintroduce a
-local copy of either map. What is still duplicated is the row-and-table layer
-(`scoreEmulator`, `dynamodbRow`, `sortRows`, `suiteSizeOf`,
-`summariseToMarkdown`), which ports a renderer the suite has since rewritten
-per-region. Reconciling it is open work, and it is not a swap: the site scores
-historical snapshots pulled from arbitrary past commits, where the split
-registry the suite's per-region scorer needs may not exist.
+the README table and the site with no site-side edit, and `scoreEmulator`
+tallies through the suite's classifier rather than reading
+`assertionResults[].status` itself, so a test the suite counts one way cannot
+be counted another way here. Do not reintroduce a local copy of either.
 
-Two of the parity tests in `site/lib/scoring.test.mjs` compare against markdown
-fixtures pinned pre-2.0.0, so they pin the site against its own past and cannot
-observe a suite-side change. The one that does real work is the numeric check
-that the port's score equals `summary.json`'s `eu-west-2` rate for every
-target. Keep that one alive through any reconciliation.
+What remains site-side is the model the templates consume: `dynamodbRow`,
+`sortRows` and `suiteSizeOf` assemble scored rows into runs, standings and
+movement, which the suite has no equivalent of and no use for.
+
+The headline figure is not derived here at all. `enrichSnapshot` in
+`lib/history.mjs` overlays each run's total with the best-matching region rate
+from the suite's published `summary.json`, keeping the locally derived score
+only as `portTotalValue`. That is what makes the board and the README agree by
+construction. The guard that can still catch drift is the numeric check in
+`scoring.test.mjs` that `portTotalValue` equals `summary.json`'s `eu-west-2`
+rate for every target; keep it alive through any refactor.
 
 **Runs are grouped by the results' `startTime`, never by commit.** A single
 commit often refreshes only some targets, and one commit can carry targets
