@@ -40,8 +40,8 @@ _Scored against real DynamoDB's recorded behaviour in each observed region (`af-
 | [ExtendDB](https://github.com/ExtendDB/extenddb) | 100.0% | 94.0% | 97.2% | 98.2% | all regions | 895 | 16 | 87 | v0.1.2 | 2026-07-26 |
 | [Dynalite](https://github.com/architect/dynalite) | 91.4% | 30.0% | 80.9% | 84.6% | 27 regions | 675 | 123 | 200 | 4.0.0 | 2026-07-26 |
 | [LocalStack](https://github.com/localstack/localstack) | 93.5% | 81.2% | 72.5% | 84.2% | 27 regions | 834 | 156 | 8 | 2026.7.0 | 2026-07-26 |
+| [Ministack](https://github.com/ministackorg/ministack) | 92.2% | 71.4% | 79.9% | 84.1% | all regions | 839 | 159 | 0 | 0e9f5965f2fa | 2026-07-26 |
 | [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 92.2% | 82.0% | 72.2% | 83.7% | 27 regions | 818 | 159 | 21 | d89f8fcc6b1a | 2026-07-26 |
-| [Ministack](https://github.com/ministackorg/ministack) | 89.1% | 70.4% | 78.7% | 82.0% | all regions | 818 | 180 | 0 | c3c2e86f19ff | 2026-07-26 |
 | [Floci](https://github.com/floci-io/floci) | 91.4% | 61.6% | 70.7% | 78.9% | all regions | 780 | 209 | 9 | d2ecc8035822 | 2026-07-26 |
 
 _† Dynoxide (wasm) is a browser/OPFS preview, scored over the operations it implements. Its Skip count is unimplemented surface (PartiQL, transactions, tags, TTL), not passing behaviour, so read its percentage as correctness on what it implements - not a like-for-like comparison with an engine that implements everything._
