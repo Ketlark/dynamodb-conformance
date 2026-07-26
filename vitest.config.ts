@@ -1,9 +1,11 @@
 import { defineConfig } from 'vitest/config'
 import { TAGS } from './src/tags.js'
+import { resultTargetFrom } from './scripts/lib/result-target.mjs'
 
-const resultTarget =
-  process.env.CONFORMANCE_TARGET ??
-  (process.env.DYNAMODB_ENDPOINT ? 'local' : 'dynamodb')
+// Naming a target is what opts a run into writing a published results file;
+// an unconfigured run goes to the gitignored scratch slug. See
+// scripts/lib/result-target.mjs for why the default is not the ground truth.
+const resultTarget = resultTargetFrom()
 
 export default defineConfig({
   test: {
