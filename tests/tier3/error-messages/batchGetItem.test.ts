@@ -90,7 +90,7 @@ describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'
   // A KeysAndAttributes block accepts both the legacy AttributesToGet and a modern
   // ProjectionExpression; supplying both is the expression/non-expression conflict,
   // rejected before any read.
-  it('AttributesToGet with ProjectionExpression in a KeysAndAttributes block: full conflict error', async () => {
+  it('AttributesToGet with ProjectionExpression in a KeysAndAttributes block: full conflict error', { tags: ['legacy'] }, async () => {
     try {
       await ddb.send(
         new BatchGetItemCommand({
@@ -134,7 +134,7 @@ describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'
     }
   })
 
-  it('mixing ProjectionExpression on one table and AttributesToGet on another is rejected', async () => {
+  it('mixing ProjectionExpression on one table and AttributesToGet on another is rejected', { tags: ['legacy'] }, async () => {
     // Each table's block is internally consistent, but real AWS rejects the
     // request as a whole for mixing expression and non-expression projection
     // across tables.
