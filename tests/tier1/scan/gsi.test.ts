@@ -7,7 +7,10 @@ import {
   compositeTableDef,
   cleanupItems,
   waitForGsiConsistency,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
   const items = [

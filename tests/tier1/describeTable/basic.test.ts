@@ -4,7 +4,10 @@ import {
   hashTableDef,
   compositeTableDef,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('DescribeTable — basic', { tags: ['describe-table', 'control-plane'] }, () => {
   it('returns table metadata for a hash-only table', async () => {

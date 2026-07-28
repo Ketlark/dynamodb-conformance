@@ -9,7 +9,10 @@ import {
   compositeTableDef,
   cleanupItems,
   waitForGsiConsistency,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
   const items = [

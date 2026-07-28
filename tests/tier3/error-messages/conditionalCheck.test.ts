@@ -12,7 +12,10 @@ import { supportsControlPlaneOp } from '../../../src/infra.js'
 import {
   hashTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 const keysToCleanup = [
   { pk: { S: 'em-ccf-put' } },

@@ -1,6 +1,8 @@
 import { PutItemCommand, BatchGetItemCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('BatchGetItem — legal shared-prefix projections', { tags: ['batch', 'data-plane'] }, () => {
   // Projection paths that share a prefix without one being a prefix of the

@@ -4,7 +4,9 @@ import {
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeTableDef, hashTableDef, hashBTableDef } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, hashTableDef, hashBTableDef } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef, hashTableDef, hashBTableDef)
 
 // Conditional-check failures for DeleteItem live in conditionalCheck.test.ts —
 // that file owns the conditional-check error family across operations.

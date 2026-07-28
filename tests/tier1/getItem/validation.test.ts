@@ -1,6 +1,8 @@
 import { GetItemCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeTableDef, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('GetItem — validation', { tags: ['get-item', 'data-plane', 'negative-path'] }, () => {
   it('rejects GetItem on a non-existent table', async () => {

@@ -3,7 +3,9 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Query — validation ordering', { tags: ['query', 'data-plane', 'negative-path'] }, () => {
   it('reports invalid TableName pattern', async () => {

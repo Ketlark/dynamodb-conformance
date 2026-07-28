@@ -5,7 +5,9 @@ import {
   TransactionCanceledException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('TransactGetItems — exact error messages', { tags: ['transactions', 'data-plane', 'negative-path'] }, () => {
   it('empty TransactItems: full minimum-length error', async () => {

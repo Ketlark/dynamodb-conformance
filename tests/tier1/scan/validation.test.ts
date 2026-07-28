@@ -1,6 +1,8 @@
 import { ScanCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Scan — validation', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('rejects scan on non-existent table', async () => {

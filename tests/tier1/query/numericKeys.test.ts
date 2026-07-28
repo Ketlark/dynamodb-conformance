@@ -3,7 +3,9 @@ import {
   QueryCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeNTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, compositeNTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(compositeNTableDef)
 
 describe('Query — numeric sort key', { tags: ['query', 'data-plane'] }, () => {
   const pk = 'numq'

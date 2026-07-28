@@ -9,7 +9,10 @@ import {
   gsiBTableDef,
   compositeTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, hashBTableDef, gsiBTableDef, compositeTableDef)
 
 const hashKeys = [
   { pk: { S: 'em-upd-key-mod' } },

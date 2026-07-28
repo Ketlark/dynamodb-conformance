@@ -4,7 +4,10 @@ import {
   hashTableDef,
   compositeTableDef,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('BatchWriteItem — validation', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
   it('rejects more than 25 items', async () => {

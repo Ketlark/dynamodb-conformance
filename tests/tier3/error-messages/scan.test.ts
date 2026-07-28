@@ -9,7 +9,10 @@ import {
   hashTableDef,
   compositeTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('Scan — exact error messages', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('Segment without TotalSegments: full required-parameter error', async () => {

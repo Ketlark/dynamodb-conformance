@@ -4,7 +4,9 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Query — KeyConditionExpression semantics', { tags: ['query', 'data-plane'] }, () => {
   const pk = 'kce-sem'

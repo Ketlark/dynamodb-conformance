@@ -7,7 +7,10 @@ import {
   compositeTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Query — KeyConditionExpression with parentheses', { tags: ['query', 'data-plane'] }, () => {
   const pk = 'kce-parens'

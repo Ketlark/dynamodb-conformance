@@ -1,6 +1,8 @@
 import { BatchGetItemCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('BatchGetItem — validation', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
   it('rejects more than 100 keys', async () => {

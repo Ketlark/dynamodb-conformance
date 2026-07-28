@@ -9,7 +9,10 @@ import {
   compositeTableDef,
   expectDynamoError,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('DeleteItem — basic', { tags: ['delete-item', 'data-plane'] }, () => {
   it('deletes an existing item', async () => {

@@ -4,7 +4,10 @@ import {
   hashTableDef,
   compositeTableDef,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('PutItem — validation', { tags: ['put-item', 'data-plane', 'negative-path'] }, () => {
   it('rejects PutItem to a non-existent table', async () => {

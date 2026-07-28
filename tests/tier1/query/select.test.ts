@@ -3,7 +3,9 @@ import {
   QueryCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeTableDef, cleanupItems, waitForGsiConsistency, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, cleanupItems, waitForGsiConsistency, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Query — Select COUNT', { tags: ['query', 'data-plane'] }, () => {
   const pk = 'query-select-count'

@@ -10,7 +10,10 @@ import {
   deleteTable,
   expectDynamoError,
   hashTableDef,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('CreateTable — basic', { tags: ['create-table', 'control-plane'] }, () => {
   const tablesToCleanup: string[] = []

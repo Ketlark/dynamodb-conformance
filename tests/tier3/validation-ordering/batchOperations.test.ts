@@ -4,7 +4,9 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Batch operations — validation ordering', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
   it('BatchWriteItem rejects empty RequestItems', async () => {

@@ -8,7 +8,10 @@ import {
   hashTableDef,
   compositeTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('GetItem — basic', { tags: ['get-item', 'data-plane'] }, () => {
   beforeAll(async () => {

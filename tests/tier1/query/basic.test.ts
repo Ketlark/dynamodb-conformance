@@ -10,7 +10,10 @@ import {
   compositeTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Query — basic', { tags: ['query', 'data-plane'] }, () => {
   const pk = 'query-basic'

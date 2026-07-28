@@ -283,6 +283,119 @@ async function disableDeletionProtection(tableName: string): Promise<void> {
   }
 }
 
+// ── Demand-driven provisioning ────────────────────────────────────────
+//
+// A test file declares the shared tables it needs at module scope, and
+// src/setup.ts creates whatever the files vitest actually selected asked for.
+// A run that excludes an axis therefore never creates the tables only that axis
+// needed, which is what lets an exclusion like `--tags-filter="!gsi and !lsi"`
+// mean something to an engine that cannot create the excluded thing at all.
+// Provisioning used to run over a fixed list before any filter had been
+// applied, so the run died in setup no matter what it had selected.
+//
+// Module scope rather than a per-file hook, for two reasons. Imports are
+// evaluated before any hook runs, so a file's declaration is always registered
+// by the time the shared beforeAll executes, and provisioning stays a single
+// ordered step instead of scattering across a hundred files' own hooks. And a
+// module-scope call is statically visible, so a guard can fail a file that uses
+// a table def it never declared; the same mistake under a per-file hook would
+// surface only as a missing-table error, and only on the run that happened to
+// select that file.
+//
+// Nothing here reads the tag filter. Deselected files are never imported, so
+// their declarations never register and their tables are never created. That
+// falls out of vitest's collection for free, and keeps provisioning from
+// growing its own copy of the CLI's filter semantics.
+
+interface TableRegistry {
+  declare: (...defs: TestTableDef[]) => void
+  declaredDefs: () => TestTableDef[]
+  provision: (create?: (def: TestTableDef) => Promise<void>) => Promise<void>
+  sweepOnce: (sweep?: () => Promise<void>) => Promise<void>
+}
+
+/**
+ * An isolated declaration set, creation memo, and sweep guard.
+ *
+ * Exported as a factory so the memoisation and retry behaviour can be asserted
+ * against synthetic creators, rather than by counting calls to real AWS.
+ */
+export function createTableRegistry(): TableRegistry {
+  const declared = new Map<string, TestTableDef>()
+  const inFlight = new Map<string, Promise<void>>()
+  let swept: Promise<void> | null = null
+
+  return {
+    declare(...defs: TestTableDef[]): void {
+      for (const def of defs) declared.set(def.name, def)
+    },
+
+    declaredDefs(): TestTableDef[] {
+      return [...declared.values()]
+    },
+
+    async provision(create = createTable): Promise<void> {
+      await Promise.all(
+        [...declared.values()].map((def) => {
+          const existing = inFlight.get(def.name)
+          if (existing) return existing
+          // A rejected attempt drops out of the memo so the next file retries
+          // it rather than replaying the same rejection for the rest of the
+          // run. This is the old flag-set-only-after-success behaviour, held
+          // per table instead of per run.
+          const attempt = create(def).catch((e: unknown) => {
+            inFlight.delete(def.name)
+            throw e
+          })
+          inFlight.set(def.name, attempt)
+          return attempt
+        }),
+      )
+    },
+
+    // Guarded separately from provisioning, and that separation is the whole
+    // point. Provisioning now runs on every test file, creating whatever that
+    // file newly declared; a sweep sharing the same guard would run again after
+    // tables existed and delete the ones earlier files are still using.
+    sweepOnce(sweep = cleanupAllTables): Promise<void> {
+      if (!swept) {
+        swept = sweep().catch((e: unknown) => {
+          swept = null
+          throw e
+        })
+      }
+      return swept
+    },
+  }
+}
+
+// The suite-wide registry. Module state is shared across every test file
+// because the suite runs as a single non-isolated fork (`maxWorkers: 1`,
+// `isolate: false` in vitest.config.ts) - the same property that already lets
+// the table defs below compute their unique names once and be addressed by
+// every file. It breaks silently if anyone ever parallelises the suite.
+const registry = createTableRegistry()
+
+/**
+ * Declare the shared tables a test file needs. Call once at module scope,
+ * naming every shared def the file goes on to use.
+ */
+export const declareTables = registry.declare
+
+/** Every shared table declared by the files collected so far. */
+export const declaredTableDefs = registry.declaredDefs
+
+/**
+ * Create every declared table that no earlier file has created yet.
+ *
+ * Safe to call from a beforeAll that runs per test file: tables already created
+ * are memoised by name, so a def declared by forty files is created once.
+ */
+export const provisionDeclaredTables = registry.provision
+
+/** Sweep leftover tables exactly once per run, before anything is created. */
+export const cleanupAllTablesOnce = registry.sweepOnce
+
 /** Delete all tables created by the conformance suite */
 export async function cleanupAllTables(): Promise<void> {
   const allNames: string[] = []

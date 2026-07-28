@@ -10,7 +10,10 @@ import {
   hashTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 // no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Reserved words — ExpressionAttributeNames handling', { tags: ['put-item', 'get-item', 'update-item', 'query', 'scan', 'data-plane'] }, () => {

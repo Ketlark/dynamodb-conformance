@@ -3,7 +3,9 @@ import {
   GetItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashNTableDef, compositeNTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashNTableDef, compositeNTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashNTableDef, compositeNTableDef)
 
 describe('PutItem — numeric hash key', { tags: ['put-item', 'data-plane'] }, () => {
   afterAll(async () => {

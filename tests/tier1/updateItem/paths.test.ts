@@ -4,7 +4,9 @@ import {
   UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('UpdateItem — nested path semantics', { tags: ['update-item', 'data-plane'] }, () => {
   const keysToCleanup: { pk: { S: string } }[] = []

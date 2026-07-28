@@ -8,7 +8,10 @@ import {
   hashBTableDef,
   gsiBTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, hashBTableDef, gsiBTableDef)
 
 const keysToCleanup = [
   { pk: { S: 'em-put-null-false' } },

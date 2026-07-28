@@ -3,7 +3,9 @@ import {
   ScanCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeTableDef, cleanupItems, waitForGsiConsistency } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, cleanupItems, waitForGsiConsistency } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 // Scan FilterExpression parser is distinct from KeyConditionExpression and
 // may also differ from Query's FilterExpression path in some emulators.

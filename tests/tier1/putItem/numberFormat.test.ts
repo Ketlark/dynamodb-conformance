@@ -5,7 +5,10 @@ import {
   compositeNTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeNTableDef)
 
 // Number format: which N strings DynamoDB accepts, what it stores them as,
 // and which it rejects. Captured against real DynamoDB. A leading '+' on the

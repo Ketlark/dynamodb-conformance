@@ -6,7 +6,10 @@ import { ddb } from '../../../src/client.js'
 import {
   compositeTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
   const items = [

@@ -4,7 +4,9 @@ import {
   PutItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('BatchWriteItem — basic', { tags: ['batch', 'data-plane'] }, () => {
   afterAll(async () => {

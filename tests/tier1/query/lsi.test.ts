@@ -7,7 +7,10 @@ import { ddb } from '../../../src/client.js'
 import {
   compositeTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   const items = [

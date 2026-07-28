@@ -4,7 +4,9 @@ import {
   type AttributeValue,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Scan — parallel', { tags: ['scan', 'data-plane'] }, () => {
   const TOTAL_SEGMENTS = 4

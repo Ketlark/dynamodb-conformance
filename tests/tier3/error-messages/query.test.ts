@@ -8,7 +8,10 @@ import {
   compositeTableDef,
   hashTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef, hashTableDef)
 
 describe('Query — exact error messages', { tags: ['query', 'data-plane', 'negative-path'] }, () => {
   it('missing hash key in KeyConditionExpression', async () => {

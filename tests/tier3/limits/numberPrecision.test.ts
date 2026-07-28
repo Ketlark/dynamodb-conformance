@@ -10,7 +10,10 @@ import {
   compositeNTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeNTableDef)
 
 // no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Number precision — DynamoDB number limits and edge cases', { tags: ['put-item', 'get-item', 'update-item', 'query', 'data-plane'] }, () => {

@@ -10,7 +10,10 @@ import {
   hashTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Scan — basic', { tags: ['scan', 'data-plane'] }, () => {
   const items = Array.from({ length: 5 }, (_, i) => ({

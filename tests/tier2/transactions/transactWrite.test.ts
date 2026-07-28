@@ -13,7 +13,10 @@ import {
   compositeTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 const hashKeys = [
   { pk: { S: 'tw-basic-1' } },

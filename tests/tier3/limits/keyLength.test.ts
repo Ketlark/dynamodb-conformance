@@ -1,6 +1,8 @@
 import { PutItemCommand, GetItemCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 // Real DynamoDB caps a partition key at 2048 bytes. The ceiling is enforced on
 // the read/lookup path as well as on writes.
