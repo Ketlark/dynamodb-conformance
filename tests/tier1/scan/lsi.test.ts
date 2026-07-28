@@ -4,12 +4,12 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {
-  compositeTableDef,
+  compositeIndexedTableDef,
   cleanupItems,
   declareTables,
 } from '../../../src/helpers.js'
 
-declareTables(compositeTableDef)
+declareTables(compositeIndexedTableDef)
 
 describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
   const items = [
@@ -40,7 +40,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
     await Promise.all(
       items.map((item) =>
         ddb.send(
-          new PutItemCommand({ TableName: compositeTableDef.name, Item: item }),
+          new PutItemCommand({ TableName: compositeIndexedTableDef.name, Item: item }),
         ),
       ),
     )
@@ -48,7 +48,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
 
   afterAll(async () => {
     await cleanupItems(
-      compositeTableDef.name,
+      compositeIndexedTableDef.name,
       items.map((item) => ({ pk: item.pk, sk: item.sk })),
     )
   })
@@ -56,7 +56,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
   it('scans an LSI and returns items', async () => {
     const result = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         FilterExpression: 'begins_with(pk, :prefix)',
         ExpressionAttributeValues: { ':prefix': { S: 'scan-lsi-' } },
@@ -77,7 +77,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
   it('scans an LSI with FilterExpression', async () => {
     const result = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         FilterExpression: 'pk = :pk AND #d = :data',
         ExpressionAttributeNames: { '#d': 'data' },
@@ -97,7 +97,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
   it('supports ConsistentRead on LSI scan', async () => {
     const result = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi2',
         FilterExpression: 'begins_with(pk, :prefix)',
         ExpressionAttributeValues: { ':prefix': { S: 'scan-lsi-' } },
@@ -122,7 +122,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
     const noLsiSkItem = { pk: { S: 'scan-lsi-sparse' }, sk: { S: 'x' } }
     await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: noLsiSkItem,
       }),
     )
@@ -130,7 +130,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
     // Absent from an LSI scan...
     const lsiScan = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         ConsistentRead: true,
       }),
@@ -140,7 +140,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
     // ...but present in a base-table scan.
     const baseScan = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         ConsistentRead: true,
         FilterExpression: 'pk = :p',
         ExpressionAttributeValues: { ':p': { S: 'scan-lsi-sparse' } },
@@ -148,7 +148,7 @@ describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
     )
     expect(baseScan.Items!.map((i) => i.pk?.S)).toContain('scan-lsi-sparse')
 
-    await cleanupItems(compositeTableDef.name, [
+    await cleanupItems(compositeIndexedTableDef.name, [
       { pk: noLsiSkItem.pk, sk: noLsiSkItem.sk },
     ])
   })

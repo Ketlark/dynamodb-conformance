@@ -93,28 +93,6 @@ describe('Query — exact error messages', { tags: ['query', 'data-plane', 'nega
     }
   })
 
-  it('ConsistentRead on GSI', async () => {
-    try {
-      await ddb.send(
-        new QueryCommand({
-          TableName: compositeTableDef.name,
-          IndexName: 'gsi1',
-          KeyConditionExpression: '#hk = :v',
-          ExpressionAttributeNames: { '#hk': 'lsi1sk' },
-          ExpressionAttributeValues: { ':v': { S: 'val' } },
-          ConsistentRead: true,
-        }),
-      )
-      expect.unreachable('should have thrown')
-    } catch (err) {
-      expect(err).toBeInstanceOf(DynamoDBServiceException)
-      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
-      expect((err as DynamoDBServiceException).message).toBe(
-        'Consistent reads are not supported on global secondary indexes',
-      )
-    }
-  })
-
   it('Limit of 0', async () => {
     try {
       await ddb.send(

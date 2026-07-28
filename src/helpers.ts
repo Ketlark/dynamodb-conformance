@@ -285,27 +285,14 @@ async function disableDeletionProtection(tableName: string): Promise<void> {
 
 // ── Demand-driven provisioning ────────────────────────────────────────
 //
-// A test file declares the shared tables it needs at module scope, and
-// src/setup.ts creates whatever the files vitest actually selected asked for.
-// A run that excludes an axis therefore never creates the tables only that axis
-// needed, which is what lets an exclusion like `--tags-filter="!gsi and !lsi"`
-// mean something to an engine that cannot create the excluded thing at all.
-// Provisioning used to run over a fixed list before any filter had been
-// applied, so the run died in setup no matter what it had selected.
+// A test file declares the shared tables it needs at module scope; setup
+// creates only what the selected files declared, so an excluded axis never
+// creates its tables. Deselected files are never imported, so nothing here
+// needs to read the tag filter.
 //
-// Module scope rather than a per-file hook, for two reasons. Imports are
-// evaluated before any hook runs, so a file's declaration is always registered
-// by the time the shared beforeAll executes, and provisioning stays a single
-// ordered step instead of scattering across a hundred files' own hooks. And a
-// module-scope call is statically visible, so a guard can fail a file that uses
-// a table def it never declared; the same mistake under a per-file hook would
-// surface only as a missing-table error, and only on the run that happened to
-// select that file.
-//
-// Nothing here reads the tag filter. Deselected files are never imported, so
-// their declarations never register and their tables are never created. That
-// falls out of vitest's collection for free, and keeps provisioning from
-// growing its own copy of the CLI's filter semantics.
+// Module scope rather than a per-file hook because a static declaration can be
+// checked by a guard; a missing declaration would otherwise surface only as a
+// runtime missing-table error on the run that selected that file.
 
 interface TableRegistry {
   declare: (...defs: TestTableDef[]) => void
@@ -314,12 +301,8 @@ interface TableRegistry {
   sweepOnce: (sweep?: () => Promise<void>) => Promise<void>
 }
 
-/**
- * An isolated declaration set, creation memo, and sweep guard.
- *
- * Exported as a factory so the memoisation and retry behaviour can be asserted
- * against synthetic creators, rather than by counting calls to real AWS.
- */
+/** A declaration set, creation memo and sweep guard. A factory so the
+ * memoisation and retry behaviour can be tested without real AWS. */
 export function createTableRegistry(): TableRegistry {
   const declared = new Map<string, TestTableDef>()
   const inFlight = new Map<string, Promise<void>>()
@@ -339,10 +322,8 @@ export function createTableRegistry(): TableRegistry {
         [...declared.values()].map((def) => {
           const existing = inFlight.get(def.name)
           if (existing) return existing
-          // A rejected attempt drops out of the memo so the next file retries
-          // it rather than replaying the same rejection for the rest of the
-          // run. This is the old flag-set-only-after-success behaviour, held
-          // per table instead of per run.
+          // Drop a rejected attempt from the memo so the next file retries it
+          // instead of replaying the rejection.
           const attempt = create(def).catch((e: unknown) => {
             inFlight.delete(def.name)
             throw e
@@ -353,10 +334,8 @@ export function createTableRegistry(): TableRegistry {
       )
     },
 
-    // Guarded separately from provisioning, and that separation is the whole
-    // point. Provisioning now runs on every test file, creating whatever that
-    // file newly declared; a sweep sharing the same guard would run again after
-    // tables existed and delete the ones earlier files are still using.
+    // Guarded separately from provisioning: provisioning runs per file, and a
+    // sweep sharing that guard would delete tables earlier files are using.
     sweepOnce(sweep = cleanupAllTables): Promise<void> {
       if (!swept) {
         swept = sweep().catch((e: unknown) => {
@@ -369,28 +348,18 @@ export function createTableRegistry(): TableRegistry {
   }
 }
 
-// The suite-wide registry. Module state is shared across every test file
-// because the suite runs as a single non-isolated fork (`maxWorkers: 1`,
-// `isolate: false` in vitest.config.ts) - the same property that already lets
-// the table defs below compute their unique names once and be addressed by
-// every file. It breaks silently if anyone ever parallelises the suite.
+// Shared across every test file only because the suite runs as a single
+// non-isolated fork (maxWorkers: 1, isolate: false in vitest.config.ts), the
+// same property the table defs below rely on for their names.
 const registry = createTableRegistry()
 
-/**
- * Declare the shared tables a test file needs. Call once at module scope,
- * naming every shared def the file goes on to use.
- */
+/** Declare the shared tables a file uses. Call once at module scope. */
 export const declareTables = registry.declare
 
 /** Every shared table declared by the files collected so far. */
 export const declaredTableDefs = registry.declaredDefs
 
-/**
- * Create every declared table that no earlier file has created yet.
- *
- * Safe to call from a beforeAll that runs per test file: tables already created
- * are memoised by name, so a def declared by forty files is created once.
- */
+/** Create every declared table not already created. Safe to call per file. */
 export const provisionDeclaredTables = registry.provision
 
 /** Sweep leftover tables exactly once per run, before anything is created. */
@@ -554,8 +523,20 @@ export const gsiBTableDef: TestTableDef = {
   billingMode: 'PAY_PER_REQUEST',
 }
 
+// The generic composite-key table. No secondary index, so a run excluding both
+// index axes creates nothing an index-free engine would reject.
 export const compositeTableDef: TestTableDef = {
   name: uniqueTableName('composite'),
+  hashKey: { name: 'pk', type: 'S' },
+  rangeKey: { name: 'sk', type: 'S' },
+}
+
+// The same key schema carrying the secondary indexes. Index names, projections
+// and key attributes are unchanged - tests pin messages naming `gsi1` and
+// `lsi1sk` exactly. One indexed variant carries both kinds, so excluding both
+// axes together is the guarantee and excluding one is not; see README.
+export const compositeIndexedTableDef: TestTableDef = {
+  name: uniqueTableName('compositeIdx'),
   hashKey: { name: 'pk', type: 'S' },
   rangeKey: { name: 'sk', type: 'S' },
   lsis: [

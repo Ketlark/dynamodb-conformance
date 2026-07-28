@@ -412,24 +412,6 @@ describe('Query — Limit + FilterExpression interaction', { tags: ['query', 'da
       /provided starting key is invalid/,
     )
   })
-
-  it('rejects ExclusiveStartKey missing the index key on a GSI query', async () => {
-    await expectDynamoError(
-      () =>
-        ddb.send(
-          new QueryCommand({
-            TableName: compositeTableDef.name,
-            IndexName: 'gsi1',
-            KeyConditionExpression: '#hk = :v',
-            ExpressionAttributeNames: { '#hk': 'lsi1sk' },
-            ExpressionAttributeValues: { ':v': { S: 'x' } },
-            ExclusiveStartKey: { pk: { S: 'x' } },
-          }),
-        ),
-      'ValidationException',
-      /provided starting key is invalid/,
-    )
-  })
 })
 
 describe('Query — ExclusiveStartKey exclusivity', { tags: ['query', 'data-plane'] }, () => {

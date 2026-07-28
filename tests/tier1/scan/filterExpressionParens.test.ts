@@ -3,14 +3,16 @@ import {
   ScanCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, compositeTableDef, cleanupItems, waitForGsiConsistency } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
 
 declareTables(compositeTableDef)
 
 // Scan FilterExpression parser is distinct from KeyConditionExpression and
 // may also differ from Query's FilterExpression path in some emulators.
 // Items carry a unique `lsi1sk` marker so scans can isolate this test's
-// data from whatever else is in the shared compositeTableDef.
+// data from whatever else is in the shared compositeTableDef. The marker is a
+// plain attribute here, not an index key — the index-scan case lives in
+// tests/tier1/scan/gsi.test.ts so this file needs no secondary index.
 describe('Scan — FilterExpression parens', { tags: ['scan', 'data-plane'] }, () => {
   const marker = 'fes-parens-marker'
   const items = [
@@ -28,12 +30,6 @@ describe('Scan — FilterExpression parens', { tags: ['scan', 'data-plane'] }, (
         ),
       ),
     )
-    await waitForGsiConsistency({
-      tableName: compositeTableDef.name,
-      indexName: 'gsi1',
-      partitionKey: { name: 'lsi1sk', value: { S: marker } },
-      expectedCount: items.length,
-    })
   }, 30_000)
 
   afterAll(async () => {
@@ -95,25 +91,6 @@ describe('Scan — FilterExpression parens', { tags: ['scan', 'data-plane'] }, (
       }),
     )
 
-    expect(result.Items).toHaveLength(3)
-  })
-
-  it('GSI scan — parens filter returns matching items', async () => {
-    const result = await ddb.send(
-      new ScanCommand({
-        TableName: compositeTableDef.name,
-        IndexName: 'gsi1',
-        FilterExpression: '(#m = :m) AND ((#t = :a) OR (#t = :b))',
-        ExpressionAttributeNames: { '#m': 'lsi1sk', '#t': 'type' },
-        ExpressionAttributeValues: {
-          ':m': { S: marker },
-          ':a': { S: 'alpha' },
-          ':b': { S: 'beta' },
-        },
-      }),
-    )
-
-    // Same three items show through the GSI (all four have lsi1sk=marker)
     expect(result.Items).toHaveLength(3)
   })
 

@@ -2,14 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { createTableRegistry } from './helpers.js'
 import type { TestTableDef } from './types.js'
 
-// The declaration registry behind demand-driven provisioning.
-//
-// These assertions run against a synthetic creator rather than real AWS,
-// because what needs proving is the bookkeeping: how many times a table is
-// created, and how many times the leftover sweep runs. Both are properties the
-// suite cannot observe about itself - a second create surfaces as
-// ResourceInUseException and a second sweep silently deletes tables the run is
-// still using, ~80 files after the code that caused it.
+// The declaration registry behind demand-driven provisioning. Asserted against
+// a synthetic creator: what needs proving is how many times a table is created
+// and how many times the sweep runs, neither of which the suite can observe
+// about itself.
 
 const def = (name: string): TestTableDef => ({
   name,
@@ -151,8 +147,7 @@ describe('createTableRegistry — the leftover sweep', () => {
   })
 
   it('does not sweep again once tables have been provisioned', async () => {
-    // The regression this guards: a sweep sharing provisioning's guard would
-    // run again mid-run and delete the shared tables in use.
+    // A sweep sharing provisioning's guard would delete tables still in use.
     const r = createTableRegistry()
     const { create } = recordingCreator()
     let sweeps = 0

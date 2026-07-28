@@ -4,11 +4,11 @@ import {
   UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, compositeIndexedTableDef, cleanupItems } from '../../../src/helpers.js'
 
-declareTables(compositeTableDef)
+declareTables(compositeIndexedTableDef)
 
-describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane'] }, () => {
+describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane', 'lsi'] }, () => {
   const keys = [
     { pk: { S: 'icm-put-1' }, sk: { S: 'a' } },
     { pk: { S: 'icm-del-1' }, sk: { S: 'a' } },
@@ -17,13 +17,13 @@ describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane'] }, ()
   ]
 
   afterAll(async () => {
-    await cleanupItems(compositeTableDef.name, keys)
+    await cleanupItems(compositeIndexedTableDef.name, keys)
   })
 
   it('PutItem with SIZE returns ItemCollectionMetrics', async () => {
     const result = await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: {
           pk: { S: 'icm-put-1' },
           sk: { S: 'a' },
@@ -44,7 +44,7 @@ describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane'] }, ()
   it('DeleteItem with SIZE returns ItemCollectionMetrics', async () => {
     await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: {
           pk: { S: 'icm-del-1' },
           sk: { S: 'a' },
@@ -56,7 +56,7 @@ describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane'] }, ()
 
     const result = await ddb.send(
       new DeleteItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Key: { pk: { S: 'icm-del-1' }, sk: { S: 'a' } },
         ReturnItemCollectionMetrics: 'SIZE',
       }),
@@ -71,7 +71,7 @@ describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane'] }, ()
   it('UpdateItem with SIZE returns ItemCollectionMetrics', async () => {
     await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: {
           pk: { S: 'icm-upd-1' },
           sk: { S: 'a' },
@@ -83,7 +83,7 @@ describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane'] }, ()
 
     const result = await ddb.send(
       new UpdateItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Key: { pk: { S: 'icm-upd-1' }, sk: { S: 'a' } },
         UpdateExpression: 'SET #d = :v',
         ExpressionAttributeNames: { '#d': 'data' },
@@ -101,7 +101,7 @@ describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane'] }, ()
   it('PutItem with NONE does not return ItemCollectionMetrics', async () => {
     const result = await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: {
           pk: { S: 'icm-none-1' },
           sk: { S: 'a' },

@@ -7,29 +7,18 @@ import { ddb } from '../../../src/client.js'
 import {
   hashTableDef,
   hashBTableDef,
-  gsiBTableDef,
-  compositeTableDef,
   cleanupItems,
   declareTables,
 } from '../../../src/helpers.js'
 
-declareTables(hashTableDef, hashBTableDef, gsiBTableDef, compositeTableDef)
+declareTables(hashTableDef, hashBTableDef)
 
 const keysToCleanup = [
   { pk: { S: 'em-bw-dup' } },
 ]
 
-// Defensive: the invalid-index-key cases below fail validation and write
-// nothing; clean up anyway in case a too-lenient target persists them.
-const compositeKeysToCleanup = [
-  { pk: { S: 'em-bw-idx-type' }, sk: { S: 'a' } },
-  { pk: { S: 'em-bw-idx-nonscalar' }, sk: { S: 'b' } },
-  { pk: { S: 'em-bw-idx-empty' }, sk: { S: 'c' } },
-]
-
 afterAll(async () => {
   await cleanupItems(hashTableDef.name, keysToCleanup)
-  await cleanupItems(compositeTableDef.name, compositeKeysToCleanup)
 })
 
 describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
@@ -127,8 +116,8 @@ describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plan
   // Strings captured from real AWS, invariant across four regions (eu-west-2,
   // us-east-1, ap-southeast-2, eu-central-1; 2026-06-23) — so the table-key
   // schema-mismatch message is the contract, not a region-local wording.
-  // Index-key messages name gsi1, the alphabetically-first index lsi1sk keys on
-  // compositeTableDef.
+  // The secondary-index-key variants live in indexKeyValues.test.ts, so this
+  // file declares no indexed table.
   const expectExactValidation = async (
     command: BatchWriteItemCommand,
     message: string,
@@ -185,58 +174,6 @@ describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plan
         RequestItems: { [hashBTableDef.name]: [{ DeleteRequest: { Key: { pk: { B: new Uint8Array([]) } } } }] },
       }),
       'One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty binary value. Key: pk',
-    )
-  })
-
-  it('wrong-typed index key: full type-mismatch message', async () => {
-    await expectExactValidation(
-      new BatchWriteItemCommand({
-        RequestItems: {
-          [compositeTableDef.name]: [
-            { PutRequest: { Item: { pk: { S: 'em-bw-idx-type' }, sk: { S: 'a' }, lsi1sk: { N: '5' } } } },
-          ],
-        },
-      }),
-      'One or more parameter values were invalid: Type mismatch for Index Key lsi1sk Expected: S Actual: N IndexName: gsi1',
-    )
-  })
-
-  it('non-scalar index key: full type-mismatch message', async () => {
-    await expectExactValidation(
-      new BatchWriteItemCommand({
-        RequestItems: {
-          [compositeTableDef.name]: [
-            { PutRequest: { Item: { pk: { S: 'em-bw-idx-nonscalar' }, sk: { S: 'b' }, lsi1sk: { L: [{ S: 'x' }] } } } },
-          ],
-        },
-      }),
-      'One or more parameter values were invalid: Type mismatch for Index Key lsi1sk Expected: S Actual: L IndexName: gsi1',
-    )
-  })
-
-  it('empty-string index key: full secondary-index-key message', async () => {
-    await expectExactValidation(
-      new BatchWriteItemCommand({
-        RequestItems: {
-          [compositeTableDef.name]: [
-            { PutRequest: { Item: { pk: { S: 'em-bw-idx-empty' }, sk: { S: 'c' }, lsi1sk: { S: '' } } } },
-          ],
-        },
-      }),
-      'One or more parameter values are not valid. A value specified for a secondary index key is not supported. The AttributeValue for a key attribute cannot contain an empty string value. IndexName: gsi1, IndexKey: lsi1sk',
-    )
-  })
-
-  it('empty-binary index key: full secondary-index-key message', async () => {
-    await expectExactValidation(
-      new BatchWriteItemCommand({
-        RequestItems: {
-          [gsiBTableDef.name]: [
-            { PutRequest: { Item: { pk: { S: 'eb-bw-idx' }, bidx: { B: new Uint8Array([]) } } } },
-          ],
-        },
-      }),
-      'One or more parameter values are not valid. A value specified for a secondary index key is not supported. The AttributeValue for a key attribute cannot contain an empty binary value. IndexName: gsib, IndexKey: bidx',
     )
   })
 })

@@ -6,13 +6,14 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {
-  compositeTableDef,
+  compositeIndexedTableDef,
   cleanupItems,
   waitForGsiConsistency,
   declareTables,
+  expectDynamoError,
 } from '../../../src/helpers.js'
 
-declareTables(compositeTableDef)
+declareTables(compositeIndexedTableDef)
 
 describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
   const items = [
@@ -43,13 +44,13 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
     await Promise.all(
       items.map((item) =>
         ddb.send(
-          new PutItemCommand({ TableName: compositeTableDef.name, Item: item }),
+          new PutItemCommand({ TableName: compositeIndexedTableDef.name, Item: item }),
         ),
       ),
     )
     // GSI propagation can be eventually consistent, wait for items to appear
     await waitForGsiConsistency({
-      tableName: compositeTableDef.name,
+      tableName: compositeIndexedTableDef.name,
       indexName: 'gsi1',
       partitionKey: { name: 'lsi1sk', value: { S: 'gsi-hash-A' } },
       expectedCount: 2,
@@ -58,7 +59,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
 
   afterAll(async () => {
     await cleanupItems(
-      compositeTableDef.name,
+      compositeIndexedTableDef.name,
       items.map((item) => ({ pk: item.pk, sk: item.sk })),
     )
   })
@@ -66,7 +67,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
   it('queries a hash-only GSI (gsi1)', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi1',
         KeyConditionExpression: 'lsi1sk = :v',
         ExpressionAttributeValues: { ':v': { S: 'gsi-hash-A' } },
@@ -79,7 +80,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
   it('queries a composite GSI (gsi2) with hash and range', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi2',
         KeyConditionExpression: 'lsi1sk = :pk AND lsi2sk = :sk',
         ExpressionAttributeValues: {
@@ -96,7 +97,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
   it('returns empty results for non-existent GSI key', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi1',
         KeyConditionExpression: 'lsi1sk = :v',
         ExpressionAttributeValues: { ':v': { S: 'does-not-exist' } },
@@ -111,7 +112,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
     const sparseItem = { pk: { S: 'gsi-sparse' }, sk: { S: 'x' } }
     await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: sparseItem,
       }),
     )
@@ -119,7 +120,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
     // Query the GSI — the sparse item should not appear
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi1',
         KeyConditionExpression: 'lsi1sk = :v',
         ExpressionAttributeValues: { ':v': { S: 'gsi-hash-A' } },
@@ -131,7 +132,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
 
     await ddb.send(
       new DeleteItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Key: { pk: sparseItem.pk, sk: sparseItem.sk },
       }),
     )
@@ -147,13 +148,13 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
     }
     await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: noRangeItem,
       }),
     )
     // Confirm it propagated into the hash-only GSI (so it was written and indexed there).
     await waitForGsiConsistency({
-      tableName: compositeTableDef.name,
+      tableName: compositeIndexedTableDef.name,
       indexName: 'gsi1',
       partitionKey: { name: 'lsi1sk', value: { S: 'gsi-hash-sparse-range' } },
       expectedCount: 1,
@@ -161,7 +162,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
 
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi2',
         KeyConditionExpression: 'lsi1sk = :v',
         ExpressionAttributeValues: { ':v': { S: 'gsi-hash-sparse-range' } },
@@ -172,7 +173,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
 
     await ddb.send(
       new DeleteItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Key: { pk: noRangeItem.pk, sk: noRangeItem.sk },
       }),
     )
@@ -197,12 +198,12 @@ describe('Query — GSI pagination across tied sort keys', { tags: ['query', 'da
     await Promise.all(
       tied.map((item) =>
         ddb.send(
-          new PutItemCommand({ TableName: compositeTableDef.name, Item: item }),
+          new PutItemCommand({ TableName: compositeIndexedTableDef.name, Item: item }),
         ),
       ),
     )
     await waitForGsiConsistency({
-      tableName: compositeTableDef.name,
+      tableName: compositeIndexedTableDef.name,
       indexName: 'gsi2',
       partitionKey: { name: 'lsi1sk', value: { S: 'gsi-tie-hash' } },
       expectedCount: tied.length,
@@ -211,7 +212,7 @@ describe('Query — GSI pagination across tied sort keys', { tags: ['query', 'da
 
   afterAll(async () => {
     await cleanupItems(
-      compositeTableDef.name,
+      compositeIndexedTableDef.name,
       tied.map((item) => ({ pk: item.pk, sk: item.sk })),
     )
   })
@@ -224,7 +225,7 @@ describe('Query — GSI pagination across tied sort keys', { tags: ['query', 'da
     do {
       const page = await ddb.send(
         new QueryCommand({
-          TableName: compositeTableDef.name,
+          TableName: compositeIndexedTableDef.name,
           IndexName: 'gsi2',
           KeyConditionExpression: 'lsi1sk = :h AND lsi2sk = :r',
           ExpressionAttributeValues: {
@@ -254,5 +255,30 @@ describe('Query — GSI pagination across tied sort keys', { tags: ['query', 'da
 
     expect(seen.sort()).toEqual(tied.map((t) => t.pk.S).sort())
     expect(new Set(seen).size).toBe(tied.length) // no repeats
+  })
+})
+
+// Pagination only ever feeds back a well-formed LastEvaluatedKey. A GSI cursor
+// must carry the index key as well as the base key, so a target that does not
+// validate ExclusiveStartKey against the index schema is too lenient; real
+// DynamoDB rejects a key that does not match. Needs no seeded data: the
+// rejection happens before any item is read.
+describe('Query — GSI ExclusiveStartKey validation', { tags: ['query', 'data-plane', 'gsi', 'negative-path'] }, () => {
+  it('rejects ExclusiveStartKey missing the index key on a GSI query', async () => {
+    await expectDynamoError(
+      () =>
+        ddb.send(
+          new QueryCommand({
+            TableName: compositeIndexedTableDef.name,
+            IndexName: 'gsi1',
+            KeyConditionExpression: '#hk = :v',
+            ExpressionAttributeNames: { '#hk': 'lsi1sk' },
+            ExpressionAttributeValues: { ':v': { S: 'x' } },
+            ExclusiveStartKey: { pk: { S: 'x' } },
+          }),
+        ),
+      'ValidationException',
+      /provided starting key is invalid/,
+    )
   })
 })
