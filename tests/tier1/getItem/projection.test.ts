@@ -202,7 +202,7 @@ describe('GetItem — projection matching nothing', { tags: ['get-item', 'data-p
     expect(Object.keys(result.Item!)).toHaveLength(0)
   })
 
-  it('returns an empty Item when legacy AttributesToGet matches no attribute on a present item', async () => {
+  it('returns an empty Item when legacy AttributesToGet matches no attribute on a present item', { tags: ['legacy'] }, async () => {
     const result = await ddb.send(
       new GetItemCommand({
         TableName: hashTableDef.name,

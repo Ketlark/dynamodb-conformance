@@ -3,19 +3,29 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { TAG_NAMES, PLANE_TAGS } from '../src/tags.js'
 import { buildManifest } from './tag-manifest.mjs'
+import { capabilityLeaks, describeLeak } from './lib/tag-content.mjs'
 
 // Guards that the feature/capability tags stay trustworthy as the suite grows.
 // A `--tags-filter` is only honest if every test that belongs to an axis is
 // actually tagged; an untagged file would silently slip through an exclusion.
 //
-// Why static parsing rather than booting vitest: every top-level describe
-// carries an inline `{ tags: [...] }` literal (no const indirection, no
-// per-test overrides), and tags inherit from a top-level describe to all of its
-// nested suites and tests. So validating every top-level describe — plus
-// forbidding stray top-level it()/test() that would escape a describe and carry
-// no tags — is equivalent to validating every test's resolved tags, with no AWS
-// and no test run. strictTags in vitest.config.ts is the run-time backstop that
-// rejects any undeclared tag whenever the suite actually executes.
+// Why static parsing rather than booting vitest: tags are inline `{ tags: [...] }`
+// literals (no const indirection), so the source is the whole truth, and reading
+// it needs no AWS and no test run. strictTags in vitest.config.ts is the
+// run-time backstop that rejects any undeclared tag whenever the suite executes.
+//
+// Two halves, and both are needed. Checking that every top-level describe is
+// tagged is the "is tagged" half: it catches a new file that forgets its tags.
+// It cannot catch a test that sends `AttributesToGet` inside a describe tagged
+// only `get-item`, because that describe is tagged perfectly well - and that gap
+// is how seven legacy tests sat inside a `!legacy` run. The "belongs to an axis"
+// half is scripts/lib/tag-content.mjs, which reads what a test sends and
+// requires the matching tag.
+//
+// Tags may also sit on an individual `it()`, which is how a capability is marked
+// when only some tests in a describe exercise it. Describe-level checks are
+// therefore no longer equivalent to checking every test's resolved tags, so do
+// not reintroduce that assumption.
 
 const TEST_DIR = 'tests'
 const PLANES = new Set(PLANE_TAGS)
@@ -80,6 +90,19 @@ describe('tag coverage guard', () => {
       if (src.split('\n').some((l) => /^(it|test)[.(]/.test(l))) offenders.push(file)
     }
     expect(offenders, `top-level tests outside any describe:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  it('every test that exercises a tagged capability carries that tag', () => {
+    const problems = []
+    for (const file of testFiles) {
+      for (const leak of capabilityLeaks(readFileSync(file, 'utf8'))) {
+        problems.push(describeLeak(file, leak))
+      }
+    }
+    expect(
+      problems,
+      `tests exercising a capability without its tag:\n${problems.join('\n')}`,
+    ).toEqual([])
   })
 
   it('the README tag table matches the declared vocabulary', () => {

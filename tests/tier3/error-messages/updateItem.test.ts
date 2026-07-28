@@ -129,7 +129,7 @@ describe('UpdateItem — exact error messages', { tags: ['update-item', 'data-pl
     }
   })
 
-  it('mixing UpdateExpression with AttributeUpdates', async () => {
+  it('mixing UpdateExpression with AttributeUpdates', { tags: ['legacy'] }, async () => {
     try {
       await ddb.send(
         new UpdateItemCommand({

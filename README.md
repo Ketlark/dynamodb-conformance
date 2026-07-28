@@ -163,7 +163,7 @@ The vocabulary lives in one place, `src/tags.ts`, and stays honest two ways: `st
 | `cloud-only` | No emulator implements it; needs real AWS infrastructure, another AWS service, or account/region context |
 | `gsi` | Exercises Global Secondary Indexes |
 | `lsi` | Exercises Local Secondary Indexes |
-| `legacy` | Deprecated request parameters (AttributeUpdates, QueryFilter, ScanFilter, Expected, AttributesToGet) |
+| `legacy` | Sends a deprecated request parameter (AttributeUpdates, QueryFilter, ScanFilter, Expected, AttributesToGet), wherever the test lives |
 | `slow` | Long-running against real AWS; the set `test:gating` excludes |
 | `negative-path` | Asserts only rejections: every case expects a validation error, conditional-check failure, or transaction cancellation |
 <!-- tags:end -->

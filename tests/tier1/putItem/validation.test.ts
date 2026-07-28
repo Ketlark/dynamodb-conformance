@@ -166,7 +166,7 @@ describe('PutItem — validation', { tags: ['put-item', 'data-plane', 'negative-
     )
   })
 
-  it('rejects mixing expression and non-expression parameters', async () => {
+  it('rejects mixing expression and non-expression parameters', { tags: ['legacy'] }, async () => {
     await expectDynamoError(
       () => ddb.send(
         new PutItemCommand({

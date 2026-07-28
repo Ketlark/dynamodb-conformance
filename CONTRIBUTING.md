@@ -83,11 +83,30 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
 })
 ```
 
+A tag can also go on an individual test, and has to when only some of the tests
+in a describe exercise the capability. Legacy parameters are the usual case: a
+rejection test that sends `Expected` alongside `ConditionExpression` belongs
+next to its expression-parameter counterpart, so the file stays readable, but
+only that one test depends on legacy support.
+
+```ts
+describe('PutItem — validation', { tags: ['put-item', 'data-plane'] }, () => {
+  it('rejects mixing expression and non-expression parameters', { tags: ['legacy'] }, async () => {
+    // ...
+  })
+})
+```
+
+Tags add up rather than replace, so that test resolves to `put-item`,
+`data-plane` and `legacy`. Tagging the whole describe instead would drop every
+other case in it from a `--tags-filter='!legacy'` run.
+
 The vocabulary lives in `src/tags.ts` - add a tag there before using it, or
 `strictTags` rejects the run. The coverage guard (`npm run test:tooling`) fails
-if a top-level describe is left untagged, so feature filters like
-`--tags-filter='!partiql'` never silently miss a test. See "Filtering by
-feature" in the `README.md` for the full vocabulary.
+if a top-level describe is left untagged, and also if a test sends something a
+tag exists for without carrying it - a legacy request parameter, a PartiQL
+command. So feature filters like `--tags-filter='!partiql'` never silently miss
+a test. See "Filtering by feature" in the `README.md` for the full vocabulary.
 
 ### Tier 3 sub-directory choice
 

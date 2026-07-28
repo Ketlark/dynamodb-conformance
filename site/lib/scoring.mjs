@@ -149,17 +149,32 @@ const testsKey = (file) => {
 };
 
 // Per-capability tally for one target's raw results, joined to the tag manifest:
-// for each test, look up its resolved tags by (file, top-level describe title),
-// then sum pass/fail/skip into every capability column that tag set includes.
-// State is derived the same way areaState does, so the glyphs match the matrix.
-// With no manifest (e.g. a fetch fallback) every capability reports n/a.
+// for each test, look up its resolved tags by (file, top-level describe title,
+// test name), then sum pass/fail/skip into every capability column that tag set
+// includes. State is derived the same way areaState does, so the glyphs match
+// the matrix. With no manifest (e.g. a fetch fallback) every capability reports
+// n/a.
+//
+// A tag can sit on an individual test rather than on its describe, which is how
+// a capability is marked when only some tests in a describe exercise it. Schema
+// 2 of the manifest carries those in `tests`, holding only what is added below
+// the describe, so the two maps are unioned here. The site fetches the manifest
+// live from the suite's main branch at build time, so it can be handed either
+// schema; a schema 1 manifest simply has no `tests` and the union is a no-op.
 export function capabilityTallies(raw, manifest) {
   const describes = manifest?.describes ?? {};
+  const perTest = manifest?.tests ?? {};
   const tally = Object.fromEntries(CAPABILITIES.map((c) => [c.key, { passed: 0, failed: 0, skipped: 0 }]));
   for (const tr of raw?.testResults ?? []) {
-    const byTitle = describes[testsKey(tr.name)] ?? {};
+    const key = testsKey(tr.name);
+    const byTitle = describes[key] ?? {};
+    const testsByTitle = perTest[key] ?? {};
     for (const ar of tr.assertionResults ?? []) {
-      const tags = byTitle[ar.ancestorTitles?.[0]] ?? [];
+      const describeTitle = ar.ancestorTitles?.[0];
+      const tags = [
+        ...(byTitle[describeTitle] ?? []),
+        ...(testsByTitle[describeTitle]?.[ar.title] ?? []),
+      ];
       for (const c of CAPABILITIES) {
         if (!tags.includes(c.key)) continue;
         const e = tally[c.key];

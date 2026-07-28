@@ -51,7 +51,7 @@ describe('DeleteItem — exact error messages', { tags: ['delete-item', 'data-pl
   // Completes the expression/non-expression mutual-exclusion family for the item
   // writes (PutItem and UpdateItem already pin it). DeleteItem takes legacy Expected
   // and a modern ConditionExpression; supplying both is rejected up front.
-  it('mixing Expected with ConditionExpression: full conflict error', async () => {
+  it('mixing Expected with ConditionExpression: full conflict error', { tags: ['legacy'] }, async () => {
     try {
       await ddb.send(
         new DeleteItemCommand({

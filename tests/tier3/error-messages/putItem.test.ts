@@ -274,7 +274,7 @@ describe('PutItem — exact error messages', { tags: ['put-item', 'data-plane'] 
     }
   })
 
-  it('mixing expression and non-expression: full conflict error', async () => {
+  it('mixing expression and non-expression: full conflict error', { tags: ['legacy'] }, async () => {
     try {
       await ddb.send(
         new PutItemCommand({

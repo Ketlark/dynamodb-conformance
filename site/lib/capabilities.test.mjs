@@ -4,13 +4,24 @@ import assert from "node:assert/strict";
 import { capabilityTallies, CAPABILITIES, CAPABILITY_GROUPS } from "./scoring.mjs";
 import { renderCapabilities, renderCapabilityCards } from "./capabilities.mjs";
 
-// A tag manifest like the suite publishes: (file, top-level describe title) -> tags.
+// A tag manifest like the suite publishes: (file, top-level describe title) -> tags,
+// plus schema 2's `tests` map for tags applied below the describe.
 const manifest = {
+  schema: 2,
   describes: {
     "tests/tier2/partiql/executeStatement.test.ts": { "ExecuteStatement — PartiQL": ["partiql", "data-plane"] },
     "tests/tier1/query/gsi.test.ts": { "Query — GSI": ["query", "data-plane", "gsi"] },
+    "tests/tier1/getItem/projection.test.ts": { "GetItem — projection": ["get-item", "data-plane"] },
+  },
+  tests: {
+    "tests/tier1/getItem/projection.test.ts": {
+      "GetItem — projection": { "legacy AttributesToGet": ["legacy"] },
+    },
   },
 };
+
+// The same manifest as a reader on schema 1 would see it: no `tests` map.
+const schema1Manifest = { schema: 1, describes: manifest.describes };
 
 // Raw Vitest output: one file with an absolute (CI) path, one with a repo-relative
 // path, to prove the join normalises both to the "tests/..." tail.
@@ -28,6 +39,15 @@ const raw = {
       assertionResults: [
         { ancestorTitles: ["Query — GSI"], status: "passed" },
         { ancestorTitles: ["Query — GSI"], status: "skipped" },
+      ],
+    },
+    {
+      // One describe holding a legacy test and a sibling that is not legacy.
+      // Only the tagged one may reach the legacy column.
+      name: "tests/tier1/getItem/projection.test.ts",
+      assertionResults: [
+        { ancestorTitles: ["GetItem — projection"], title: "legacy AttributesToGet", status: "passed" },
+        { ancestorTitles: ["GetItem — projection"], title: "plain projection", status: "passed" },
       ],
     },
   ],
@@ -61,6 +81,46 @@ test("capabilityTallies counts only declared capability columns, ignoring other 
 test("capabilityTallies returns one entry per capability column, in order", () => {
   const caps = capabilityTallies(raw, manifest);
   assert.deepEqual(caps.map((c) => c.key), CAPABILITIES.map((c) => c.key));
+});
+
+test("capabilityTallies counts a per-test tag but not its untagged sibling", () => {
+  const caps = byKey(capabilityTallies(raw, manifest));
+  // Two tests in that describe, one tagged legacy. Only that one lands in the
+  // legacy column; the sibling is a plain projection test and must not.
+  assert.deepEqual([caps.legacy.passed, caps.legacy.total], [1, 1]);
+});
+
+test("capabilityTallies still tallies describe-level tags with per-test tags present", () => {
+  const caps = byKey(capabilityTallies(raw, manifest));
+  assert.deepEqual([caps.partiql.passed, caps.partiql.failed], [1, 1]);
+  assert.deepEqual([caps.gsi.passed, caps.gsi.skipped], [1, 1]);
+});
+
+test("capabilityTallies falls back to describe-level tags on a schema 1 manifest", () => {
+  const caps = byKey(capabilityTallies(raw, schema1Manifest));
+  // No `tests` map, so the legacy test is invisible as legacy - but nothing
+  // throws and every describe-level column tallies as before.
+  assert.equal(caps.legacy.total, 0);
+  assert.deepEqual([caps.partiql.passed, caps.partiql.failed], [1, 1]);
+  assert.deepEqual([caps.gsi.passed, caps.gsi.skipped], [1, 1]);
+});
+
+test("capabilityTallies counts a tag once when a test repeats one from its describe", () => {
+  const dupManifest = {
+    schema: 2,
+    describes: { "tests/tier1/query/gsi.test.ts": { "Query — GSI": ["query", "data-plane", "gsi"] } },
+    tests: { "tests/tier1/query/gsi.test.ts": { "Query — GSI": { "a gsi query": ["gsi"] } } },
+  };
+  const dupRaw = {
+    testResults: [
+      {
+        name: "tests/tier1/query/gsi.test.ts",
+        assertionResults: [{ ancestorTitles: ["Query — GSI"], title: "a gsi query", status: "passed" }],
+      },
+    ],
+  };
+  const caps = byKey(capabilityTallies(dupRaw, dupManifest));
+  assert.deepEqual([caps.gsi.passed, caps.gsi.total], [1, 1]);
 });
 
 test("capabilityTallies degrades to unsupported with no manifest, rather than crashing", () => {
