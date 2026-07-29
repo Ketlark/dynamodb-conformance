@@ -12,6 +12,10 @@ const def = (name: string): TestTableDef => ({
   hashKey: { name: 'pk', type: 'S' },
 })
 
+// Declarations are keyed by the file that made them, which under vitest is this
+// test file.
+const thisFile = expect.getState().testPath ?? 'unknown'
+
 /** A creator that records what it was asked to create. */
 function recordingCreator() {
   const calls: string[] = []
@@ -28,6 +32,13 @@ describe('createTableRegistry — declarations', () => {
     const r = createTableRegistry()
     r.declare(def('a'), def('b'))
     expect(r.declaredDefs().map((d) => d.name)).toEqual(['a', 'b'])
+  })
+
+  it('attributes declarations to the declaring file', () => {
+    const r = createTableRegistry()
+    r.declare(def('a'))
+    expect(r.declaredBy(thisFile).map((d) => d.name)).toEqual(['a'])
+    expect(r.declaredBy('some/other/file.test.ts')).toEqual([])
   })
 
   it('deduplicates a def declared by several files', () => {
@@ -77,6 +88,26 @@ describe('createTableRegistry — provisioning', () => {
     r.declare(def('only-this-one'))
     await r.provision(create)
     expect(calls).toEqual(['only-this-one'])
+  })
+
+  it('creates nothing for a file that declared nothing', async () => {
+    // The property that makes an excluded axis honest. `--tags-filter` skips
+    // tests but still imports the file, so an excluded file's declaration is
+    // registered; only its hook never runs. Provisioning the whole registry
+    // would create its tables on behalf of whichever file runs next.
+    const r = createTableRegistry()
+    const { calls, create } = recordingCreator()
+    r.declare(def('declared-by-an-excluded-file'))
+    await r.provision(create, 'a/file/that/declared/nothing.test.ts')
+    expect(calls).toEqual([])
+  })
+
+  it('creates only the requesting file\'s tables, not another file\'s', async () => {
+    const r = createTableRegistry()
+    const { calls, create } = recordingCreator()
+    r.declare(def('ours'))
+    await r.provision(create, thisFile)
+    expect(calls).toEqual(['ours'])
   })
 
   it('does not create concurrently for a def already in flight', async () => {
@@ -190,6 +221,30 @@ describe('createTableRegistry — the leftover sweep', () => {
     await r.sweepOnce(flaky)
 
     expect(attempts).toBe(2)
+  })
+
+  it('sweeps before any table is created, on every file', async () => {
+    // src/setup.ts awaits the sweep then provisions. This pins the ordering
+    // that sequence exists to guarantee: nothing may be created before the
+    // one sweep has finished, or the sweep deletes it again.
+    const r = createTableRegistry()
+    const order: string[] = []
+    const sweep = async () => {
+      await Promise.resolve()
+      order.push('sweep')
+    }
+    const create = async (d: TestTableDef) => {
+      order.push(`create:${d.name}`)
+    }
+
+    r.declare(def('a'))
+    await r.sweepOnce(sweep)
+    await r.provision(create)
+    r.declare(def('b'))
+    await r.sweepOnce(sweep)
+    await r.provision(create)
+
+    expect(order).toEqual(['sweep', 'create:a', 'create:b'])
   })
 
   it('keeps its guard independent of the provisioning memo', async () => {
