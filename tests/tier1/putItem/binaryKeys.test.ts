@@ -3,7 +3,9 @@ import {
   GetItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeBTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, compositeBTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(compositeBTableDef)
 
 describe('PutItem — binary sort key', { tags: ['put-item', 'data-plane'] }, () => {
   const bin1 = new Uint8Array([0x01, 0x02, 0x03])

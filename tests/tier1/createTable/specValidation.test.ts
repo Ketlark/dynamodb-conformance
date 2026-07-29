@@ -5,7 +5,7 @@ import { uniqueTableName } from '../../../src/helpers.js'
 // The INCLUDE-without-NonKeyAttributes and disabled-stream-with-StreamViewType
 // rejections are already covered in createTable/basic.test.ts; this pins the
 // remaining corner real AWS rejects.
-describe('CreateTable — index and stream spec validation', { tags: ['create-table', 'control-plane', 'negative-path'] }, () => {
+describe('CreateTable — index and stream spec validation', { tags: ['create-table', 'control-plane', 'negative-path', 'gsi'] }, () => {
   it('rejects a KEYS_ONLY GSI projection carrying NonKeyAttributes', async () => {
     try {
       await ddb.send(

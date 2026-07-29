@@ -4,7 +4,9 @@ import {
   type UpdateItemCommandInput,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('UpdateItem — expression attribute hygiene', { tags: ['update-item', 'data-plane', 'negative-path'] }, () => {
   const key = { pk: { S: 'expr-hygiene' } }

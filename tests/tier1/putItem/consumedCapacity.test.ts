@@ -5,7 +5,9 @@ import {
   ScanCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('ReturnConsumedCapacity', { tags: ['put-item', 'data-plane'] }, () => {
   const hashKeys = [
@@ -15,7 +17,6 @@ describe('ReturnConsumedCapacity', { tags: ['put-item', 'data-plane'] }, () => {
   ]
   const compositeKeys = [
     { pk: { S: 'cc-query-1' }, sk: { S: 'a' } },
-    { pk: { S: 'cc-idx-1' }, sk: { S: 'a' } },
   ]
 
   afterAll(async () => {
@@ -115,36 +116,6 @@ describe('ReturnConsumedCapacity', { tags: ['put-item', 'data-plane'] }, () => {
     )
 
     expect(result.ConsumedCapacity).toBeUndefined()
-  })
-
-  it('Query with INDEXES returns per-index capacity breakdown', async () => {
-    await ddb.send(
-      new PutItemCommand({
-        TableName: compositeTableDef.name,
-        Item: {
-          pk: { S: 'cc-idx-1' },
-          sk: { S: 'a' },
-          lsi1sk: { S: 'lval' },
-          data: { S: 'indexed' },
-        },
-      }),
-    )
-
-    const result = await ddb.send(
-      new QueryCommand({
-        TableName: compositeTableDef.name,
-        KeyConditionExpression: 'pk = :pk',
-        ExpressionAttributeValues: { ':pk': { S: 'cc-idx-1' } },
-        ConsistentRead: true,
-        ReturnConsumedCapacity: 'INDEXES',
-      }),
-    )
-
-    expect(result.ConsumedCapacity).toBeDefined()
-    expect(result.ConsumedCapacity!.TableName).toBe(compositeTableDef.name)
-    expect(typeof result.ConsumedCapacity!.CapacityUnits).toBe('number')
-    expect(result.ConsumedCapacity!.Table).toBeDefined()
-    expect(typeof result.ConsumedCapacity!.Table!.CapacityUnits).toBe('number')
   })
 })
 

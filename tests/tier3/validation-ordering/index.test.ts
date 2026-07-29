@@ -5,10 +5,12 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 // The non-existent-index error surface. Real AWS does NOT return
-// IndexNotFoundException here (characterised in the U2 gap map): Query/Scan
+// IndexNotFoundException here: Query/Scan
 // report ValidationException, and an UpdateTable GSI delete reports
 // ResourceNotFoundException. A too-lenient target that invents its own code or
 // silently succeeds fails these.

@@ -4,7 +4,9 @@ import {
   DeleteItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 // Exercises the DeleteItem ConditionExpression parser with parenthesised forms.
 describe('DeleteItem — ConditionExpression parens', { tags: ['delete-item', 'data-plane'] }, () => {

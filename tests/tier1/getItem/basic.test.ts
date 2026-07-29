@@ -1,14 +1,16 @@
 import {
   PutItemCommand,
   GetItemCommand,
-  DeleteItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {
   hashTableDef,
   compositeTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('GetItem — basic', { tags: ['get-item', 'data-plane'] }, () => {
   beforeAll(async () => {

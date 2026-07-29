@@ -6,7 +6,9 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { isUnsupportedFault } from '../../../src/infra.js'
-import { hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('BatchExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] }, () => {
   let supported = true

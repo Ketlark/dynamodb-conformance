@@ -8,7 +8,10 @@ import {
   compositeTableDef,
   hashTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef, hashTableDef)
 
 describe('Query — exact error messages', { tags: ['query', 'data-plane', 'negative-path'] }, () => {
   it('missing hash key in KeyConditionExpression', async () => {
@@ -86,28 +89,6 @@ describe('Query — exact error messages', { tags: ['query', 'data-plane', 'nega
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toBe(
         "1 validation error detected: Value 'INVALID_VALUE' at 'select' failed to satisfy constraint: Member must satisfy enum value set: [SPECIFIC_ATTRIBUTES, COUNT, ALL_ATTRIBUTES, ALL_PROJECTED_ATTRIBUTES]",
-      )
-    }
-  })
-
-  it('ConsistentRead on GSI', async () => {
-    try {
-      await ddb.send(
-        new QueryCommand({
-          TableName: compositeTableDef.name,
-          IndexName: 'gsi1',
-          KeyConditionExpression: '#hk = :v',
-          ExpressionAttributeNames: { '#hk': 'lsi1sk' },
-          ExpressionAttributeValues: { ':v': { S: 'val' } },
-          ConsistentRead: true,
-        }),
-      )
-      expect.unreachable('should have thrown')
-    } catch (err) {
-      expect(err).toBeInstanceOf(DynamoDBServiceException)
-      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
-      expect((err as DynamoDBServiceException).message).toBe(
-        'Consistent reads are not supported on global secondary indexes',
       )
     }
   })

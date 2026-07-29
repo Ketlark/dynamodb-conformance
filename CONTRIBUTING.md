@@ -70,6 +70,29 @@ is a maintainer task and does not block your PR.
   grouped by the definition of each tier in the `README.md`.
 - Prefer the existing wait/retry helpers over `setTimeout` sleeps.
 
+### Declare the tables your file uses
+
+Shared tables are created on demand, so a file has to say which ones it needs.
+Call `declareTables` once at module scope, naming every shared def the file
+goes on to use:
+
+```ts
+import { compositeTableDef, declareTables, hashTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
+```
+
+Setup creates the tables the running file declared and nothing else, which is
+what lets `--tags-filter='!gsi and !lsi'` produce a run that never creates a
+table with a secondary index. Leave a table out and the file passes a full run,
+because some other file will have created it, then fails on a narrower run with
+`ResourceNotFoundException`. `npm run test:tooling` checks the declaration
+against what the file actually references, in both directions.
+
+Use `compositeIndexedTableDef` rather than `compositeTableDef` if you need a
+secondary index; the plain composite table has none. Any file declaring it
+needs both `gsi` and `lsi` tags, since it carries both kinds.
+
 ### Tag your test
 
 Every top-level `describe` takes a `tags` array as its second argument: the

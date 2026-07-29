@@ -3,7 +3,9 @@ import {
   QueryCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 // Query FilterExpression parser is distinct from KeyConditionExpression in
 // most emulators, so parens working there does not imply they work here.

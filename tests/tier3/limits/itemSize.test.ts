@@ -7,7 +7,10 @@ import {
   hashTableDef,
   hashNTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, hashNTableDef)
 
 const PREFIX = 'lim-is-'
 const keysToClean: { pk: { S: string } }[] = []

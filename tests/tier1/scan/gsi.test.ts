@@ -4,12 +4,15 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {
-  compositeTableDef,
+  compositeIndexedTableDef,
   cleanupItems,
   waitForGsiConsistency,
+  declareTables,
 } from '../../../src/helpers.js'
 
-describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
+declareTables(compositeIndexedTableDef)
+
+describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi', 'lsi'] }, () => {
   const items = [
     {
       pk: { S: 'scan-gsi-1' },
@@ -41,12 +44,12 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
     await Promise.all(
       items.map((item) =>
         ddb.send(
-          new PutItemCommand({ TableName: compositeTableDef.name, Item: item }),
+          new PutItemCommand({ TableName: compositeIndexedTableDef.name, Item: item }),
         ),
       ),
     )
     await waitForGsiConsistency({
-      tableName: compositeTableDef.name,
+      tableName: compositeIndexedTableDef.name,
       indexName: 'gsi1',
       partitionKey: { name: 'lsi1sk', value: { S: 'scan-gsi-hash-A' } },
       expectedCount: 2,
@@ -55,7 +58,7 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
 
   afterAll(async () => {
     await cleanupItems(
-      compositeTableDef.name,
+      compositeIndexedTableDef.name,
       items.map((item) => ({ pk: item.pk, sk: item.sk })),
     )
   })
@@ -63,7 +66,7 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
   it('scans a GSI with ALL projection and returns all attributes', async () => {
     const result = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi1',
         FilterExpression: 'begins_with(lsi1sk, :prefix)',
         ExpressionAttributeValues: { ':prefix': { S: 'scan-gsi-hash-' } },
@@ -86,7 +89,7 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
     // Keys: lsi1sk (HASH), lsi2sk (RANGE)
     const result = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi2',
         FilterExpression: 'begins_with(lsi1sk, :prefix)',
         ExpressionAttributeValues: { ':prefix': { S: 'scan-gsi-hash-' } },
@@ -108,7 +111,7 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
   it('scans a GSI with FilterExpression', async () => {
     const result = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi1',
         FilterExpression: 'lsi1sk = :v AND #d = :data',
         ExpressionAttributeNames: { '#d': 'data' },
@@ -134,12 +137,12 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
     }
     await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: noRangeItem,
       }),
     )
     await waitForGsiConsistency({
-      tableName: compositeTableDef.name,
+      tableName: compositeIndexedTableDef.name,
       indexName: 'gsi1',
       partitionKey: { name: 'lsi1sk', value: { S: 'scan-gsi-hash-sparse' } },
       expectedCount: 1,
@@ -148,7 +151,7 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
     // Present in the hash-only GSI...
     const gsi1Scan = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi1',
         FilterExpression: 'lsi1sk = :v',
         ExpressionAttributeValues: { ':v': { S: 'scan-gsi-hash-sparse' } },
@@ -159,14 +162,70 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
     // ...but never scanned from the composite GSI.
     const gsi2Scan = await ddb.send(
       new ScanCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'gsi2',
       }),
     )
     expect(gsi2Scan.Items!.map((i) => i.pk?.S)).not.toContain('scan-gsi-sparse')
 
-    await cleanupItems(compositeTableDef.name, [
+    await cleanupItems(compositeIndexedTableDef.name, [
       { pk: noRangeItem.pk, sk: noRangeItem.sk },
     ])
+  })
+})
+
+// Scanning an index runs a different FilterExpression path from scanning the
+// base table in some emulators, so the parens forms are re-checked here. Items
+// carry a unique `lsi1sk` marker, which is also gsi1's hash key, so the scan
+// isolates this describe's data from whatever else is in the shared table.
+describe('Scan — GSI FilterExpression parens', { tags: ['scan', 'data-plane', 'gsi', 'lsi'] }, () => {
+  const marker = 'fes-parens-marker'
+  const items = [
+    { pk: { S: 'fes-parens-1' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'alpha' }, status: { S: 'active' } },
+    { pk: { S: 'fes-parens-2' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'beta' }, status: { S: 'inactive' } },
+    { pk: { S: 'fes-parens-3' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'gamma' }, status: { S: 'active' } },
+    { pk: { S: 'fes-parens-4' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'alpha' }, status: { S: 'active' } },
+  ]
+
+  beforeAll(async () => {
+    await Promise.all(
+      items.map((item) =>
+        ddb.send(
+          new PutItemCommand({ TableName: compositeIndexedTableDef.name, Item: item }),
+        ),
+      ),
+    )
+    await waitForGsiConsistency({
+      tableName: compositeIndexedTableDef.name,
+      indexName: 'gsi1',
+      partitionKey: { name: 'lsi1sk', value: { S: marker } },
+      expectedCount: items.length,
+    })
+  }, 30_000)
+
+  afterAll(async () => {
+    await cleanupItems(
+      compositeIndexedTableDef.name,
+      items.map((item) => ({ pk: item.pk, sk: item.sk })),
+    )
+  })
+
+  it('GSI scan — parens filter returns matching items', async () => {
+    const result = await ddb.send(
+      new ScanCommand({
+        TableName: compositeIndexedTableDef.name,
+        IndexName: 'gsi1',
+        FilterExpression: '(#m = :m) AND ((#t = :a) OR (#t = :b))',
+        ExpressionAttributeNames: { '#m': 'lsi1sk', '#t': 'type' },
+        ExpressionAttributeValues: {
+          ':m': { S: marker },
+          ':a': { S: 'alpha' },
+          ':b': { S: 'beta' },
+        },
+      }),
+    )
+
+    // Same three items show through the GSI (all four have lsi1sk=marker)
+    expect(result.Items).toHaveLength(3)
   })
 })

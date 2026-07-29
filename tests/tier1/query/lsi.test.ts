@@ -5,11 +5,14 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {
-  compositeTableDef,
+  compositeIndexedTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
 
-describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
+declareTables(compositeIndexedTableDef)
+
+describe('Query — LSI', { tags: ['query', 'data-plane', 'gsi', 'lsi'] }, () => {
   const items = [
     {
       pk: { S: 'lsi-q-1' },
@@ -45,7 +48,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
     await Promise.all(
       items.map((item) =>
         ddb.send(
-          new PutItemCommand({ TableName: compositeTableDef.name, Item: item }),
+          new PutItemCommand({ TableName: compositeIndexedTableDef.name, Item: item }),
         ),
       ),
     )
@@ -53,7 +56,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
 
   afterAll(async () => {
     await cleanupItems(
-      compositeTableDef.name,
+      compositeIndexedTableDef.name,
       items.map((item) => ({ pk: item.pk, sk: item.sk })),
     )
   })
@@ -61,7 +64,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   it('queries LSI with equality on sort key', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         KeyConditionExpression: 'pk = :pk AND lsi1sk = :sk',
         ExpressionAttributeValues: {
@@ -79,7 +82,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   it('queries LSI with begins_with on sort key', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         KeyConditionExpression: 'pk = :pk AND begins_with(lsi1sk, :prefix)',
         ExpressionAttributeValues: {
@@ -99,7 +102,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   it('queries LSI with BETWEEN on sort key', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi2',
         KeyConditionExpression: 'pk = :pk AND lsi2sk BETWEEN :lo AND :hi',
         ExpressionAttributeValues: {
@@ -121,7 +124,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   it('supports ConsistentRead on LSI (unlike GSI)', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         KeyConditionExpression: 'pk = :pk',
         ExpressionAttributeValues: { ':pk': { S: 'lsi-q-1' } },
@@ -135,7 +138,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   it('ALL projection returns all base table attributes', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         KeyConditionExpression: 'pk = :pk AND lsi1sk = :sk',
         ExpressionAttributeValues: {
@@ -160,7 +163,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
     // lsi2 has projectionType INCLUDE with nonKeyAttributes ['lsi1sk']
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi2',
         KeyConditionExpression: 'pk = :pk AND lsi2sk = :sk',
         ExpressionAttributeValues: {
@@ -186,7 +189,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   it('returns items only from the queried partition', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         KeyConditionExpression: 'pk = :pk',
         ExpressionAttributeValues: { ':pk': { S: 'lsi-q-1' } },
@@ -203,7 +206,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   it('returns empty results for non-existent partition key on LSI', async () => {
     const result = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         KeyConditionExpression: 'pk = :pk',
         ExpressionAttributeValues: { ':pk': { S: 'does-not-exist' } },
@@ -220,7 +223,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
     const noLsiSkItem = { pk: { S: 'lsi-sparse-q' }, sk: { S: 'x' } }
     await ddb.send(
       new PutItemCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         Item: noLsiSkItem,
       }),
     )
@@ -228,7 +231,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
     // Absent from the LSI...
     const lsiResult = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         IndexName: 'lsi1',
         KeyConditionExpression: 'pk = :p',
         ExpressionAttributeValues: { ':p': { S: 'lsi-sparse-q' } },
@@ -240,7 +243,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
     // ...but present in the base table.
     const baseResult = await ddb.send(
       new QueryCommand({
-        TableName: compositeTableDef.name,
+        TableName: compositeIndexedTableDef.name,
         KeyConditionExpression: 'pk = :p',
         ExpressionAttributeValues: { ':p': { S: 'lsi-sparse-q' } },
         ConsistentRead: true,
@@ -248,13 +251,13 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
     )
     expect(baseResult.Items).toHaveLength(1)
 
-    await cleanupItems(compositeTableDef.name, [
+    await cleanupItems(compositeIndexedTableDef.name, [
       { pk: noLsiSkItem.pk, sk: noLsiSkItem.sk },
     ])
   })
 })
 
-describe('Query — LSI pagination across tied sort keys', { tags: ['query', 'data-plane', 'lsi'] }, () => {
+describe('Query — LSI pagination across tied sort keys', { tags: ['query', 'data-plane', 'gsi', 'lsi'] }, () => {
   // Items in one partition sharing the LSI sort key (lsi1sk), distinct base sk.
   // The LSI continuation key must carry the base-table keys (pk, sk) alongside
   // the index sort key, or a paged walk loops or drops rows on the tie.
@@ -269,7 +272,7 @@ describe('Query — LSI pagination across tied sort keys', { tags: ['query', 'da
     await Promise.all(
       tied.map((item) =>
         ddb.send(
-          new PutItemCommand({ TableName: compositeTableDef.name, Item: item }),
+          new PutItemCommand({ TableName: compositeIndexedTableDef.name, Item: item }),
         ),
       ),
     )
@@ -277,7 +280,7 @@ describe('Query — LSI pagination across tied sort keys', { tags: ['query', 'da
 
   afterAll(async () => {
     await cleanupItems(
-      compositeTableDef.name,
+      compositeIndexedTableDef.name,
       tied.map((item) => ({ pk: item.pk, sk: item.sk })),
     )
   })
@@ -290,7 +293,7 @@ describe('Query — LSI pagination across tied sort keys', { tags: ['query', 'da
     do {
       const page = await ddb.send(
         new QueryCommand({
-          TableName: compositeTableDef.name,
+          TableName: compositeIndexedTableDef.name,
           IndexName: 'lsi1',
           KeyConditionExpression: 'pk = :p AND lsi1sk = :v',
           ExpressionAttributeValues: {

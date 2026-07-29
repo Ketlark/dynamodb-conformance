@@ -8,7 +8,10 @@ import {
   hashTableDef,
   hashBTableDef,
   compositeTableDef,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, hashBTableDef, compositeTableDef)
 
 describe('GetItem — exact error messages', { tags: ['get-item', 'data-plane', 'negative-path'] }, () => {
   it('non-existent table: full ResourceNotFoundException message', async () => {

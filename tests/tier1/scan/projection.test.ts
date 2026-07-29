@@ -1,6 +1,8 @@
 import { PutItemCommand, ScanCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Scan — legal shared-prefix projections', { tags: ['scan', 'data-plane'] }, () => {
   // Projection paths that share a prefix without one being a prefix of the

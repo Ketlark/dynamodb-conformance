@@ -8,7 +8,10 @@ import {
   compositeTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 // no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Empty values — strings, binary, and sets', { tags: ['put-item', 'get-item', 'data-plane'] }, () => {

@@ -1,10 +1,9 @@
 import {
   PutItemCommand,
   GetItemCommand,
-  UpdateItemCommand,
-  DeleteItemCommand,
   TransactWriteItemsCommand,
   TransactionCanceledException,
+  type TransactWriteItem,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { skipUnlessSupported } from '../../../src/infra.js'
@@ -13,7 +12,10 @@ import {
   compositeTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 const hashKeys = [
   { pk: { S: 'tw-basic-1' } },
@@ -57,15 +59,6 @@ const hashKeys = [
 
 const compositeKeys = [
   { pk: { S: 'tw-cross-comp' }, sk: { S: 'sk1' } },
-  // Defensive: the invalid-index-key cases below must all fail validation and
-  // write nothing. Clean up anyway so a too-lenient target that wrongly persists
-  // them does not leak rows into later tests.
-  { pk: { S: 'tw-idx-type' }, sk: { S: 'a' } },
-  { pk: { S: 'tw-idx-nonscalar' }, sk: { S: 'b' } },
-  { pk: { S: 'tw-idx-empty' }, sk: { S: 'c' } },
-  { pk: { S: 'tw-idx-upd-type' }, sk: { S: 'a' } },
-  { pk: { S: 'tw-idx-upd-nonscalar' }, sk: { S: 'b' } },
-  { pk: { S: 'tw-idx-upd-empty' }, sk: { S: 'c' } },
 ]
 
 afterAll(async () => {
@@ -742,8 +735,8 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
     )
   })
 
-  // An item carrying a malformed key value (table or index key) is rejected, but
-  // the error SHAPE depends on the fault, and the two halves are opposite traps:
+  // An item carrying a malformed table key value is rejected, but the error
+  // SHAPE depends on the fault, and the two halves are opposite traps:
   //
   //   - Wrong type / non-scalar: caught during transaction execution, so AWS
   //     cancels with a TransactionCanceledException whose reason Code is
@@ -753,13 +746,14 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
   //     top-level ValidationException even inside a transaction. An engine that
   //     wraps this as a TransactionCanceledException diverges.
   //
-  // Both directions are asserted below. Exact strings live in
-  // tests/tier3/error-messages/transactWriteItems.test.ts.
+  // Both directions are asserted below. The equivalent secondary-index key cases
+  // live in tests/tier2/transactions/transactWriteIndexKeys.test.ts; exact
+  // strings live in tests/tier3/error-messages/transactWriteItems.test.ts.
 
   const expectCancelledForValidation = async (transactItems: unknown[]) => {
     try {
       await ddb.send(
-        new TransactWriteItemsCommand({ TransactItems: transactItems as never }),
+        new TransactWriteItemsCommand({ TransactItems: transactItems as TransactWriteItem[] }),
       )
       expect.unreachable('should have thrown')
     } catch (err) {
@@ -783,54 +777,6 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
     ])
   })
 
-  it('Put with a wrong-typed index key cancels with a ValidationError reason', async () => {
-    await expectCancelledForValidation([
-      {
-        Put: {
-          TableName: compositeTableDef.name,
-          Item: { pk: { S: 'tw-idx-type' }, sk: { S: 'a' }, lsi1sk: { N: '5' } },
-        },
-      },
-    ])
-  })
-
-  it('Put with a non-scalar index key cancels with a ValidationError reason', async () => {
-    await expectCancelledForValidation([
-      {
-        Put: {
-          TableName: compositeTableDef.name,
-          Item: { pk: { S: 'tw-idx-nonscalar' }, sk: { S: 'b' }, lsi1sk: { L: [{ S: 'x' }] } },
-        },
-      },
-    ])
-  })
-
-  it('Update setting a wrong-typed index key cancels with a ValidationError reason', async () => {
-    await expectCancelledForValidation([
-      {
-        Update: {
-          TableName: compositeTableDef.name,
-          Key: { pk: { S: 'tw-idx-upd-type' }, sk: { S: 'a' } },
-          UpdateExpression: 'SET lsi1sk = :v',
-          ExpressionAttributeValues: { ':v': { N: '5' } },
-        },
-      },
-    ])
-  })
-
-  it('Update setting a non-scalar index key cancels with a ValidationError reason', async () => {
-    await expectCancelledForValidation([
-      {
-        Update: {
-          TableName: compositeTableDef.name,
-          Key: { pk: { S: 'tw-idx-upd-nonscalar' }, sk: { S: 'b' } },
-          UpdateExpression: 'SET lsi1sk = :v',
-          ExpressionAttributeValues: { ':v': { L: [{ S: 'x' }] } },
-        },
-      },
-    ])
-  })
-
   it('Put with an empty-string table key is a top-level ValidationException', async () => {
     // Not a TransactionCanceledException — expectDynamoError asserts the name is
     // ValidationException, which a cancellation wrapper would fail.
@@ -844,46 +790,6 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
       ),
       'ValidationException',
       /empty string value/i,
-    )
-  })
-
-  it('Put with an empty-string index key is a top-level ValidationException', async () => {
-    await expectDynamoError(
-      () => ddb.send(
-        new TransactWriteItemsCommand({
-          TransactItems: [
-            {
-              Put: {
-                TableName: compositeTableDef.name,
-                Item: { pk: { S: 'tw-idx-empty' }, sk: { S: 'c' }, lsi1sk: { S: '' } },
-              },
-            },
-          ],
-        }),
-      ),
-      'ValidationException',
-      /secondary index key/i,
-    )
-  })
-
-  it('Update setting an empty-string index key is a top-level ValidationException', async () => {
-    await expectDynamoError(
-      () => ddb.send(
-        new TransactWriteItemsCommand({
-          TransactItems: [
-            {
-              Update: {
-                TableName: compositeTableDef.name,
-                Key: { pk: { S: 'tw-idx-upd-empty' }, sk: { S: 'c' } },
-                UpdateExpression: 'SET lsi1sk = :v',
-                ExpressionAttributeValues: { ':v': { S: '' } },
-              },
-            },
-          ],
-        }),
-      ),
-      'ValidationException',
-      /secondary index key/i,
     )
   })
 
@@ -901,7 +807,7 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
 
   const expectKeyTopLevelValidation = (transactItem: unknown) =>
     expectDynamoError(
-      () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [transactItem] as never })),
+      () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [transactItem] as TransactWriteItem[] })),
       'ValidationException',
       /empty string value/i,
     )

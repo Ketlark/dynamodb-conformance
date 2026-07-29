@@ -3,7 +3,9 @@ import {
   GetItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 // Exercises the ConditionExpression parser with parenthesised forms.
 // Emulator parsers are often not shared across expression contexts, so

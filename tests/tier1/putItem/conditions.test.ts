@@ -5,7 +5,9 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('PutItem — ConditionExpression', { tags: ['put-item', 'data-plane'] }, () => {
   const pk = 'put-cond'

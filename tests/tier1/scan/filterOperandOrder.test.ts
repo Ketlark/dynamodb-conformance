@@ -1,6 +1,8 @@
 import { ScanCommand, DynamoDBServiceException } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Scan — FilterExpression operand validation order', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('rejects a non-string begins_with operand even when nothing matches', async () => {

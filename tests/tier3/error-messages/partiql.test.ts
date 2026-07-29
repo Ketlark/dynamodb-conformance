@@ -5,7 +5,9 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { isUnsupportedFault } from '../../../src/infra.js'
-import { hashTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 // Exact AWS strings for the PartiQL RETURNING rejections, pinned against real
 // AWS (eu-west-2). Tier 2 (tests/tier2/partiql/) asserts the error shape; this

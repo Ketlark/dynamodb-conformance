@@ -3,7 +3,9 @@ import {
   QueryCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeBTableDef, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, compositeBTableDef, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(compositeBTableDef)
 
 describe('Query — binary sort key', { tags: ['query', 'data-plane'] }, () => {
   const pk = 'binq'

@@ -10,7 +10,10 @@ import {
   deleteTable,
   expectDynamoError,
   hashTableDef,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('CreateTable — basic', { tags: ['create-table', 'control-plane'] }, () => {
   const tablesToCleanup: string[] = []
@@ -258,7 +261,7 @@ describe('CreateTable — validation', { tags: ['create-table', 'control-plane',
 
   // ProjectionType INCLUDE means "key attributes plus this explicit list"; the list is
   // mandatory, so INCLUDE without NonKeyAttributes is rejected.
-  it('rejects a GSI INCLUDE projection without NonKeyAttributes', async () => {
+  it('rejects a GSI INCLUDE projection without NonKeyAttributes', { tags: ['gsi'] }, async () => {
     await expectDynamoError(
       () => ddb.send(
         new CreateTableCommand({

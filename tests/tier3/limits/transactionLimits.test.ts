@@ -2,7 +2,6 @@ import {
   TransactWriteItemsCommand,
   TransactGetItemsCommand,
   BatchWriteItemCommand,
-  PutItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { skipUnlessSupported } from '../../../src/infra.js'

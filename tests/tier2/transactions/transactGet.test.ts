@@ -1,7 +1,6 @@
 import {
   PutItemCommand,
   TransactGetItemsCommand,
-  TransactWriteItemsCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {
@@ -9,7 +8,10 @@ import {
   compositeTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, compositeTableDef)
 
 const hashKeys = [
   { pk: { S: 'tg-basic-1' } },

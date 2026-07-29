@@ -7,9 +7,11 @@ import {
 import { ddb } from '../../../src/client.js'
 import {
   hashTableDef,
-  compositeTableDef,
   cleanupItems,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Scan — exact error messages', { tags: ['scan', 'data-plane', 'negative-path'] }, () => {
   it('Segment without TotalSegments: full required-parameter error', async () => {
@@ -160,26 +162,6 @@ describe('Scan — exact error messages', { tags: ['scan', 'data-plane', 'negati
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toBe(
         'The provided starting key is invalid: The provided key element does not match the schema',
-      )
-    }
-  })
-
-  // Parity with Query: a Scan on a GSI cannot ask for a strongly consistent read.
-  it('ConsistentRead on a GSI: full consistent-reads-unsupported message', async () => {
-    try {
-      await ddb.send(
-        new ScanCommand({
-          TableName: compositeTableDef.name,
-          IndexName: 'gsi1',
-          ConsistentRead: true,
-        }),
-      )
-      expect.unreachable('should have thrown')
-    } catch (err) {
-      expect(err).toBeInstanceOf(DynamoDBServiceException)
-      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
-      expect((err as DynamoDBServiceException).message).toBe(
-        'Consistent reads are not supported on global secondary indexes',
       )
     }
   })

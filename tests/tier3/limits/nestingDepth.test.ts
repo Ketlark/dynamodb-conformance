@@ -4,8 +4,10 @@ import {
   type AttributeValue,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
 import { observeSplit } from '../../../src/observation-sink.js'
+
+declareTables(hashTableDef)
 
 // Wrap a scalar leaf in `depth` single-key maps: depth=1 -> { M: { n: { S: 'leaf' } } }.
 // Real DynamoDB caps document nesting at 32 levels, counting the attribute itself as

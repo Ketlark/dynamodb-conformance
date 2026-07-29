@@ -4,7 +4,9 @@ import {
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, hashBTableDef, compositeTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, hashBTableDef, compositeTableDef } from '../../../src/helpers.js'
+
+declareTables(hashTableDef, hashBTableDef, compositeTableDef)
 
 describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
   it('empty RequestItems: full required-parameter error', async () => {

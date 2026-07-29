@@ -7,7 +7,10 @@ import {
   hashTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('Scan — filter operators on different types', { tags: ['scan', 'data-plane'] }, () => {
   const items = [

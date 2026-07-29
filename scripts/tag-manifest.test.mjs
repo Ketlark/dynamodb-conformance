@@ -49,14 +49,18 @@ describe('the tag manifest', () => {
     }
   })
 
-  it('carries the legacy tag on the individually tagged tests', () => {
+  it('carries the per-test tags, which are the axes a describe would over-exclude', () => {
     const tagged = Object.entries(manifest.tests).flatMap(([file, byDescribe]) =>
       Object.values(byDescribe).flatMap((byTest) =>
         Object.entries(byTest).map(([title, tags]) => ({ file, title, tags })),
       ),
     )
     expect(tagged.length).toBeGreaterThan(0)
-    expect(tagged.every((t) => t.tags.includes('legacy'))).toBe(true)
+    // Every per-test tag names one of the axes that gets applied per test
+    // rather than per describe: a deprecated parameter, or an index dependency
+    // sitting among cases that have nothing to do with indexes.
+    expect(tagged.every((t) => t.tags.some((x) => ['legacy', 'gsi', 'lsi'].includes(x)))).toBe(true)
     expect(tagged.map((t) => t.file)).toContain('tests/tier1/getItem/projection.test.ts')
+    expect(tagged.map((t) => t.file)).toContain('tests/tier3/error-messages/createTable.test.ts')
   })
 })

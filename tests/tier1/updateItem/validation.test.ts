@@ -1,6 +1,8 @@
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 describe('UpdateItem — validation', { tags: ['update-item', 'data-plane', 'negative-path'] }, () => {
   it('rejects update on non-existent table', async () => {

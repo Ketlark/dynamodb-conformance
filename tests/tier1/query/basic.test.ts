@@ -1,7 +1,6 @@
 import {
   PutItemCommand,
   QueryCommand,
-  DeleteItemCommand,
   type AttributeValue,
   type QueryCommandOutput,
 } from '@aws-sdk/client-dynamodb'
@@ -10,7 +9,10 @@ import {
   compositeTableDef,
   cleanupItems,
   expectDynamoError,
+  declareTables,
 } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 describe('Query — basic', { tags: ['query', 'data-plane'] }, () => {
   const pk = 'query-basic'
@@ -403,24 +405,6 @@ describe('Query — Limit + FilterExpression interaction', { tags: ['query', 'da
             KeyConditionExpression: 'pk = :pk',
             ExpressionAttributeValues: { ':pk': { S: 'query-basic' } },
             ExclusiveStartKey: { bad: { S: 'p' } },
-          }),
-        ),
-      'ValidationException',
-      /provided starting key is invalid/,
-    )
-  })
-
-  it('rejects ExclusiveStartKey missing the index key on a GSI query', async () => {
-    await expectDynamoError(
-      () =>
-        ddb.send(
-          new QueryCommand({
-            TableName: compositeTableDef.name,
-            IndexName: 'gsi1',
-            KeyConditionExpression: '#hk = :v',
-            ExpressionAttributeNames: { '#hk': 'lsi1sk' },
-            ExpressionAttributeValues: { ':v': { S: 'x' } },
-            ExclusiveStartKey: { pk: { S: 'x' } },
           }),
         ),
       'ValidationException',

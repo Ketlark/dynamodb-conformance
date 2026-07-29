@@ -7,8 +7,10 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { isUnsupportedFault } from '../../../src/infra.js'
-import { hashTableDef, compositeTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, compositeTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
 import type { AttributeValue } from '@aws-sdk/client-dynamodb'
+
+declareTables(hashTableDef, compositeTableDef)
 
 describe('ExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] }, () => {
   let supported = true

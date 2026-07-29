@@ -165,10 +165,23 @@ export async function waitUntilActive(
   )
 }
 
-/** Create a table from a TestTableDef and wait for it to become ACTIVE */
+/**
+ * Create a table from a TestTableDef and wait for it to become ACTIVE.
+ *
+ * Idempotent on the create itself. An attempt whose CreateTable succeeded but
+ * whose activation wait timed out leaves the table behind, and table names are
+ * fixed for the run - so the retry must adopt the existing table rather than
+ * collide with it. Without this, one slow activation turns every later file's
+ * provisioning into ResourceInUseException, which is a real answer rather than
+ * an indeterminate one and would publish a run of false disagreements.
+ */
 export async function createTable(def: TestTableDef): Promise<void> {
   const input = buildCreateInput(def)
-  await ddb.send(new CreateTableCommand(input))
+  try {
+    await ddb.send(new CreateTableCommand(input))
+  } catch (e: unknown) {
+    if (!(e instanceof ResourceInUseException)) throw e
+  }
   await waitUntilActive(def.name)
 }
 
@@ -282,6 +295,130 @@ async function disableDeletionProtection(tableName: string): Promise<void> {
     throw e
   }
 }
+
+// ── Demand-driven provisioning ────────────────────────────────────────
+//
+// A test file declares the shared tables it needs at module scope, and setup
+// creates only the tables declared by the file whose hook is running.
+//
+// Scoping to the declaring file is load-bearing, not tidiness. `--tags-filter`
+// skips tests; it does not deselect files, so vitest still imports an excluded
+// file and its declaration still registers. Its setup hook does not run,
+// though, so keying declarations by file is what stops an excluded axis
+// creating its tables - provisioning the whole registry would create them on
+// behalf of the next file that runs.
+//
+// Module scope rather than inside a hook because a static declaration can be
+// checked by scripts/table-declarations.test.mjs; a missing declaration would
+// otherwise surface only as a runtime missing-table error, and only on a run
+// narrow enough that no other file declared the same table.
+
+interface TableRegistry {
+  // `this: void` so unbinding these onto module-level consts below stays safe:
+  // a future edit reaching for `this` fails to compile rather than at runtime.
+  declare: (this: void, ...defs: TestTableDef[]) => void
+  declaredDefs: (this: void) => TestTableDef[]
+  declaredBy: (this: void, file: string) => TestTableDef[]
+  provision: (
+    this: void,
+    create?: (def: TestTableDef) => Promise<void>,
+    file?: string,
+  ) => Promise<void>
+  sweepOnce: (this: void, sweep?: () => Promise<void>) => Promise<void>
+}
+
+/**
+ * The file vitest is currently importing or running, used to scope
+ * declarations. Available at module-import time as well as inside hooks.
+ */
+function currentTestFile(): string {
+  return expect.getState().testPath ?? 'unknown'
+}
+
+/** A declaration set, creation memo and sweep guard. A factory so the
+ * memoisation and retry behaviour can be tested without real AWS. */
+export function createTableRegistry(): TableRegistry {
+  const declared = new Map<string, TestTableDef>()
+  const declaringFiles = new Map<string, Set<string>>()
+  const inFlight = new Map<string, Promise<void>>()
+  let swept: Promise<void> | null = null
+
+  return {
+    declare(...defs: TestTableDef[]): void {
+      const file = currentTestFile()
+      for (const def of defs) {
+        declared.set(def.name, def)
+        const files = declaringFiles.get(file) ?? new Set<string>()
+        files.add(def.name)
+        declaringFiles.set(file, files)
+      }
+    },
+
+    declaredDefs(): TestTableDef[] {
+      return [...declared.values()]
+    },
+
+    declaredBy(file: string): TestTableDef[] {
+      const names = declaringFiles.get(file) ?? new Set<string>()
+      return [...names].flatMap((n) => {
+        const def = declared.get(n)
+        return def ? [def] : []
+      })
+    },
+
+    async provision(create = createTable, file = currentTestFile()): Promise<void> {
+      const names = declaringFiles.get(file) ?? new Set<string>()
+      await Promise.all(
+        [...names].map((name) => {
+          const def = declared.get(name)
+          if (!def) return Promise.resolve()
+          const existing = inFlight.get(def.name)
+          if (existing) return existing
+          // Drop a rejected attempt from the memo so the next file retries it
+          // instead of replaying the rejection.
+          const attempt = create(def).catch((e: unknown) => {
+            inFlight.delete(def.name)
+            throw e
+          })
+          inFlight.set(def.name, attempt)
+          return attempt
+        }),
+      )
+    },
+
+    // Guarded separately from provisioning: provisioning runs per file, and a
+    // sweep sharing that guard would delete tables earlier files are using.
+    sweepOnce(sweep = cleanupAllTables): Promise<void> {
+      if (!swept) {
+        swept = sweep().catch((e: unknown) => {
+          swept = null
+          throw e
+        })
+      }
+      return swept
+    },
+  }
+}
+
+// Shared across every test file only because the suite runs as a single
+// non-isolated fork (maxWorkers: 1, isolate: false in vitest.config.ts), the
+// same property the table defs below rely on for their names.
+const registry = createTableRegistry()
+
+/** Declare the shared tables a file uses. Call once at module scope. */
+export const declareTables = registry.declare
+
+/** Every shared table declared by the files collected so far. */
+export const declaredTableDefs = registry.declaredDefs
+
+/** The shared tables one test file declared. */
+export const tablesDeclaredBy = registry.declaredBy
+
+/** Create the current file's declared tables. Safe to call per file. */
+export const provisionDeclaredTables = registry.provision
+
+/** Sweep leftover tables exactly once per run, before anything is created. */
+export const cleanupAllTablesOnce = registry.sweepOnce
 
 /** Delete all tables created by the conformance suite */
 export async function cleanupAllTables(): Promise<void> {
@@ -441,10 +578,21 @@ export const gsiBTableDef: TestTableDef = {
   billingMode: 'PAY_PER_REQUEST',
 }
 
+// The generic composite-key table. No secondary index, so a run excluding both
+// index axes creates nothing an index-free engine would reject.
 export const compositeTableDef: TestTableDef = {
   name: uniqueTableName('composite'),
   hashKey: { name: 'pk', type: 'S' },
   rangeKey: { name: 'sk', type: 'S' },
+}
+
+// The same key schema carrying the secondary indexes. Index names, projections
+// and key attributes are unchanged - tests pin messages naming `gsi1` and
+// `lsi1sk` exactly. One indexed variant carries both kinds, so excluding both
+// axes together is the guarantee and excluding one is not; see README.
+export const compositeIndexedTableDef: TestTableDef = {
+  ...compositeTableDef,
+  name: uniqueTableName('compositeIdx'),
   lsis: [
     {
       indexName: 'lsi1',

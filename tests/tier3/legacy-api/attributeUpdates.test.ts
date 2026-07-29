@@ -4,7 +4,9 @@ import {
   GetItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 // no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Legacy API — AttributeUpdates (legacy UpdateExpression)', { tags: ['update-item', 'legacy', 'data-plane'] }, () => {

@@ -3,7 +3,9 @@ import {
   QueryCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { compositeTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+
+declareTables(compositeTableDef)
 
 // no negative-path: acceptance-mixed (asserts accepted and rejected cases)
 describe('Legacy API — KeyConditions and QueryFilter', { tags: ['query', 'legacy', 'data-plane'] }, () => {

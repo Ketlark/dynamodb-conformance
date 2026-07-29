@@ -254,6 +254,42 @@ describe('capabilityLeaks', () => {
     expect(capabilityLeaks(src)).toEqual([])
   })
 
+  it('reports an index-key attribute written by an untagged test', () => {
+    const src = [
+      "describe('PutItem', { tags: ['put-item', 'data-plane'] }, () => {",
+      "  it('rejects a wrong-typed index key', async () => {",
+      '    await ddb.send(new PutItemCommand({ Item: { pk: p, lsi1sk: { N: :v } } }))',
+      '  })',
+      '})',
+      '',
+    ].join('\n')
+    expect(tags(capabilityLeaks(src))).toEqual(['test:rejects a wrong-typed index key:gsi or lsi'])
+  })
+
+  it('accepts either index axis for an index-key attribute', () => {
+    const withLsi = [
+      "describe('PutItem', { tags: ['put-item', 'data-plane', 'lsi'] }, () => {",
+      "  it('a', async () => { await ddb.send(new PutItemCommand({ Item: { lsi1sk: v } })) })",
+      '})',
+      '',
+    ].join('\n')
+    const withGsi = withLsi.replace("'lsi'", "'gsi'")
+    expect(capabilityLeaks(withLsi)).toEqual([])
+    expect(capabilityLeaks(withGsi)).toEqual([])
+  })
+
+  it('does not treat an index-key name inside an asserted message as a dependency', () => {
+    const src = [
+      "describe('Scan', { tags: ['scan', 'data-plane'] }, () => {",
+      "  it('reports the message', async () => {",
+      "    expect(err.message).toBe('Type mismatch for Index Key lsi1sk: Expected S')",
+      '  })',
+      '})',
+      '',
+    ].join('\n')
+    expect(capabilityLeaks(src)).toEqual([])
+  })
+
   it('requires the tag on every top-level describe when the marker is at module scope', () => {
     const src = [
       'const legacyRead = { AttributesToGet: [pk] }',

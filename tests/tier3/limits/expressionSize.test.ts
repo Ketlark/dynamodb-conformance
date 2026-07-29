@@ -6,7 +6,9 @@ import {
   UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+
+declareTables(hashTableDef)
 
 // Real DynamoDB caps every expression parameter at 4096 bytes, measured on the
 // raw expression string as sent: aliases are not substituted before counting,
