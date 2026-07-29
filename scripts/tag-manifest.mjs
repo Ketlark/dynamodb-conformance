@@ -68,7 +68,11 @@ export function buildManifest(testDir = TEST_DIR) {
 // CLI: write the committed manifest.
 if (import.meta.url === `file://${process.argv[1]}`) {
   const manifest = buildManifest()
-  writeFileSync('results/tag-manifest.json', `${JSON.stringify(manifest, null, 2)}\n`)
+  const json = `${JSON.stringify(manifest, null, 2)}\n`
+  // The site reads its own copy as a build-time fallback, so write both here.
+  // Keeping them in step by hand is what let them drift nine files apart.
+  writeFileSync('results/tag-manifest.json', json)
+  writeFileSync('site/data/tag-manifest.json', json)
   const fileCount = Object.keys(manifest.describes).length
   const describeCount = Object.values(manifest.describes).reduce((s, d) => s + Object.keys(d).length, 0)
   const testCount = Object.values(manifest.tests).reduce(

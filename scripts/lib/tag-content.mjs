@@ -62,6 +62,21 @@ export const CAPABILITY_MARKERS = [
     what: 'a secondary index key attribute',
     pattern: /\b(lsi1sk|lsi2sk|bidx)\s*:/,
   },
+  {
+    // Building a table that carries an index. This is the case an exclusion has
+    // to catch, because the table is created before any assertion runs.
+    //
+    // Deliberately not `IndexName`: naming an index is not depending on one.
+    // tests/tier3/validation-ordering/index.test.ts queries a name that exists
+    // nowhere, on an index-free table, and an engine without index support
+    // should still reject it - tagging it would drop a test that run can
+    // legitimately execute. Same for GlobalSecondaryIndexUpdates, which is a
+    // delete as often as an add.
+    tag: 'gsi',
+    anyOf: ['gsi', 'lsi'],
+    what: 'a table carrying a secondary index',
+    pattern: /\b(GlobalSecondaryIndexes|LocalSecondaryIndexes)\s*:/,
+  },
 ]
 
 /**

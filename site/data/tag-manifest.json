@@ -42,6 +42,15 @@
         "data-plane"
       ]
     },
+    "tests/tier1/batchWriteItem/indexKeyValidation.test.ts": {
+      "BatchWriteItem — index key validation": [
+        "batch",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
+      ]
+    },
     "tests/tier1/batchWriteItem/validation.test.ts": {
       "BatchWriteItem — validation": [
         "batch",
@@ -88,7 +97,8 @@
       "CreateTable — index and stream spec validation": [
         "create-table",
         "control-plane",
-        "negative-path"
+        "negative-path",
+        "gsi"
       ]
     },
     "tests/tier1/deleteItem/basic.test.ts": {
@@ -142,6 +152,14 @@
         "describe-table",
         "control-plane",
         "negative-path"
+      ]
+    },
+    "tests/tier1/describeTable/indexes.test.ts": {
+      "DescribeTable — secondary indexes": [
+        "describe-table",
+        "control-plane",
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier1/getItem/basic.test.ts": {
@@ -249,10 +267,21 @@
         "data-plane"
       ]
     },
+    "tests/tier1/putItem/indexKeyValidation.test.ts": {
+      "PutItem — index key validation": [
+        "put-item",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
+      ]
+    },
     "tests/tier1/putItem/itemCollectionMetrics.test.ts": {
       "ReturnItemCollectionMetrics": [
         "put-item",
-        "data-plane"
+        "data-plane",
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier1/putItem/numberFormat.test.ts": {
@@ -326,12 +355,21 @@
       "Query — GSI": [
         "query",
         "data-plane",
-        "gsi"
+        "gsi",
+        "lsi"
       ],
       "Query — GSI pagination across tied sort keys": [
         "query",
         "data-plane",
-        "gsi"
+        "gsi",
+        "lsi"
+      ],
+      "Query — GSI ExclusiveStartKey validation": [
+        "query",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier1/query/gsiHashOnlyPagination.test.ts": {
@@ -339,6 +377,14 @@
         "query",
         "data-plane",
         "gsi"
+      ]
+    },
+    "tests/tier1/query/indexConsumedCapacity.test.ts": {
+      "ConsumedCapacity — INDEXES on a secondary-index Query": [
+        "query",
+        "data-plane",
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier1/query/keyConditionParens.test.ts": {
@@ -357,11 +403,13 @@
       "Query — LSI": [
         "query",
         "data-plane",
+        "gsi",
         "lsi"
       ],
       "Query — LSI pagination across tied sort keys": [
         "query",
         "data-plane",
+        "gsi",
         "lsi"
       ]
     },
@@ -386,10 +434,6 @@
         "query",
         "data-plane"
       ],
-      "Query — Select modes on indexes": [
-        "query",
-        "data-plane"
-      ],
       "Query — Select SPECIFIC_ATTRIBUTES": [
         "query",
         "data-plane"
@@ -398,6 +442,14 @@
         "query",
         "data-plane",
         "negative-path"
+      ]
+    },
+    "tests/tier1/query/selectOnIndexes.test.ts": {
+      "Query — Select modes on indexes": [
+        "query",
+        "data-plane",
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier1/query/validation.test.ts": {
@@ -465,7 +517,14 @@
       "Scan — GSI": [
         "scan",
         "data-plane",
-        "gsi"
+        "gsi",
+        "lsi"
+      ],
+      "Scan — GSI FilterExpression parens": [
+        "scan",
+        "data-plane",
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier1/scan/gsiPagination.test.ts": {
@@ -484,6 +543,7 @@
       "Scan — LSI": [
         "scan",
         "data-plane",
+        "gsi",
         "lsi"
       ]
     },
@@ -740,6 +800,15 @@
         "data-plane"
       ]
     },
+    "tests/tier2/transactions/transactWriteIndexKeys.test.ts": {
+      "TransactWriteItems — index key validation": [
+        "transactions",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
+      ]
+    },
     "tests/tier2/ttl/basic.test.ts": {
       "TTL — basic": [
         "ttl",
@@ -827,6 +896,45 @@
         "negative-path"
       ]
     },
+    "tests/tier3/error-messages/indexKeyValues.test.ts": {
+      "BatchWriteItem — index key error messages": [
+        "batch",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
+      ],
+      "PutItem — index key error messages": [
+        "put-item",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
+      ],
+      "UpdateItem — index key error messages": [
+        "update-item",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
+      ]
+    },
+    "tests/tier3/error-messages/indexReads.test.ts": {
+      "Query — index error messages": [
+        "query",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
+      ],
+      "Scan — index error messages": [
+        "scan",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
+      ]
+    },
     "tests/tier3/error-messages/partiql.test.ts": {
       "PartiQL — exact error messages": [
         "partiql",
@@ -869,6 +977,15 @@
         "transactions",
         "data-plane",
         "negative-path"
+      ]
+    },
+    "tests/tier3/error-messages/transactIndexKeys.test.ts": {
+      "TransactWriteItems — index key error messages": [
+        "transactions",
+        "data-plane",
+        "negative-path",
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier3/error-messages/transactWriteItems.test.ts": {
@@ -1084,6 +1201,13 @@
     }
   },
   "tests": {
+    "tests/tier1/createTable/basic.test.ts": {
+      "CreateTable — validation": {
+        "rejects a GSI INCLUDE projection without NonKeyAttributes": [
+          "gsi"
+        ]
+      }
+    },
     "tests/tier1/getItem/projection.test.ts": {
       "GetItem — projection matching nothing": {
         "returns an empty Item when legacy AttributesToGet matches no attribute on a present item": [
@@ -1105,6 +1229,22 @@
         ],
         "mixing ProjectionExpression on one table and AttributesToGet on another is rejected": [
           "legacy"
+        ]
+      }
+    },
+    "tests/tier3/error-messages/createTable.test.ts": {
+      "CreateTable — exact error messages": {
+        "LSI without range key on base table": [
+          "lsi"
+        ],
+        "duplicate index names": [
+          "gsi"
+        ],
+        "GSI INCLUDE projection without NonKeyAttributes: full missing-attributes message": [
+          "gsi"
+        ],
+        "LSI INCLUDE projection without NonKeyAttributes: full missing-attributes message": [
+          "lsi"
         ]
       }
     },

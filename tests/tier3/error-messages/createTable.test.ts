@@ -161,7 +161,7 @@ describe('CreateTable — exact error messages', { tags: ['create-table', 'contr
     }
   })
 
-  it('LSI without range key on base table', async () => {
+  it('LSI without range key on base table', { tags: ['lsi'] }, async () => {
     try {
       await ddb.send(
         new CreateTableCommand({
@@ -194,7 +194,7 @@ describe('CreateTable — exact error messages', { tags: ['create-table', 'contr
     }
   })
 
-  it('duplicate index names', async () => {
+  it('duplicate index names', { tags: ['gsi'] }, async () => {
     try {
       await ddb.send(
         new CreateTableCommand({
@@ -257,7 +257,7 @@ describe('CreateTable — exact error messages', { tags: ['create-table', 'contr
     }
   })
 
-  it('GSI INCLUDE projection without NonKeyAttributes: full missing-attributes message', async () => {
+  it('GSI INCLUDE projection without NonKeyAttributes: full missing-attributes message', { tags: ['gsi'] }, async () => {
     try {
       await ddb.send(
         new CreateTableCommand({
@@ -289,7 +289,7 @@ describe('CreateTable — exact error messages', { tags: ['create-table', 'contr
 
   // LSI uses the same Projection model as GSI, so the missing-attributes rejection
   // is identical. Sibling of the GSI case above.
-  it('LSI INCLUDE projection without NonKeyAttributes: full missing-attributes message', async () => {
+  it('LSI INCLUDE projection without NonKeyAttributes: full missing-attributes message', { tags: ['lsi'] }, async () => {
     try {
       await ddb.send(
         new CreateTableCommand({

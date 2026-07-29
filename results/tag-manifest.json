@@ -97,7 +97,8 @@
       "CreateTable — index and stream spec validation": [
         "create-table",
         "control-plane",
-        "negative-path"
+        "negative-path",
+        "gsi"
       ]
     },
     "tests/tier1/deleteItem/basic.test.ts": {
@@ -1200,6 +1201,13 @@
     }
   },
   "tests": {
+    "tests/tier1/createTable/basic.test.ts": {
+      "CreateTable — validation": {
+        "rejects a GSI INCLUDE projection without NonKeyAttributes": [
+          "gsi"
+        ]
+      }
+    },
     "tests/tier1/getItem/projection.test.ts": {
       "GetItem — projection matching nothing": {
         "returns an empty Item when legacy AttributesToGet matches no attribute on a present item": [
@@ -1221,6 +1229,22 @@
         ],
         "mixing ProjectionExpression on one table and AttributesToGet on another is rejected": [
           "legacy"
+        ]
+      }
+    },
+    "tests/tier3/error-messages/createTable.test.ts": {
+      "CreateTable — exact error messages": {
+        "LSI without range key on base table": [
+          "lsi"
+        ],
+        "duplicate index names": [
+          "gsi"
+        ],
+        "GSI INCLUDE projection without NonKeyAttributes: full missing-attributes message": [
+          "gsi"
+        ],
+        "LSI INCLUDE projection without NonKeyAttributes: full missing-attributes message": [
+          "lsi"
         ]
       }
     },

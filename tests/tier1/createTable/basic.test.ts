@@ -261,7 +261,7 @@ describe('CreateTable — validation', { tags: ['create-table', 'control-plane',
 
   // ProjectionType INCLUDE means "key attributes plus this explicit list"; the list is
   // mandatory, so INCLUDE without NonKeyAttributes is rejected.
-  it('rejects a GSI INCLUDE projection without NonKeyAttributes', async () => {
+  it('rejects a GSI INCLUDE projection without NonKeyAttributes', { tags: ['gsi'] }, async () => {
     await expectDynamoError(
       () => ddb.send(
         new CreateTableCommand({
