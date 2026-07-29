@@ -12,7 +12,7 @@ import {
 
 declareTables(compositeIndexedTableDef)
 
-describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
+describe('Query — LSI', { tags: ['query', 'data-plane', 'gsi', 'lsi'] }, () => {
   const items = [
     {
       pk: { S: 'lsi-q-1' },
@@ -257,7 +257,7 @@ describe('Query — LSI', { tags: ['query', 'data-plane', 'lsi'] }, () => {
   })
 })
 
-describe('Query — LSI pagination across tied sort keys', { tags: ['query', 'data-plane', 'lsi'] }, () => {
+describe('Query — LSI pagination across tied sort keys', { tags: ['query', 'data-plane', 'gsi', 'lsi'] }, () => {
   // Items in one partition sharing the LSI sort key (lsi1sk), distinct base sk.
   // The LSI continuation key must carry the base-table keys (pk, sk) alongside
   // the index sort key, or a paged walk loops or drops rows on the tie.

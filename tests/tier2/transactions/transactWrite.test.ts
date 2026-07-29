@@ -1,10 +1,9 @@
 import {
   PutItemCommand,
   GetItemCommand,
-  UpdateItemCommand,
-  DeleteItemCommand,
   TransactWriteItemsCommand,
   TransactionCanceledException,
+  type TransactWriteItem,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { skipUnlessSupported } from '../../../src/infra.js'
@@ -754,7 +753,7 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
   const expectCancelledForValidation = async (transactItems: unknown[]) => {
     try {
       await ddb.send(
-        new TransactWriteItemsCommand({ TransactItems: transactItems as never }),
+        new TransactWriteItemsCommand({ TransactItems: transactItems as TransactWriteItem[] }),
       )
       expect.unreachable('should have thrown')
     } catch (err) {
@@ -808,7 +807,7 @@ describe('TransactWriteItems - validation', { tags: ['transactions', 'data-plane
 
   const expectKeyTopLevelValidation = (transactItem: unknown) =>
     expectDynamoError(
-      () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [transactItem] as never })),
+      () => ddb.send(new TransactWriteItemsCommand({ TransactItems: [transactItem] as TransactWriteItem[] })),
       'ValidationException',
       /empty string value/i,
     )

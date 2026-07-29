@@ -8,7 +8,7 @@ import {
 
 declareTables(compositeIndexedTableDef)
 
-describe('BatchWriteItem — index key validation', { tags: ['batch', 'data-plane', 'negative-path', 'lsi'] }, () => {
+describe('BatchWriteItem — index key validation', { tags: ['batch', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   // An index key value whose type is wrong, is non-scalar, or is an empty
   // string is rejected. BatchWriteItem validates the item up front, so every
   // variant is a top-level ValidationException for the whole request - there is

@@ -11,7 +11,7 @@ import {
 
 declareTables(compositeIndexedTableDef)
 
-describe('Scan — LSI', { tags: ['scan', 'data-plane', 'lsi'] }, () => {
+describe('Scan — LSI', { tags: ['scan', 'data-plane', 'gsi', 'lsi'] }, () => {
   const items = [
     {
       pk: { S: 'scan-lsi-1' },

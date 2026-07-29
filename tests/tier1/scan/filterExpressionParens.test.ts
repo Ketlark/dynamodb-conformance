@@ -9,17 +9,17 @@ declareTables(compositeTableDef)
 
 // Scan FilterExpression parser is distinct from KeyConditionExpression and
 // may also differ from Query's FilterExpression path in some emulators.
-// Items carry a unique `lsi1sk` marker so scans can isolate this test's
+// Items carry a unique `mark` attribute so scans can isolate this test's
 // data from whatever else is in the shared compositeTableDef. The marker is a
 // plain attribute here, not an index key — the index-scan case lives in
 // tests/tier1/scan/gsi.test.ts so this file needs no secondary index.
 describe('Scan — FilterExpression parens', { tags: ['scan', 'data-plane'] }, () => {
   const marker = 'fes-parens-marker'
   const items = [
-    { pk: { S: 'fes-parens-1' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'alpha' }, status: { S: 'active' } },
-    { pk: { S: 'fes-parens-2' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'beta' }, status: { S: 'inactive' } },
-    { pk: { S: 'fes-parens-3' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'gamma' }, status: { S: 'active' } },
-    { pk: { S: 'fes-parens-4' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'alpha' }, status: { S: 'active' } },
+    { pk: { S: 'fes-parens-1' }, sk: { S: 'x' }, mark: { S: marker }, type: { S: 'alpha' }, status: { S: 'active' } },
+    { pk: { S: 'fes-parens-2' }, sk: { S: 'x' }, mark: { S: marker }, type: { S: 'beta' }, status: { S: 'inactive' } },
+    { pk: { S: 'fes-parens-3' }, sk: { S: 'x' }, mark: { S: marker }, type: { S: 'gamma' }, status: { S: 'active' } },
+    { pk: { S: 'fes-parens-4' }, sk: { S: 'x' }, mark: { S: marker }, type: { S: 'alpha' }, status: { S: 'active' } },
   ]
 
   beforeAll(async () => {
@@ -44,7 +44,7 @@ describe('Scan — FilterExpression parens', { tags: ['scan', 'data-plane'] }, (
       new ScanCommand({
         TableName: compositeTableDef.name,
         FilterExpression: '(#m = :m) AND ((#t = :a) OR (#t = :b))',
-        ExpressionAttributeNames: { '#m': 'lsi1sk', '#t': 'type' },
+        ExpressionAttributeNames: { '#m': 'mark', '#t': 'type' },
         ExpressionAttributeValues: {
           ':m': { S: marker },
           ':a': { S: 'alpha' },
@@ -63,7 +63,7 @@ describe('Scan — FilterExpression parens', { tags: ['scan', 'data-plane'] }, (
       new ScanCommand({
         TableName: compositeTableDef.name,
         FilterExpression: '(#m = :m) AND (#t = :a OR #t = :b)',
-        ExpressionAttributeNames: { '#m': 'lsi1sk', '#t': 'type' },
+        ExpressionAttributeNames: { '#m': 'mark', '#t': 'type' },
         ExpressionAttributeValues: {
           ':m': { S: marker },
           ':a': { S: 'alpha' },
@@ -81,7 +81,7 @@ describe('Scan — FilterExpression parens', { tags: ['scan', 'data-plane'] }, (
       new ScanCommand({
         TableName: compositeTableDef.name,
         FilterExpression: '(#m = :m) AND (#t = :a OR (#t = :b))',
-        ExpressionAttributeNames: { '#m': 'lsi1sk', '#t': 'type' },
+        ExpressionAttributeNames: { '#m': 'mark', '#t': 'type' },
         ExpressionAttributeValues: {
           ':m': { S: marker },
           ':a': { S: 'alpha' },
@@ -99,7 +99,7 @@ describe('Scan — FilterExpression parens', { tags: ['scan', 'data-plane'] }, (
       new ScanCommand({
         TableName: compositeTableDef.name,
         FilterExpression: '(#m = :m) AND (NOT (#s = :s))',
-        ExpressionAttributeNames: { '#m': 'lsi1sk', '#s': 'status' },
+        ExpressionAttributeNames: { '#m': 'mark', '#s': 'status' },
         ExpressionAttributeValues: {
           ':m': { S: marker },
           ':s': { S: 'active' },

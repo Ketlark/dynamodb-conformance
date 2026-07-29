@@ -51,6 +51,17 @@ export const CAPABILITY_MARKERS = [
     what: 'a PartiQL command',
     pattern: /\b(ExecuteStatementCommand|BatchExecuteStatementCommand|ExecuteTransactionCommand)\b/,
   },
+  {
+    // The category filenames miss entirely: a test that never names an index
+    // but writes an index-key attribute, and is only rejected because that
+    // attribute is an index key. Either axis satisfies it - the shared indexed
+    // table carries both, so which one a case is filed under is a coin toss,
+    // and demanding a specific one would just encode that arbitrariness.
+    tag: 'gsi',
+    anyOf: ['gsi', 'lsi'],
+    what: 'a secondary index key attribute',
+    pattern: /\b(lsi1sk|lsi2sk|bidx)\s*:/,
+  },
 ]
 
 /**
@@ -211,17 +222,23 @@ export function capabilityLeaks(src, { markers = CAPABILITY_MARKERS } = {}) {
     for (const marker of markers) {
       const hit = line.match(marker.pattern)
       if (!hit) continue
-      const found = { line: i + 1, tag: marker.tag, marker: hit[1] ?? hit[0].trim() }
+      const accepted = marker.anyOf ?? [marker.tag]
+      const found = {
+        line: i + 1,
+        tag: accepted.join(' or '),
+        marker: hit[1] ?? hit[0].trim(),
+      }
       const at = innermostAt(roots, i + 1)
 
       if (!at) {
-        for (const d of roots.filter((r) => !r.tags.includes(marker.tag))) {
+        for (const d of roots.filter((r) => !accepted.some((t) => r.tags.includes(t)))) {
           leaks.push({ ...found, scope: 'file', title: d.title })
         }
         continue
       }
 
-      if (resolveTags(at.chain).has(marker.tag)) continue
+      const resolved = resolveTags(at.chain)
+      if (accepted.some((t) => resolved.has(t))) continue
       leaks.push({ ...found, scope: at.block.kind, title: at.block.title })
     }
   })

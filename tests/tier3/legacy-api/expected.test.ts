@@ -27,7 +27,7 @@ describe('Legacy API — Expected (legacy ConditionExpression)', { tags: ['put-i
   })
 
   it('PutItem with Expected Exists:false succeeds when item does not exist', async () => {
-    const result = await ddb.send(
+    await ddb.send(
       new PutItemCommand({
         TableName: hashTableDef.name,
         Item: { pk: { S: 'expected-1' }, data: { S: 'created' } },

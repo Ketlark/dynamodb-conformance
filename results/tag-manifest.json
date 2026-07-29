@@ -47,6 +47,7 @@
         "batch",
         "data-plane",
         "negative-path",
+        "gsi",
         "lsi"
       ]
     },
@@ -270,6 +271,7 @@
         "put-item",
         "data-plane",
         "negative-path",
+        "gsi",
         "lsi"
       ]
     },
@@ -277,6 +279,7 @@
       "ReturnItemCollectionMetrics": [
         "put-item",
         "data-plane",
+        "gsi",
         "lsi"
       ]
     },
@@ -351,18 +354,21 @@
       "Query — GSI": [
         "query",
         "data-plane",
-        "gsi"
+        "gsi",
+        "lsi"
       ],
       "Query — GSI pagination across tied sort keys": [
         "query",
         "data-plane",
-        "gsi"
+        "gsi",
+        "lsi"
       ],
       "Query — GSI ExclusiveStartKey validation": [
         "query",
         "data-plane",
+        "negative-path",
         "gsi",
-        "negative-path"
+        "lsi"
       ]
     },
     "tests/tier1/query/gsiHashOnlyPagination.test.ts": {
@@ -370,6 +376,14 @@
         "query",
         "data-plane",
         "gsi"
+      ]
+    },
+    "tests/tier1/query/indexConsumedCapacity.test.ts": {
+      "ConsumedCapacity — INDEXES on a secondary-index Query": [
+        "query",
+        "data-plane",
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier1/query/keyConditionParens.test.ts": {
@@ -388,11 +402,13 @@
       "Query — LSI": [
         "query",
         "data-plane",
+        "gsi",
         "lsi"
       ],
       "Query — LSI pagination across tied sort keys": [
         "query",
         "data-plane",
+        "gsi",
         "lsi"
       ]
     },
@@ -500,12 +516,14 @@
       "Scan — GSI": [
         "scan",
         "data-plane",
-        "gsi"
+        "gsi",
+        "lsi"
       ],
       "Scan — GSI FilterExpression parens": [
         "scan",
         "data-plane",
-        "gsi"
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier1/scan/gsiPagination.test.ts": {
@@ -524,6 +542,7 @@
       "Scan — LSI": [
         "scan",
         "data-plane",
+        "gsi",
         "lsi"
       ]
     },
@@ -785,6 +804,7 @@
         "transactions",
         "data-plane",
         "negative-path",
+        "gsi",
         "lsi"
       ]
     },
@@ -880,19 +900,22 @@
         "batch",
         "data-plane",
         "negative-path",
-        "gsi"
+        "gsi",
+        "lsi"
       ],
       "PutItem — index key error messages": [
         "put-item",
         "data-plane",
         "negative-path",
-        "gsi"
+        "gsi",
+        "lsi"
       ],
       "UpdateItem — index key error messages": [
         "update-item",
         "data-plane",
         "negative-path",
-        "gsi"
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier3/error-messages/indexReads.test.ts": {
@@ -900,13 +923,15 @@
         "query",
         "data-plane",
         "negative-path",
-        "gsi"
+        "gsi",
+        "lsi"
       ],
       "Scan — index error messages": [
         "scan",
         "data-plane",
         "negative-path",
-        "gsi"
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier3/error-messages/partiql.test.ts": {
@@ -958,7 +983,8 @@
         "transactions",
         "data-plane",
         "negative-path",
-        "gsi"
+        "gsi",
+        "lsi"
       ]
     },
     "tests/tier3/error-messages/transactWriteItems.test.ts": {

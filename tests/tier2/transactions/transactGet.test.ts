@@ -1,7 +1,6 @@
 import {
   PutItemCommand,
   TransactGetItemsCommand,
-  TransactWriteItemsCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {

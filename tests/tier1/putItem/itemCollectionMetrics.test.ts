@@ -8,7 +8,7 @@ import { declareTables, compositeIndexedTableDef, cleanupItems } from '../../../
 
 declareTables(compositeIndexedTableDef)
 
-describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane', 'lsi'] }, () => {
+describe('ReturnItemCollectionMetrics', { tags: ['put-item', 'data-plane', 'gsi', 'lsi'] }, () => {
   const keys = [
     { pk: { S: 'icm-put-1' }, sk: { S: 'a' } },
     { pk: { S: 'icm-del-1' }, sk: { S: 'a' } },

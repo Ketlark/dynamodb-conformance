@@ -38,7 +38,7 @@ afterAll(async () => {
   await cleanupItems(compositeIndexedTableDef.name, compositeKeysToCleanup)
 })
 
-describe('BatchWriteItem — index key error messages', { tags: ['batch', 'data-plane', 'negative-path', 'gsi'] }, () => {
+describe('BatchWriteItem — index key error messages', { tags: ['batch', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   // BatchWriteItem validates up front, so every variant is a top-level
   // ValidationException (no cancellation path).
   const expectExactValidation = async (
@@ -108,7 +108,7 @@ describe('BatchWriteItem — index key error messages', { tags: ['batch', 'data-
   })
 })
 
-describe('PutItem — index key error messages', { tags: ['put-item', 'data-plane', 'negative-path', 'gsi'] }, () => {
+describe('PutItem — index key error messages', { tags: ['put-item', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   it('empty-binary index key value: full secondary-index-key message', async () => {
     // Real AWS rejects a zero-length binary value on a secondary index key with
     // the put-form secondary-index message, naming the index and key.
@@ -130,7 +130,7 @@ describe('PutItem — index key error messages', { tags: ['put-item', 'data-plan
   })
 })
 
-describe('UpdateItem — index key error messages', { tags: ['update-item', 'data-plane', 'negative-path', 'gsi'] }, () => {
+describe('UpdateItem — index key error messages', { tags: ['update-item', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   it('empty-binary index key value: full secondary-index-key message', async () => {
     // Real AWS rejects a SET of a zero-length binary value on a secondary index
     // key with the update-form message (no IndexName/IndexKey suffix).

@@ -15,7 +15,7 @@ import {
 
 declareTables(compositeIndexedTableDef)
 
-describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
+describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi', 'lsi'] }, () => {
   const items = [
     {
       pk: { S: 'gsi-q-1' },
@@ -180,7 +180,7 @@ describe('Query — GSI', { tags: ['query', 'data-plane', 'gsi'] }, () => {
   })
 })
 
-describe('Query — GSI pagination across tied sort keys', { tags: ['query', 'data-plane', 'gsi'] }, () => {
+describe('Query — GSI pagination across tied sort keys', { tags: ['query', 'data-plane', 'gsi', 'lsi'] }, () => {
   // All items share both GSI keys (lsi1sk + lsi2sk), so the GSI cursor is
   // ambiguous without the base-table key. Real AWS composes LastEvaluatedKey
   // from the base key (pk, sk) AND the index keys (lsi1sk, lsi2sk) — captured
@@ -263,7 +263,7 @@ describe('Query — GSI pagination across tied sort keys', { tags: ['query', 'da
 // validate ExclusiveStartKey against the index schema is too lenient; real
 // DynamoDB rejects a key that does not match. Needs no seeded data: the
 // rejection happens before any item is read.
-describe('Query — GSI ExclusiveStartKey validation', { tags: ['query', 'data-plane', 'gsi', 'negative-path'] }, () => {
+describe('Query — GSI ExclusiveStartKey validation', { tags: ['query', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   it('rejects ExclusiveStartKey missing the index key on a GSI query', async () => {
     await expectDynamoError(
       () =>

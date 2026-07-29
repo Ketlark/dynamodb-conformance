@@ -3,7 +3,7 @@ import {
   GetItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, hashTableDef, expectDynamoError, cleanupItems } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
 

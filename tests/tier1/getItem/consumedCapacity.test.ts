@@ -21,9 +21,6 @@ describe('ConsumedCapacity across operations', { tags: ['get-item', 'data-plane'
     { pk: { S: 'cc-bw-1' } },
     { pk: { S: 'cc-bw-2' } },
   ]
-  const compositeKeys = [
-    { pk: { S: 'cc-qidx-1' }, sk: { S: 'a' } },
-  ]
 
   beforeAll(async () => {
     await Promise.all([
@@ -51,23 +48,11 @@ describe('ConsumedCapacity across operations', { tags: ['get-item', 'data-plane'
           Item: { pk: { S: 'cc-scan-1' }, data: { S: 'scanme' } },
         }),
       ),
-      ddb.send(
-        new PutItemCommand({
-          TableName: compositeTableDef.name,
-          Item: {
-            pk: { S: 'cc-qidx-1' },
-            sk: { S: 'a' },
-            lsi1sk: { S: 'lval' },
-            data: { S: 'indexed' },
-          },
-        }),
-      ),
     ])
   })
 
   afterAll(async () => {
     await cleanupItems(hashTableDef.name, hashKeys)
-    await cleanupItems(compositeTableDef.name, compositeKeys)
   })
 
   it('GetItem with TOTAL returns ConsumedCapacity', async () => {
@@ -117,25 +102,6 @@ describe('ConsumedCapacity across operations', { tags: ['get-item', 'data-plane'
     expect(result.ConsumedCapacity!.TableName).toBe(hashTableDef.name)
     expect(typeof result.ConsumedCapacity!.CapacityUnits).toBe('number')
     expect(result.ConsumedCapacity!.CapacityUnits).toBeGreaterThan(0)
-  })
-
-  it('Query with INDEXES returns per-index breakdown', async () => {
-    const result = await ddb.send(
-      new QueryCommand({
-        TableName: compositeTableDef.name,
-        KeyConditionExpression: '#pk = :pk',
-        ExpressionAttributeNames: { '#pk': 'pk' },
-        ExpressionAttributeValues: { ':pk': { S: 'cc-qidx-1' } },
-        ConsistentRead: true,
-        ReturnConsumedCapacity: 'INDEXES',
-      }),
-    )
-
-    expect(result.ConsumedCapacity).toBeDefined()
-    expect(result.ConsumedCapacity!.TableName).toBe(compositeTableDef.name)
-    expect(typeof result.ConsumedCapacity!.CapacityUnits).toBe('number')
-    expect(result.ConsumedCapacity!.Table).toBeDefined()
-    expect(typeof result.ConsumedCapacity!.Table!.CapacityUnits).toBe('number')
   })
 
   it('Scan with TOTAL returns ConsumedCapacity', async () => {
@@ -201,7 +167,7 @@ describe('ConsumedCapacity — single-item ops report only the aggregate, no rea
       ddb.send(new PutItemCommand({ TableName: hashTableDef.name, Item: { pk: delKey.pk, data: { S: 'x' } } })),
       ddb.send(new PutItemCommand({
         TableName: compositeTableDef.name,
-        Item: { pk: { S: 'cc-split-q' }, sk: { S: 'a' }, lsi1sk: { S: 'l' }, data: { S: 'x' } },
+        Item: { pk: { S: 'cc-split-q' }, sk: { S: 'a' }, data: { S: 'x' } },
       })),
     ])
   })
@@ -235,6 +201,9 @@ describe('ConsumedCapacity — single-item ops report only the aggregate, no rea
     expect(res.ConsumedCapacity!.WriteCapacityUnits).toBeUndefined()
   })
 
+  // INDEXES here is about the split, not about index coverage: this table carries
+  // no secondary index, so the response has a Table arm and nothing else. The
+  // per-index arm is asserted in tests/tier1/query/indexConsumedCapacity.test.ts.
   it('a Query under INDEXES omits the split at the top level and on Table', async () => {
     const res = await ddb.send(new QueryCommand({
       TableName: compositeTableDef.name,

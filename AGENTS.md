@@ -112,6 +112,16 @@ If a test is flaky against real DynamoDB (for example GSI
 propagation), use the existing wait/retry helpers rather than adding
 sleeps.
 
+A new test file must call `declareTables(...)` at module scope for
+every shared table def it uses. Shared tables are created on demand,
+so an undeclared table is simply never created for a run narrow enough
+that no other file asked for it, and the test fails with
+`ResourceNotFoundException` rather than a real answer. `npm run
+test:tooling` checks the declaration against what the file references.
+Reach for `compositeIndexedTableDef` when a test needs a secondary
+index; `compositeTableDef` has none, and any file using the indexed one
+carries both the `gsi` and `lsi` tags.
+
 ## Citing a suite finding elsewhere
 
 When a finding from this suite is referenced in another project's

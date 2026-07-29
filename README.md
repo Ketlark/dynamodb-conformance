@@ -117,6 +117,9 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npx vitest run --tags-filter='data-plane
 # Drop the operations no emulator implements
 DYNAMODB_ENDPOINT=http://localhost:8000 npx vitest run --tags-filter='!cloud-only'
 
+# Skip secondary indexes entirely, and create no table that has one
+DYNAMODB_ENDPOINT=http://localhost:8000 npx vitest run --tags-filter='!gsi and !lsi'
+
 # Compose them, and with tiers: transactions only, excluding cloud-only async
 DYNAMODB_ENDPOINT=http://localhost:8000 npx vitest run tests/tier2 --tags-filter='transactions and !cloud-only'
 ```
@@ -124,6 +127,14 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npx vitest run tests/tier2 --tags-filter
 The grammar takes `and` / `&&`, `not` / `!`, `or`, parentheses, and `prefix/*` wildcards, and it composes with the tier scripts and directory paths.
 
 The vocabulary lives in one place, `src/tags.ts`, and stays honest two ways: `strictTags` rejects an undeclared tag the moment the suite runs, and a coverage guard (`npm run test:tooling`) fails if any test is left untagged. So an exclusion like `!partiql` can't silently miss a test that someone forgot to tag.
+
+### What excluding an index buys you
+
+Most exclusions only change which tests run. The index ones also change what gets built, which matters if your engine can't build it.
+
+Tables are created on demand: a test file declares the shared tables it needs, and a run creates what its selected files asked for and nothing else. Exclude `gsi` and `lsi` and no table carrying a secondary index is ever created, so an engine with no index support can complete the run instead of dying in setup.
+
+The shared indexed table carries both kinds together, so any test using it is tagged `gsi` and `lsi` both, and excluding either axis drops it. That costs some precision when you select rather than exclude: `--tags-filter='gsi'` picks up tests that only exercise an LSI, because they share a table. If a target ever supports one index kind and not the other, splitting the table into separate variants is the way to fix that, at the cost of seeding both.
 
 <!-- tags:start -->
 **Operation tags** - one per test, matching the operation it exercises.
@@ -161,8 +172,8 @@ The vocabulary lives in one place, `src/tags.ts`, and stays honest two ways: `st
 | `data-plane` | Reads or writes items |
 | `control-plane` | Manages tables, indexes, or table-level features |
 | `cloud-only` | No emulator implements it; needs real AWS infrastructure, another AWS service, or account/region context |
-| `gsi` | Exercises Global Secondary Indexes |
-| `lsi` | Exercises Local Secondary Indexes |
+| `gsi` | Depends on a Global Secondary Index, whether it queries one, asserts on an index key, or creates a table carrying one |
+| `lsi` | Depends on a Local Secondary Index, on the same terms |
 | `legacy` | Sends a deprecated request parameter (AttributeUpdates, QueryFilter, ScanFilter, Expected, AttributesToGet), wherever the test lives |
 | `slow` | Long-running against real AWS; the set `test:gating` excludes |
 | `negative-path` | Asserts only rejections: every case expects a validation error, conditional-check failure, or transaction cancellation |
@@ -376,7 +387,7 @@ tests/
 
 - `src/client.ts` - DynamoDB and Streams client, configured from the `DYNAMODB_ENDPOINT` env var
 - `src/helpers.ts` - table lifecycle, assertion helpers (`expectDynamoError`, `cleanupItems`, `waitForGsiConsistency`)
-- `src/setup.ts` - global beforeAll/afterAll that creates 5 shared tables
+- `src/setup.ts` - per-file beforeAll that creates the shared tables the running file declared
 - `src/types.ts` - `TestTableDef` and `KeyDef` types
 
 ## The site

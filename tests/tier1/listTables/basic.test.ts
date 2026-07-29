@@ -1,8 +1,11 @@
 import { ListTablesCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, hashTableDef } from '../../../src/helpers.js'
+import { compositeTableDef, declareTables, hashTableDef } from '../../../src/helpers.js'
 
-declareTables(hashTableDef)
+// Two tables, because the Limit and pagination cases below need a second page
+// to exist. Provisioning follows what a file declares, so this file has to ask
+// for both rather than lean on whatever other files happened to create.
+declareTables(hashTableDef, compositeTableDef)
 
 describe('ListTables — basic', { tags: ['list-tables', 'control-plane'] }, () => {
   it('returns an array of table names', async () => {

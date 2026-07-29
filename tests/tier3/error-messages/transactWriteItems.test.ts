@@ -4,6 +4,7 @@ import {
   DynamoDBServiceException,
   ResourceNotFoundException,
   TransactionCanceledException,
+  type TransactWriteItem,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { skipUnlessSupported } from '../../../src/infra.js'
@@ -311,7 +312,7 @@ describe('TransactWriteItems — exact error messages', { tags: ['transactions',
   // the Put 'Type mismatch for key' form.
   const emptyKeyMsg = 'One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk'
   const schemaMismatchMsg = 'The provided key element does not match the schema'
-  const cmd = (item: unknown) => new TransactWriteItemsCommand({ TransactItems: [item] as never })
+  const cmd = (item: unknown) => new TransactWriteItemsCommand({ TransactItems: [item] as TransactWriteItem[] })
   const updKey = (key: unknown) => ({ Update: { TableName: hashTableDef.name, Key: { pk: key }, UpdateExpression: 'SET attr1 = :v', ExpressionAttributeValues: { ':v': { S: 'x' } } } })
   const delKey = (key: unknown) => ({ Delete: { TableName: hashTableDef.name, Key: { pk: key } } })
   const ccKey = (key: unknown) => ({ ConditionCheck: { TableName: hashTableDef.name, Key: { pk: key }, ConditionExpression: 'attribute_not_exists(pk)' } })

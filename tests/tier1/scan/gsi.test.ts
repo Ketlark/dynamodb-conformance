@@ -12,7 +12,7 @@ import {
 
 declareTables(compositeIndexedTableDef)
 
-describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
+describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi', 'lsi'] }, () => {
   const items = [
     {
       pk: { S: 'scan-gsi-1' },
@@ -178,7 +178,7 @@ describe('Scan — GSI', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
 // base table in some emulators, so the parens forms are re-checked here. Items
 // carry a unique `lsi1sk` marker, which is also gsi1's hash key, so the scan
 // isolates this describe's data from whatever else is in the shared table.
-describe('Scan — GSI FilterExpression parens', { tags: ['scan', 'data-plane', 'gsi'] }, () => {
+describe('Scan — GSI FilterExpression parens', { tags: ['scan', 'data-plane', 'gsi', 'lsi'] }, () => {
   const marker = 'fes-parens-marker'
   const items = [
     { pk: { S: 'fes-parens-1' }, sk: { S: 'x' }, lsi1sk: { S: marker }, type: { S: 'alpha' }, status: { S: 'active' } },

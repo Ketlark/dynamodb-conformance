@@ -7,13 +7,13 @@ import {
 } from './indeterminate-sink.js'
 import { clearObservedMarker } from './observation-sink.js'
 
-// Provision the shared tables the selected test files declared.
+// Provision the tables this test file declared.
 //
-// vitest 4 runs this beforeAll per test file, and a file's declarations only
-// register once it is imported, so the hook must run per file to create what
-// the newest one added. Both steps are guarded in src/helpers.ts: tables are
-// memoised by name, the sweep separately so it stays one pass at run start.
-// Final teardown runs once in src/global-teardown.ts.
+// vitest 4 runs this beforeAll per test file, and it does not run at all for a
+// file whose tests were all filtered out - which is what keeps an excluded
+// axis from creating its tables. Both steps are guarded in src/helpers.ts:
+// tables are memoised by name, the sweep separately so it stays one pass at
+// run start. Final teardown runs once in src/global-teardown.ts.
 beforeAll(async () => {
   try {
     await cleanupAllTablesOnce()

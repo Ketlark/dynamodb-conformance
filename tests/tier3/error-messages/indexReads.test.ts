@@ -12,7 +12,7 @@ import { compositeIndexedTableDef, declareTables } from '../../../src/helpers.js
 // index-not-found error.
 declareTables(compositeIndexedTableDef)
 
-describe('Query — index error messages', { tags: ['query', 'data-plane', 'negative-path', 'gsi'] }, () => {
+describe('Query — index error messages', { tags: ['query', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   it('ConsistentRead on GSI', async () => {
     try {
       await ddb.send(
@@ -36,7 +36,7 @@ describe('Query — index error messages', { tags: ['query', 'data-plane', 'nega
   })
 })
 
-describe('Scan — index error messages', { tags: ['scan', 'data-plane', 'negative-path', 'gsi'] }, () => {
+describe('Scan — index error messages', { tags: ['scan', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   // Parity with Query: a Scan on a GSI cannot ask for a strongly consistent read.
   it('ConsistentRead on a GSI: full consistent-reads-unsupported message', async () => {
     try {

@@ -1,7 +1,6 @@
 import {
   BatchWriteItemCommand,
   BatchGetItemCommand,
-  PutItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {

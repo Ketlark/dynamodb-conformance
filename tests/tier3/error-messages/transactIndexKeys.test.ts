@@ -32,7 +32,7 @@ afterAll(async () => {
   await cleanupItems(compositeIndexedTableDef.name, compositeKeysToCleanup)
 })
 
-describe('TransactWriteItems — index key error messages', { tags: ['transactions', 'data-plane', 'negative-path', 'gsi'] }, () => {
+describe('TransactWriteItems — index key error messages', { tags: ['transactions', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   // An empty TransactItems is rejected by any target that implements the
   // operation, so this separates "not implemented" from "implemented".
   skipUnlessSupported(() => ddb.send(new TransactWriteItemsCommand({ TransactItems: [] })))

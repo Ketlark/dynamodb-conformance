@@ -1,7 +1,6 @@
 import {
   PutItemCommand,
   QueryCommand,
-  DeleteItemCommand,
   type AttributeValue,
   type QueryCommandOutput,
 } from '@aws-sdk/client-dynamodb'

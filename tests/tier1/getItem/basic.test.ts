@@ -1,7 +1,6 @@
 import {
   PutItemCommand,
   GetItemCommand,
-  DeleteItemCommand,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import {

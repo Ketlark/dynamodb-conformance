@@ -1,6 +1,7 @@
 import {
   TransactWriteItemsCommand,
   TransactionCanceledException,
+  type TransactWriteItem,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { skipUnlessSupported } from '../../../src/infra.js'
@@ -29,7 +30,7 @@ afterAll(async () => {
   await cleanupItems(compositeIndexedTableDef.name, compositeKeys)
 })
 
-describe('TransactWriteItems — index key validation', { tags: ['transactions', 'data-plane', 'negative-path', 'lsi'] }, () => {
+describe('TransactWriteItems — index key validation', { tags: ['transactions', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   // An empty TransactItems is rejected by any target that implements the
   // operation, so this separates "not implemented" from "implemented".
   skipUnlessSupported(() => ddb.send(new TransactWriteItemsCommand({ TransactItems: [] })))
@@ -52,7 +53,7 @@ describe('TransactWriteItems — index key validation', { tags: ['transactions',
   const expectCancelledForValidation = async (transactItems: unknown[]) => {
     try {
       await ddb.send(
-        new TransactWriteItemsCommand({ TransactItems: transactItems as never }),
+        new TransactWriteItemsCommand({ TransactItems: transactItems as TransactWriteItem[] }),
       )
       expect.unreachable('should have thrown')
     } catch (err) {

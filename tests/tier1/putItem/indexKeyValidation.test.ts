@@ -8,7 +8,7 @@ import {
 
 declareTables(compositeIndexedTableDef)
 
-describe('PutItem — index key validation', { tags: ['put-item', 'data-plane', 'negative-path', 'lsi'] }, () => {
+describe('PutItem — index key validation', { tags: ['put-item', 'data-plane', 'negative-path', 'gsi', 'lsi'] }, () => {
   // An attribute used as a table or index key must match its declared scalar
   // type and may not be empty. lsi1sk is declared S and is an index key on the
   // composite table, so these writes are rejected even though the base-table
