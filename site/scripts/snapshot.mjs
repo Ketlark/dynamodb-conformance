@@ -14,11 +14,18 @@
 //
 //   npm run snapshot
 //
+// The first two are rebuilt from the history published on main. On a branch
+// that is the wrong source - it replaces the branch's own timeline with an
+// older one - so `--mirrors` refreshes only the three verbatim mirrors, which
+// are this checkout's own files and have no such coupling:
+//
+//   npm run snapshot -- --mirrors
+//
 // A GITHUB_TOKEN in the environment lifts the commits-API rate limit. Each
 // write is guarded: a fetch that fails or returns something unusable leaves the
 // committed copy alone, because a stale fallback beats an empty one.
 
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -34,47 +41,68 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const token = process.env.GITHUB_TOKEN;
 const timeoutMs = 15000;
 const log = (msg) => console.error(`[snapshot] ${msg}`);
+const mirrorsOnly = process.argv.includes("--mirrors");
 
 // The per-region overlay first, so buildModel can join it into the conformance
 // fallback and the committed model matches what a live build produces.
-const summarySnaps = await fetchSummaries({ token, timeoutMs, log });
-const summary = assemble(summarySnaps);
-if (!summary.latest) {
-  console.error("[snapshot] no summary snapshots reconstructed - refusing to write an empty overlay");
-  process.exit(1);
-}
-const summaryPayload = { available: true, source: "fallback", ...summary, generatedAt: null };
-await writeFile(join(root, "data", "summary-history.json"), `${JSON.stringify(summaryPayload, null, 2)}\n`, "utf8");
-log(`wrote summary overlay for run dates ${summary.runDates.join(", ")} to data/summary-history.json`);
-
-const snapshots = await fetchSnapshots({ token, timeoutMs, log });
-
-// Pass the payload (which carries `available: true`) so buildModel applies the
-// overlay; the bare assemble() result has no availability flag and would be
-// treated as no overlay, baking a region-less fallback.
-const model = buildModel(snapshots, summaryPayload);
-if (!model.latest) {
-  console.error("[snapshot] no runs reconstructed - refusing to write an empty fallback");
-  process.exit(1);
-}
-
-// Thin the findings to what the fallback needs (see leanForFallback for why).
-const lean = leanForFallback(model);
-// Hash what is actually written, not the model it came from. A build that falls
-// back recomputes the digest from this file, so a stored hash taken before the
-// strip could never match and would be misleading to anyone checking.
 //
-// The two paths do produce different digests for identical data, because a live
-// build's projection sees findings and a fallback's does not. That only costs a
-// redundant deploy, never a skipped one: the scheduled build is the only one that
-// skips, and it fails rather than falling back.
-const payload = { ...lean, historyHash: historyDigest(lean), capturedAt: new Date().toISOString() };
-await writeFile(join(root, "data", "conformance-history.json"), `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+// The checkout's own results/summary.json leads the fetched history, which all
+// comes from main. On a branch that changes the artefact the fallback would
+// otherwise mirror a shape the branch has moved past, and the hermetic build
+// check renders that fallback. assemble() keeps the first snapshot it sees for
+// a run date, so on main this changes nothing.
+async function localSummarySnapshot() {
+  try {
+    const raw = JSON.parse(await readFile(join(root, "..", "results", "summary.json"), "utf8"));
+    return [{ sha: "working-tree", raw }];
+  } catch (err) {
+    log(`no local results/summary.json to lead the history (${err.message})`);
+    return [];
+  }
+}
 
-console.error(
-  `[snapshot] wrote ${model.runs.length} runs, ${model.targets.length} targets ` +
-    `(latest ${model.latest.id}, digest ${payload.historyHash}) to data/conformance-history.json`,
-);
+if (mirrorsOnly) {
+  log("--mirrors: leaving the derived history models as the branch has them");
+} else {
+  const summarySnaps = [...(await localSummarySnapshot()), ...(await fetchSummaries({ token, timeoutMs, log }))];
+  const summary = assemble(summarySnaps);
+  if (!summary.latest) {
+    console.error("[snapshot] no summary snapshots reconstructed - refusing to write an empty overlay");
+    process.exit(1);
+  }
+  const summaryPayload = { available: true, source: "fallback", ...summary, generatedAt: null };
+  await writeFile(join(root, "data", "summary-history.json"), `${JSON.stringify(summaryPayload, null, 2)}\n`, "utf8");
+  log(`wrote summary overlay for run dates ${summary.runDates.join(", ")} to data/summary-history.json`);
+
+  const snapshots = await fetchSnapshots({ token, timeoutMs, log });
+
+  // Pass the payload (which carries `available: true`) so buildModel applies the
+  // overlay; the bare assemble() result has no availability flag and would be
+  // treated as no overlay, baking a region-less fallback.
+  const model = buildModel(snapshots, summaryPayload);
+  if (!model.latest) {
+    console.error("[snapshot] no runs reconstructed - refusing to write an empty fallback");
+    process.exit(1);
+  }
+
+  // Thin the findings to what the fallback needs (see leanForFallback for why).
+  const lean = leanForFallback(model);
+  // Hash what is actually written, not the model it came from. A build that falls
+  // back recomputes the digest from this file, so a stored hash taken before the
+  // strip could never match and would be misleading to anyone checking.
+  //
+  // The two paths do produce different digests for identical data, because a live
+  // build's projection sees findings and a fallback's does not. That only costs a
+  // redundant deploy, never a skipped one: the scheduled build is the only one that
+  // skips, and it fails rather than falling back.
+  const payload = { ...lean, historyHash: historyDigest(lean), capturedAt: new Date().toISOString() };
+  await writeFile(join(root, "data", "conformance-history.json"), `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+
+  console.error(
+    `[snapshot] wrote ${model.runs.length} runs, ${model.targets.length} targets ` +
+      `(latest ${model.latest.id}, digest ${payload.historyHash}) to data/conformance-history.json`,
+  );
+}
 
 // The three verbatim mirrors. Each is fetched from the raw CDN (no API limit,
 // no token) and checked with the same parser its data file uses, so a fetch
@@ -116,12 +144,25 @@ const mirrors = [
   },
 ];
 
+// Each mirrored file lives in this repository, so the checkout is the better
+// source: fetching from main mirrors what is published rather than what the
+// branch holds, and a branch that edits one of these ships a fallback
+// contradicting its own canonical copy. Falls back to the fetch when the file
+// is missing locally, which keeps this working from a partial checkout.
+async function mirrorBody(path) {
+  try {
+    return await readFile(join(root, "..", path), "utf8");
+  } catch {
+    const res = await fetch(`${RAW_BASE}/${path}`, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.text();
+  }
+}
+
 let failed = 0;
 for (const { path, into, check } of mirrors) {
   try {
-    const res = await fetch(`${RAW_BASE}/${path}`, { signal: AbortSignal.timeout(timeoutMs) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const body = await res.text();
+    const body = await mirrorBody(path);
 
     const verdict = check(body);
     if (typeof verdict === "string") throw new Error(verdict);

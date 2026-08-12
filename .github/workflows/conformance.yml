@@ -31,8 +31,19 @@ on:
         description: "ExtendDB git ref to build (blank = latest release)"
         required: false
         default: ""
-  repository_dispatch:
-    types: [dynoxide-release, extenddb-release]
+      dynoxide_wasm_ref:
+        description: "Dynoxide git ref to build the wasm engine from (blank = latest release)"
+        required: false
+        default: ""
+  # No repository_dispatch. A `[dynoxide-release, extenddb-release]` trigger
+  # sat here and nothing ever fired it - the sending repo dispatches to its own
+  # docs site, not to this one - so it read as a live path and was not one, and
+  # the ground-truth jobs excluded the event anyway. Wiring it up is the wrong
+  # fix rather than the missing one: two named targets would refresh the whole
+  # board within minutes of their own release while the other six waited for
+  # Sunday, and one of the two is the board author's engine. Every target's row
+  # is refreshed together, by the weekly cron or by a merge to main, or the
+  # dates in the table stop meaning the same thing per row.
 
 permissions:
   contents: read
@@ -398,30 +409,18 @@ jobs:
         with:
           node-version: 24
 
-      # The emulator targets are the reference: they run the full `npm test`,
-      # so between them they define the suite size the published row claims.
-      - name: Download every run artefact
+      # Only the real-AWS lanes are needed. The suite itself comes from the
+      # committed manifest, which is what the published row's denominator is;
+      # this used to reconcile against whichever emulator run was widest, so a
+      # truncated emulator run could shrink the population and hide a gap.
+      - name: Download the real-AWS lane artefacts
         uses: actions/download-artifact@v8
         with:
           path: /tmp/artifacts
 
-      - name: Reconcile real-AWS coverage against the published suite size
+      - name: Reconcile real-AWS coverage against the suite manifest
         run: |
           shopt -s nullglob
-          refs=()
-          # Each results-<target> artefact carries that target's fresh file plus
-          # stale committed copies of every other target, so take only each
-          # artefact's own - the same rule the Update Results Table overlay
-          # applies. A stale copy would still be a full-suite run and so would
-          # not move the max, but reconciling against last week's file is not a
-          # thing to leave to luck.
-          for d in /tmp/artifacts/results-*/; do
-            target=$(basename "$d"); target=${target#results-}
-            # results-dynamodb is ground truth, not a reference full-suite run.
-            [ "$target" = "dynamodb" ] && continue
-            [ -f "$d$target.json" ] && refs+=(--reference "$d$target.json")
-          done
-
           observed=()
           for f in /tmp/artifacts/results-dynamodb/dynamodb.json \
                    /tmp/artifacts/integration-results/dynamodb.json \
@@ -436,12 +435,12 @@ jobs:
           if [ ${#observed[@]} -lt 3 ]; then
             echo "::warning::Only ${#observed[@]} of 3 real-AWS lanes produced results."
           fi
-          if [ ${#refs[@]} -eq 0 ] || [ ${#observed[@]} -eq 0 ]; then
-            echo "::error::No reference or no real-AWS results to reconcile."
+          if [ ${#observed[@]} -eq 0 ]; then
+            echo "::error::No real-AWS results to reconcile."
             exit 1
           fi
 
-          node scripts/ground-truth-coverage.mjs "${refs[@]}" "${observed[@]}"
+          node scripts/ground-truth-coverage.mjs "${observed[@]}"
 
   capture-cross-region:
     name: Cross-region drift capture (non-gating)
@@ -646,6 +645,109 @@ jobs:
           name: results-dynoxide
           path: results/
 
+  test-dynoxide-wasm:
+    name: Dynoxide (wasm)
+    # A separate engine from the native build above, scored as its own row.
+    # It is the only target reachable by neither a container image nor an npm
+    # binary: the wasm engine answers a postMessage RPC in a browser, and the
+    # shim that puts a DynamoDB endpoint in front of it is unpublished. So this
+    # builds it from a Dynoxide checkout, which makes it as heavy as ExtendDB
+    # and it skips PRs for the same reason.
+    #
+    # Until this job existed the row was refreshed by hand, and it went three
+    # weeks without a run while tests moved between files underneath it. Its
+    # count still matched the suite, so nothing noticed.
+    if: github.event_name != 'pull_request'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve the engine's repository and ref
+        id: ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Through the environment, not spliced into the script. A dispatch
+          # input is caller-supplied text, and interpolating it directly would
+          # let a quote in the value end the string and run the rest.
+          REQUESTED_REF: ${{ github.event.inputs.dynoxide_wasm_ref }}
+        run: |
+          # The organisation comes from the target registry, where a target's
+          # project URL is data. Writing it here would have the workflow name a
+          # vendor, which scripts/public-tree.test.mjs refuses and which is the
+          # difference between a neutral board and somebody's marketing. The
+          # registry module has no imports, so this runs before npm ci.
+          REPO=$(node --input-type=module -e "
+            import { repoUrl } from './scripts/lib/targets.mjs'
+            process.stdout.write(new URL(repoUrl('dynoxide')).pathname.slice(1))
+          ")
+          REF="$REQUESTED_REF"
+          if [ -z "$REF" ]; then
+            REF=$(gh release view -R "$REPO" --json tagName --jq .tagName)
+          fi
+          # Build the commit, not the name. A release tag can be moved after it
+          # is published, so checking out the tag means this job builds whatever
+          # that name points at on the day - from a repository this one does not
+          # control, whose output is scored and committed to main. Resolving it
+          # once here pins the build and records what actually ran.
+          SHA=$(gh api "repos/$REPO/commits/$REF" --jq .sha)
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Building the wasm engine from $REPO at $REF ($SHA)"
+
+      - name: Checkout the engine
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ steps.ref.outputs.repo }}
+          ref: ${{ steps.ref.outputs.sha }}
+          path: dynoxide
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: dynoxide
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # From npm rather than the upstream shell installer, so the version is
+      # pinned by a lockfile-shaped thing and nothing pipes curl into sh.
+      - name: Install wasm-pack
+        run: npm install -g wasm-pack@0.15.0
+
+      - name: Build and start the wasm engine
+        env:
+          DYNOXIDE_DIR: ${{ github.workspace }}/dynoxide
+        run: ./scripts/run-dynoxide-wasm.sh
+
+      - name: Run conformance suite
+        continue-on-error: true # a preview: PartiQL, transactions, tags and TTL skip
+        env:
+          CONFORMANCE_TARGET: dynoxide-wasm
+        run: npm test
+
+      - name: Record target version
+        continue-on-error: true
+        env:
+          DYNOXIDE_WASM_REF: ${{ steps.ref.outputs.ref }}
+        run: scripts/record-version.sh dynoxide-wasm
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: results-dynoxide-wasm
+          path: results/
+
   test-floci:
     name: Floci
     continue-on-error: true
@@ -800,20 +902,27 @@ jobs:
         id: ref
         env:
           GH_TOKEN: ${{ github.token }}
+          # Through the environment rather than spliced into the script, and
+          # resolved to a commit rather than built by name, for the same two
+          # reasons as the wasm engine above.
+          REQUESTED_REF: ${{ github.event.inputs.extenddb_ref }}
         run: |
-          REF='${{ github.event.inputs.extenddb_ref }}'
+          REF="$REQUESTED_REF"
           if [ -z "$REF" ]; then
             REF=$(gh release view -R ExtendDB/extenddb --json tagName --jq .tagName)
           fi
+          SHA=$(gh api "repos/ExtendDB/extenddb/commits/$REF" --jq .sha)
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
-          echo "Building ExtendDB at $REF"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Building ExtendDB at $REF ($SHA)"
 
       - name: Checkout ExtendDB
         uses: actions/checkout@v7
         with:
           repository: ExtendDB/extenddb
-          ref: ${{ steps.ref.outputs.ref }}
+          ref: ${{ steps.ref.outputs.sha }}
           path: extenddb
+          persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2

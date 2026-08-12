@@ -29,7 +29,11 @@ export function shapeSplit(s, pinned = PINNED) {
   const groups = [...byAnswer.values()]
     .map((g) => ({ ...g, regions: g.regions.sort(), count: g.regions.length, hasPinned: g.regions.includes(pinned) }))
     .sort((a, b) => b.count - a.count);
-  return { id: s.id, behaviour: s.behaviour ?? "", firstObserved: s.firstObserved ?? null, pinned: s.pinned ?? pinned, groups };
+  // The test identity travels with the row. It is what makes a split a fact
+  // about a specific assertion rather than a paragraph, and the A+ premise
+  // check matches on it - without it here that check has to read the registry
+  // file directly, which is the wrong source on a live build.
+  return { id: s.id, test: s.test ?? null, behaviour: s.behaviour ?? "", firstObserved: s.firstObserved ?? null, pinned: s.pinned ?? pinned, groups };
 }
 
 export function buildSplitsModel(raw, { pinned = PINNED } = {}) {
@@ -43,6 +47,49 @@ export function buildSplitsModel(raw, { pinned = PINNED } = {}) {
   const distinctKinds = (s) => new Set(s.groups.map((g) => g.error?.name ?? g.outcome)).size;
   const featured = [...splits].sort((a, b) => distinctKinds(b) - distinctKinds(a))[0];
   return { available: true, splits, count: splits.length, featured };
+}
+
+/**
+ * The observed regions a split does not account for, by name.
+ *
+ * The cohorts add up to fewer regions than the board says it scores, and the
+ * gap has two causes that look identical on the page: a region with no definite
+ * recorded answer when the evidence was captured, and a region named in the row
+ * that has since been dropped. Left as bare cohort counts the reader is invited
+ * to subtract and find regions missing.
+ */
+export function splitCoverage(split, observed = []) {
+  // An empty observed set means the region overlay is unavailable, not that
+  // every region in the row has dropped out. Nothing to compare against.
+  if (!split || !observed.length) return null;
+  const named = new Set(split.groups.flatMap((g) => g.regions));
+  const unrecorded = observed.filter((r) => !named.has(r));
+  return {
+    observed: observed.length,
+    accounted: observed.length - unrecorded.length,
+    unrecorded,
+    // Named in the row but no longer scored, so the cohort counts above can
+    // exceed what the split accounts for today.
+    departed: [...named].filter((r) => !observed.includes(r)),
+  };
+}
+
+/** One line of prose for the arithmetic above, or "" when it all adds up. */
+export function splitCoverageNote(split, observed = []) {
+  const c = splitCoverage(split, observed);
+  if (!c || (!c.unrecorded.length && !c.departed.length)) return "";
+  const parts = [];
+  if (c.unrecorded.length) {
+    parts.push(
+      `${c.unrecorded.length} of the ${c.observed} observed regions had no definite recorded answer for this behaviour when the evidence was captured (${c.unrecorded.join(", ")})`,
+    );
+  }
+  if (c.departed.length) {
+    parts.push(
+      `${c.departed.join(", ")} answered at capture but ${c.departed.length === 1 ? "has" : "have"} since dropped out of scoring`,
+    );
+  }
+  return `The cohorts account for ${c.accounted} of them: ${parts.join("; ")}.`;
 }
 
 // Render one split's cohorts as HTML for the explainer. WebC can't nest the

@@ -35,7 +35,26 @@ concurrency:
   group: deploy-site
   cancel-in-progress: false
 
+# The floor. Only the deploy job needs more than this, and it asks for it
+# itself; without a workflow-level default the guard job ran on whatever the
+# repository hands out, which is more than a job that checks out and builds
+# has any use for.
+permissions:
+  contents: read
+
 jobs:
+  # The publish gate runs inside the deploy, against the build that is about to
+  # be synced.
+  #
+  # It used to be a job of its own, and check-build builds hermetically - every
+  # data file takes its committed-fallback path. The deploy builds from a live
+  # fetch. So the gate asserted the methodology's promises about a board
+  # assembled from the committed snapshot and then shipped a different one,
+  # assembled from data the checks never saw. Building once and checking that
+  # artefact is also one build rather than two.
+  #
+  # The hermetic run still happens, in ci.yml on every pull request. That is
+  # where it belongs: it is the only thing exercising the fallback path.
   deploy:
     runs-on: ubuntu-latest
     if: github.repository == 'paritysuite/dynamodb-conformance'
@@ -73,6 +92,11 @@ jobs:
         run: |
           npm ci
           npm run site:build
+
+      # Against the directory just built, before anything reaches the bucket.
+      - name: Check what is about to be published
+        working-directory: site
+        run: node scripts/check-build.mjs --built _site
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6

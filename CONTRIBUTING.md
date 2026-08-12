@@ -52,6 +52,11 @@ Before opening a PR that adds or modifies a test:
    from DynamoDB. Put the error-code check in the operation's own tier
    (or `tests/tier3/validation-ordering/`) and the exact message, where
    it's stable, in `tests/tier3/error-messages/`.
+5. **Required if you added, moved or renamed a test:** regenerate the
+   suite manifest in the same commit with
+   `node scripts/suite-manifest.mjs`. It rewrites
+   `registry/suite-manifest.json`, the count every published figure
+   divides by, and CI fails the PR if it is stale.
 
 Regenerating the published results table across every tracked target
 is a maintainer task and does not block your PR.
@@ -156,6 +161,17 @@ and a message assertion whose strictness fits the message:
   model defines, so don't pin them. Pin what is invariant across regions
   and float the rest. This is the same idea as `createTable.test.ts`'s
   backend-variant handling.
+
+`limits/` makes the same exact-or-structural choice, on the same grounds.
+It had no stated rule until a nesting-depth message gained a
+`N validation error detected:` envelope in the pinned region and nothing
+noticed: the test matched on an unanchored regex that both wordings
+satisfy, so no verdict moved and the weekly sweep saw nothing. A tolerant
+assertion is often the right call, but it means the test cannot detect
+regional drift on that behaviour, so the per-region answers have to be
+recorded in `registry/splits.json` and the row has to say the assertion
+does not enforce them. Tolerance that nothing writes down is
+indistinguishable from agreement.
 
 Don't use the `expectDynamoError` helper in `error-messages/` - it always
 routes the message through `toContain`, so it can't express the exact
