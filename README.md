@@ -30,75 +30,49 @@ DYNAMODB_ENDPOINT=http://localhost:8000 npm run test:tier1
 ## Results
 
 <!-- results:start -->
-_Scored against real DynamoDB's recorded behaviour in each observed region (`af-south-1`, `ap-east-1`, `ap-east-2`, `ap-northeast-1`, `ap-northeast-2`, `ap-northeast-3`, `ap-south-1`, `ap-south-2`, `ap-southeast-1`, `ap-southeast-2`, `ap-southeast-3`, `ap-southeast-4`, `ap-southeast-5`, `ap-southeast-6`, `ap-southeast-7`, `ca-central-1`, `ca-west-1`, `eu-central-1`, `eu-central-2`, `eu-north-1`, `eu-south-1`, `eu-south-2`, `eu-west-1`, `eu-west-2`, `eu-west-3`, `il-central-1`, `mx-central-1`, `sa-east-1`, `us-east-1`, `us-east-2`, `us-west-1`, `us-west-2`), at each target's best-matching region. **Divergence** is the share of the whole suite a target answers differently from real DynamoDB - the operations it implements and gets wrong. **Coverage** is the share it implements at all. They are reported apart because they carry opposite risks: a declined operation is discoverable in minutes, a wrong one in production. **Grade** is a reading of the pair: divergence sets the letter and coverage can only lower it, never raise it, under the versioned criteria in the [methodology](https://paritysuite.org/methodology). Sorted by divergence, so the order ranks risk rather than declaring a winner - a target with no divergences over a narrow surface is exactly what its two figures say it is. Regions is how many of the observed regions the headline was measured against. The tier columns are divergence too, within each tier, so lower is better in every column but Coverage. Real DynamoDB does not behave identically in every region, so each target is measured in every region above and scored against its best match; the per-region detail is in `results/summary.json`. Behaviour varies by region and over time, so these are point-in-time figures. `me-central-1`, `me-south-1` have been dropped from the observed set and are not scored against._
+_Scored against real DynamoDB in each of the 32 observed regions, at each target's best-matching region. **Coverage** is how much of DynamoDB's behaviour a target implements. **Divergence** is how much of it the target answers differently from real DynamoDB. Both are shares of the whole suite, and they are never added together: an operation a target declines is discoverable in minutes, one it answers wrongly is discoverable in production. **Grade** reads the pair, with divergence setting the letter and coverage only ever lowering it, under the versioned criteria in the [methodology](https://paritysuite.org/methodology). Rows are sorted by divergence. The tier columns are divergence within that tier, so lower is better in every column but Coverage. **Regions** counts the observed regions a target's headline matched, as evidence rather than a score: it currently over-credits a target whose assertion matches a region's answer loosely ([#138](https://github.com/paritysuite/dynamodb-conformance/issues/138)). Real DynamoDB does not answer identically everywhere, and the per-region detail is in `results/summary.json`. Behaviour varies by region and over time, so these are point-in-time figures. `me-central-1`, `me-south-1` have been dropped from the observed set and are not scored against. Measured 2026-08-12, except where a row carries its own date._
 
-| Target | Grade | Divergence | Coverage | Regions | Tier 1 | Tier 2 | Tier 3 | Fail | Skip | Version | Date |
-|--------|-------|-----------|----------|---------|--------|--------|--------|------|------|---------|------|
-| [DynamoDB](https://aws.amazon.com/dynamodb/) | baseline | 0.0% | 100.0% | 32 of 32 | 0.0% | 0.0% | 0.0% | 0 | 0 | live (AWS) | 2026-08-12 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) · native | A | 0.9% | 94.7% | 4 of 32 | 2.0% | 0.0% | 0.0% | 10 | 56 | 0.13.0 | 2026-08-12 |
-| ↳ WebAssembly / OPFS | B | 0.9% | 83.4% | 4 of 32 | 2.0% | 0.0% | 0.0% | 10 | 175 | 0.13.0 | 2026-08-12 |
-| [ExtendDB](https://github.com/ExtendDB/extenddb) · PostgreSQL | B | 2.0% | 87.8% | 27 of 32 | 0.8% | 2.7% | 3.2% | 21 | 129 | v0.1.3 | 2026-08-12 |
-| [Ministack](https://github.com/ministackorg/ministack) | B | 11.9% | 96.0% | 27 of 32 | 5.7% | 15.1% | 18.5% | 125 | 42 | 63621de32116 | 2026-08-12 |
-| [Dynalite](https://github.com/architect/dynalite) | C | 12.8% | 77.0% | 23 of 32 | 10.8% | 12.4% | 15.9% | 135 | 242 | 4.0.0 | 2026-08-12 |
-| [LocalStack](https://github.com/localstack/localstack) | C | 14.8% | 95.3% | 25 of 32 | 6.3% | 16.0% | 26.2% | 156 | 50 | 2026.7.3 | 2026-08-12 |
-| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | C | 15.1% | 94.0% | 25 of 32 | 7.6% | 14.2% | 26.5% | 159 | 63 | ff89bd48ff32 | 2026-08-12 |
-| [Floci](https://github.com/floci-io/floci) | C | 21.0% | 95.2% | 27 of 32 | 10.8% | 32.4% | 27.9% | 221 | 51 | eab36252ea43 | 2026-08-12 |
+| Target | Grade | Version | Divergence | Coverage | Fail | Skip | Tier 1 | Tier 2 | Tier 3 | Regions | Measured |
+|--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|----------|
+| [DynamoDB](https://aws.amazon.com/dynamodb/) | baseline | live (AWS) | 0.0% | 100.0% | 0 | 0 | 0.0% | 0.0% | 0.0% | 32 of 32 |  |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) · native | A | 0.13.0 | 0.9% | 94.7% | 10 | 56 | 2.0% | 0.0% | 0.0% | 4 of 32 |  |
+| ↳ WebAssembly / OPFS | B | 0.13.0 | 0.9% | 83.4% | 10 | 175 | 2.0% | 0.0% | 0.0% | 4 of 32 |  |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) · PostgreSQL | B | v0.1.3 | 2.0% | 87.8% | 21 | 129 | 0.8% | 2.7% | 3.2% | 27 of 32 |  |
+| [Ministack](https://github.com/ministackorg/ministack) | B | 63621de32116 | 11.9% | 96.0% | 125 | 42 | 5.7% | 15.1% | 18.5% | 27 of 32 |  |
+| [Dynalite](https://github.com/architect/dynalite) | C | 4.0.0 | 12.8% | 77.0% | 135 | 242 | 10.8% | 12.4% | 15.9% | 23 of 32 |  |
+| [LocalStack](https://github.com/localstack/localstack) | C | 2026.7.3 | 14.8% | 95.3% | 156 | 50 | 6.3% | 16.0% | 26.2% | 25 of 32 |  |
+| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | C | ff89bd48ff32 | 15.1% | 94.0% | 159 | 63 | 7.6% | 14.2% | 26.5% | 25 of 32 |  |
+| [Floci](https://github.com/floci-io/floci) | C | eab36252ea43 | 21.0% | 95.2% | 221 | 51 | 10.8% | 32.4% | 27.9% | 27 of 32 |  |
 <!-- results:end -->
 
 **Live results:** [the Parity Suite board](https://paritysuite.org) - the full table for every target, tracked run over run.
 
-Two figures, and they are never added together. **Divergence** is `Fail / Total`:
-the share of the whole suite a target answers differently from real DynamoDB.
-**Coverage** is `(Pass + Fail) / Total`: the share it implements at all. They
-stay apart because a skip and a fail are not the same kind of problem. An
-operation a target declines is something you find in minutes and plan around;
-one it gets quietly wrong is something you find in production.
+**Divergence** is `Fail / Total` and **Coverage** is `(Pass + Fail) / Total`,
+and they are never added together: an operation a target declines is one you
+plan around, one it gets quietly wrong is one you find in production.
 
 The **Grade** leads because a row carries several figures and a reader
-comparing eight targets needs somewhere to start. Divergence sets the letter (A
-under 5%, B under 15%, C under 25%, D under 35%, F beyond) and coverage can
+comparing a column of them needs somewhere to start. Divergence sets the letter
+(A under 5%, B under 15%, C under 25%, D under 35%, F beyond) and coverage can
 only lower it, never raise it: a third of whatever a target leaves
 unimplemented is added to its divergence before the bands are read, so a target
 implementing the whole suite is graded on divergence alone. A+ is exactly zero
-divergence at full coverage, and nothing holds it today. Both figures print
-beside the letter in this table and on every page of the board, so the grade is
-always recomputable; the criteria are versioned and dated in the
-[methodology](https://paritysuite.org/methodology#grading). The per-target
-badges are the exception: a shields endpoint has room for a label and a message
-and nothing else, so a badge carries the letter alone. A grade is an
-observation against this suite's tests on a date, not a certification.
+divergence at full coverage, and nothing holds it today. Real DynamoDB reads
+`baseline` rather than a letter, because grading the yardstick against itself
+would put it in a band an engine had to earn its way into.
 
-Where coverage is holding a letter down the site says so on the row. On the 9
-August 2026 run, Dynalite diverged on 12.3% of the suite, which is the B band
-on its own, but implemented 80.0% of it, and the third of that shortfall reads
-it up to an effective 19.0 and grades it C. Dynoxide diverged nowhere and
-implemented 98.6%, and that 1.4-point gap is enough to deny it A+ and settle it
-at A.
+Both figures print beside the letter, so any grade here is recomputable, and the
+percentage points are the finer instrument: **rank on the two figures rather
+than the letter** if a close call matters to you. A grade is an observation
+against this suite's tests on a date, not a certification. The criteria are
+versioned and dated in the
+[methodology](https://paritysuite.org/methodology#grading), which carries the
+derivation of the bands, the worked examples, and what withdrawing a test costs.
 
-Real DynamoDB reads `baseline` rather than a letter. A grade measures how far a
-target sits from real DynamoDB, so grading the yardstick against itself would
-put it in a band an engine had to earn its way into. Its two figures still
-publish: they are the definition every other row is read against.
-
-Withdrawing a failing test lowers divergence and coverage by exactly the same
-amount, which is what makes the pair hard to game. The letter does not fully
-inherit that. A third of the withdrawal comes back, so the effective figure
-still falls by two thirds of whatever left: withdrawal costs more than it used
-to rather than costing everything. Closing it completely would mean weighting a
-declined test exactly as heavily as a failed one, and the distinction between
-those two is what the board is built on. **Rank on the two figures, not the
-letter, if that matters to you.** On the 9 August 2026 run the cheapest letter
-anyone could buy this way was LocalStack's, at 14 withdrawn tests, which is a
-measurement of that board rather than a property of the criteria.
-
-The 5% and 25% boundaries are the numbers this board has published as its
-colour bands since it began, though those bands sat on correctness over the
-operations a target implements and these sit on divergence over the whole
-suite. Same numbers, different denominator, and the two only coincide at full
-coverage. The coverage weight is what answers that: a target diverging 4.9%
-over 92% coverage is 94.7% correct, which the old sub-95% amber band caught,
-and reads an effective 7.6 here, which grades B. The splits at 15% and 35% are
-new, and so is the weight.
+Rows are ordered by divergence. That ranks how much a target gets wrong rather
+than telling you which one to pick, because that depends on the operations you
+need: a target with no divergences over a narrow surface sits high, and its
+coverage figure says how narrow.
 
 A skipped test is deliberate: each test file probes for feature support in
 `beforeAll` and skips itself when the target doesn't implement that operation,
@@ -107,30 +81,47 @@ is a failed observation - a timeout, an exhausted throttle, a transport fault -
 and counts neither for nor against a target, because nobody knows what the
 answer was.
 
-Rows are ordered by divergence. That ranks how much a target gets wrong; it
-isn't a verdict on which emulator to pick, because that depends on which
-operations you need. A target with no divergences over a narrow surface sits
-high and its coverage figure says how narrow.
-
 DynamoDB is the ground truth, recorded per region. Real DynamoDB disagrees with
 itself in a handful of places (the admitted cases are in `registry/splits.json`),
 so each target is measured in every observed region and scored against its
-best-matching one. A target fails a behaviour only when no observed region does
-what it does. The spread is small - three tests out of about a thousand - so the
-per-region detail lives in `results/summary.json` rather than in the table.
+best-matching one, and fails a behaviour only when no observed region does what
+it does. The spread is three tests in about a thousand, so the per-region detail
+lives in `results/summary.json` rather than in the table.
 
 This table is regenerated by the **Update Results Table** workflow -
 automatically when a Conformance Tests run finishes on `main`, and on demand
-from the Actions tab. It pulls each target's result artifact, fills the Version
-(npm version, container image digest, release tag, or `live` for real AWS) and
-Run date columns from the run, and commits the refreshed table. Run
+from the Actions tab. It fills each row's Version from the run (npm version,
+container image digest, release tag, or `live` for real AWS). Run
 `npm run results:table` to preview it locally.
+
+## Independence
+
+This suite is maintained by the same person who maintains Dynoxide, one of the
+engines it scores. Dynoxide runs through the same automated matrix as every
+other target, against the same live-AWS ground truth, and the tests and the
+results are both in this repo.
+
+Two inputs are hand-picked rather than measured. The grade bands and the
+coverage weight decide a published letter, and moving either regrades targets
+whose results never changed, so they carry a version: these are grading criteria
+version 1, and any change to a band, the coverage weight or the A+ gate bumps
+the version and is dated in the
+[methodology](https://paritysuite.org/methodology#grading).
+
+`registry/splits.json` is the other, and it is written by hand by design. It
+records the behaviours where real DynamoDB's own regions disagree, with the
+evidence each region returned, and a target matching any recorded answer is
+scored as conformant rather than wrong. Admitting a row turns a fail into a pass
+with no re-run and no results file changing, which is the one thing "a score
+can't be tuned without changing the published results first" does not cover. So
+the registry is in this repo, every row carries its captured evidence and the
+date it was refreshed, and a behaviour enters only once confirmed across regions.
 
 ## Tiers
 
-**Tier 1 - Core.** The operations and behaviours that 90% of DynamoDB users rely on. CRUD, queries, scans, batch operations, GSIs, UpdateTable. If an emulator fails Tier 1, it's not usable.
+**Tier 1 - Core.** The operations and behaviours that 90% of DynamoDB users rely on. CRUD, queries, scans, batch operations, secondary indexes (GSI and LSI), UpdateTable. If an emulator fails Tier 1, it's not usable.
 
-**Tier 2 - Complete.** Less common but documented features. Transactions, PartiQL, LSIs, TTL, streams, tags. An emulator that passes Tier 1 but fails some Tier 2 is usable with caveats.
+**Tier 2 - Complete.** Less common but documented features. Transactions, PartiQL, TTL, streams, tags, vector search, the online index lifecycle (adding and removing a GSI or a vector index on a live table), and the `cloud-only` surfaces below: backups and PITR, S3 export and import, Kinesis, Contributor Insights, resource policies, account reads. An emulator that passes Tier 1 but fails some Tier 2 is usable with caveats.
 
 **Tier 3 - Strict.** Validation ordering, error behaviour at a range of strictness (exact where DynamoDB's wording is stable, structural where its rendering is non-deterministic), edge cases around limits, legacy API compatibility (ScanFilter, QueryFilter). An emulator that passes Tier 1 and Tier 2 but fails some Tier 3 is production-quality for local dev.
 
@@ -146,6 +137,76 @@ Tier 3 splits into four sub-directories by what each test asserts:
 - `legacy-api/` - the older request shapes (`AttributeUpdates`, `QueryFilter`, `ScanFilter`, `Expected`, `AttributesToGet`) for backwards compatibility.
 
 A new test goes in whichever sub-directory matches what it asserts. If you care about the message the service returns, that's `error-messages/`. If you only care which error fires, that's `validation-ordering/`.
+
+## Operations covered
+
+| Operation | Tier 1 | Tier 2 | Tier 3 |
+|-----------|--------|--------|--------|
+| PutItem | basic, conditions (incl. parens), validation, expressions, dataTypes, consumedCapacity, indexConsumedCapacity (GSI/LSI write cost) | vector write validation, vector write capacity | error messages |
+| GetItem | basic, validation, projection, consumedCapacity | | error messages |
+| UpdateItem | basic, conditions (incl. parens, non-existent key branch), validation, paths, index write-capacity ladder | | error messages |
+| DeleteItem | basic, conditions (incl. parens), validation, index write capacity | | error messages |
+| Query | basic, GSI, LSI, expressions (incl. KeyCondition + Filter parens), select, numericKeys, binaryKeys, pagination | | error messages, validation ordering |
+| Scan | basic, validation, GSI (incl. pagination), LSI (incl. pagination), parallel, select, filterOperators, filterExpression parens | | error messages, validation ordering |
+| BatchWriteItem | basic, validation, index write capacity | | error messages |
+| BatchGetItem | basic, validation | | error messages |
+| CreateTable | basic, GSI, LSI | vector indexes (lifecycle, SearchSchema, validation) | error messages, validation ordering |
+| DeleteTable | basic | | |
+| DescribeTable | basic | | |
+| ListTables | basic | | |
+| UpdateTable | basic (throughput, billing mode) | GSI lifecycle, vector index lifecycle | |
+| SearchVectors | | scores per distance function, projection, capacity shape, request validation | error messages |
+| TransactWriteItems | | basic, conditions (incl. parens, non-existent key branch), idempotency, cancellation | error messages |
+| TransactGetItems | | basic, validation | error messages |
+| ExecuteStatement | | INSERT, SELECT, UPDATE, DELETE, parameterised, RETURNING, vector index non-reach | error messages (RETURNING) |
+| BatchExecuteStatement | | batch, partial failure, RETURNING honoured | |
+| ExecuteTransaction | | atomic, rollback, RETURNING rejected | error messages (RETURNING) |
+| UpdateTimeToLive | | enable, validation | |
+| DescribeTimeToLive | | describe | |
+| TagResource | | add, list, remove, validation | |
+| DynamoDB Streams | | ListStreams, DescribeStream, GetRecords, view types | |
+| Backups | | on-demand, continuous (PITR) | |
+| ExportTableToPointInTime / ImportTable | | S3 export and import | |
+| Kinesis streaming destination | | enable, describe, disable | |
+| UpdateContributorInsights | | enable, describe, list | |
+| Resource policies | | put, get, delete | |
+| DescribeLimits / DescribeEndpoints | | account reads | |
+
+### Operations every emulator skips
+
+A handful of operations only exist on real AWS or reach into another AWS
+service, so no emulator implements them and each one skips on every target. The
+suite still exercises them against real DynamoDB - characterising AWS's own
+behaviour has value - and they all carry the `cloud-only` tag, so
+`--tags-filter='!cloud-only'` drops the lot:
+
+- Import/Export to S3
+- Kinesis Data Streams integration (streaming destinations)
+- On-demand backups and Point-in-Time Recovery
+- Contributor Insights
+- Resource-based policies
+- Account reads (DescribeLimits, DescribeEndpoints)
+
+Import/Export and Kinesis lean on slow async control-plane calls that make poor
+gate material, so they run in a separate non-gating job via
+`npm run test:integrations` rather than on the gating run. They still run
+against real AWS every scheduled run, and the ground-truth coverage check
+fails if they don't.
+
+Vector search (SearchVectors and the vector index lifecycle) is in the same
+position today for a different reason: the surface shipped on AWS in August
+2026 and no emulator implements it yet, so every current target skips the
+whole family through its support probes. Unlike the list above it is not
+`cloud-only` - it is ordinary DynamoDB surface any emulator can adopt, and the
+skips (and the coverage they cost) should shrink as targets catch up. The
+family carries the `vector` tag, so `--tags-filter='!vector'` drops it. The
+UpdateTable half of the lifecycle backfills on GSI timescales and rides in the
+same slow lane as the GSI lifecycle (`npm run test:gsi`).
+
+Genuinely not covered, with no tests yet:
+
+- Global Tables
+- DynamoDB Accelerator (DAX)
 
 ## Filtering by feature
 
@@ -369,7 +430,7 @@ npm test
 
 The full suite includes slow online-index lifecycle tests: 14 UpdateTable GSI tests that add and remove Global Secondary Indexes from existing tables, plus the UpdateTable vector index lifecycle test, which backfills on the same machinery. On real DynamoDB, each index creation triggers a backfill that usually takes 5-15 minutes even on small tables, and has been observed taking 25+ on a slow night (a 25-item vector index took ~17). These tests are important for conformance but they dominate runtime against real AWS.
 
-`test:quick` excludes the online-index lifecycle tests (GSI and vector) for faster local iteration. CI's gating real-DynamoDB job runs `test:gating`, which drops those *and* the S3 and Kinesis integration suites (see "Operations no emulator implements" below), so a slow async import can't redden the build. Emulator targets run the full `npm test` since index creation is instant locally.
+`test:quick` excludes the online-index lifecycle tests (GSI and vector) for faster local iteration. CI's gating real-DynamoDB job runs `test:gating`, which drops those *and* the S3 and Kinesis integration suites (see "Operations every emulator skips" above), so a slow async import can't redden the build. Emulator targets run the full `npm test` since index creation is instant locally.
 
 Nothing is dropped from real AWS by being off the gate, only moved. Real-AWS
 coverage runs in three lanes, split by runtime rather than by importance:
@@ -446,7 +507,7 @@ tests/
 
 ## The site
 
-[paritysuite.org](https://paritysuite.org) is built from `site/`, an npm workspace in this repository. It renders the files in `results/` as current standings, a page per target with its score over time, and a browsable archive of every recorded run. It imports the suite's own target maps and pass-rate arithmetic, so the board and the table above can't disagree about a target's name, its link, or its score.
+[paritysuite.org](https://paritysuite.org) is built from `site/`, an npm workspace in this repository. It renders the files in `results/` as current standings, a page per target with its score over time, and a browsable archive of every recorded run. It imports the suite's own target maps and the same divergence, coverage and grading arithmetic, so the board and the table above can't disagree about a target's name, its link, or its score.
 
 ```bash
 npm run site:dev     # http://localhost:8080
@@ -510,7 +571,9 @@ the first such target), two extra steps apply: trust its certificate with
 `NODE_EXTRA_CA_CERTS=/path/to/cert.pem` (the JS SDK does **not** read
 `AWS_CA_BUNDLE`), and pass a real `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
 whose policy allows the operations the suite exercises. Before committing the
-results JSON, grep it for your key to be sure no credential leaked into it.
+results JSON, grep it for your key to be sure no credential leaked into it, and
+run `npm run results:check-leaks`, which catches account IDs and the machine
+paths Vitest records.
 
 If the engine doesn't speak DynamoDB HTTP at all - a browser or embedded engine
 reached over its own RPC - it can still be tracked, provided the vendor fronts
@@ -528,83 +591,13 @@ operation is scored as a failure instead of a skip.
 
 All test data must be synthetic. Don't use real names, emails, addresses, or any personally identifiable information in test fixtures.
 
-## Operations covered
-
-| Operation | Tier 1 | Tier 2 | Tier 3 |
-|-----------|--------|--------|--------|
-| PutItem | basic, conditions (incl. parens), validation, expressions, dataTypes, consumedCapacity, indexConsumedCapacity (GSI/LSI write cost) | vector write validation, vector write capacity | error messages |
-| GetItem | basic, validation, projection, consumedCapacity | | error messages |
-| UpdateItem | basic, conditions (incl. parens, non-existent key branch), validation, paths, index write-capacity ladder | | error messages |
-| DeleteItem | basic, conditions (incl. parens), validation, index write capacity | | error messages |
-| Query | basic, GSI, LSI, expressions (incl. KeyCondition + Filter parens), select, numericKeys, binaryKeys, pagination | | error messages, validation ordering |
-| Scan | basic, validation, GSI (incl. pagination), LSI (incl. pagination), parallel, select, filterOperators, filterExpression parens | | error messages, validation ordering |
-| BatchWriteItem | basic, validation, index write capacity | | error messages |
-| BatchGetItem | basic, validation | | error messages |
-| CreateTable | basic, GSI, LSI | vector indexes (lifecycle, SearchSchema, validation) | error messages, validation ordering |
-| DeleteTable | basic | | |
-| DescribeTable | basic | | |
-| ListTables | basic | | |
-| UpdateTable | basic (throughput, billing mode) | GSI lifecycle, vector index lifecycle | |
-| SearchVectors | | scores per distance function, projection, capacity shape, request validation | error messages |
-| TransactWriteItems | | basic, conditions (incl. parens, non-existent key branch), idempotency, cancellation | error messages |
-| TransactGetItems | | basic, validation | error messages |
-| ExecuteStatement | | INSERT, SELECT, UPDATE, DELETE, parameterised, RETURNING, vector index non-reach | error messages (RETURNING) |
-| BatchExecuteStatement | | batch, partial failure, RETURNING honoured | |
-| ExecuteTransaction | | atomic, rollback, RETURNING rejected | error messages (RETURNING) |
-| UpdateTimeToLive | | enable, validation | |
-| DescribeTimeToLive | | describe | |
-| TagResource | | add, list, remove, validation | |
-| DynamoDB Streams | | ListStreams, DescribeStream, GetRecords, view types | |
-| Backups | | on-demand, continuous (PITR) | |
-| ExportTableToPointInTime / ImportTable | | S3 export and import | |
-| Kinesis streaming destination | | enable, describe, disable | |
-| UpdateContributorInsights | | enable, describe, list | |
-| Resource policies | | put, get, delete | |
-| DescribeLimits / DescribeEndpoints | | account reads | |
-
-### Operations every emulator skips
-
-A handful of operations only exist on real AWS or reach into another AWS
-service, so no emulator implements them and each one skips on every target. The
-suite still exercises them against real DynamoDB - characterising AWS's own
-behaviour has value - and they all carry the `cloud-only` tag, so
-`--tags-filter='!cloud-only'` drops the lot:
-
-- Import/Export to S3
-- Kinesis Data Streams integration (streaming destinations)
-- On-demand backups and Point-in-Time Recovery
-- Contributor Insights
-- Resource-based policies
-- Account reads (DescribeLimits, DescribeEndpoints)
-
-Import/Export and Kinesis lean on slow async control-plane calls that make poor
-gate material, so they run in a separate non-gating job via
-`npm run test:integrations` rather than on the gating run. They still run
-against real AWS every scheduled run, and the ground-truth coverage check
-fails if they don't.
-
-Vector search (SearchVectors and the vector index lifecycle) is in the same
-position today for a different reason: the surface shipped on AWS in August
-2026 and no emulator implements it yet, so every current target skips the
-whole family through its support probes. Unlike the list above it is not
-`cloud-only` - it is ordinary DynamoDB surface any emulator can adopt, and the
-skips (and the coverage they cost) should shrink as targets catch up. The
-family carries the `vector` tag, so `--tags-filter='!vector'` drops it. The
-UpdateTable half of the lifecycle backfills on GSI timescales and rides in the
-same slow lane as the GSI lifecycle (`npm run test:gsi`).
-
-Genuinely not covered, with no tests yet:
-
-- Global Tables
-- DynamoDB Accelerator (DAX)
-
 ## Citing a finding
 
-When the suite surfaces a divergence in a target and you want to reference it from that target's own issue tracker, cite the suite as the independent source it is. The reference carries weight precisely because the suite is not the engine's own test harness: it scores every target against the same live-AWS baseline, so "the conformance suite flags this" says more than a self-written test can.
-
-**Disclosure.** This suite is maintained by the same person who maintains Dynoxide, one of the engines it scores. Dynoxide runs through the same automated matrix as every other target, against the same live-AWS ground truth. The tests and the results are in this repo. The grade bands and the coverage weight are hand-picked inputs to a published letter, and moving one regrades targets whose results never changed. So they carry a version. These are grading criteria version 1, and any change to a band, the coverage weight or the A+ gate bumps the version and is dated in the [methodology](https://paritysuite.org/methodology#grading), which is where the effective date lives.
-
-They are not the only hand-picked input. `registry/splits.json` is written by hand by design: it records the behaviours where real DynamoDB's own regions disagree, with the evidence each region returned, and a target matching any recorded answer is scored as conformant rather than wrong. Admitting a row there turns a fail into a pass with no re-run and no results file changing, which is the one thing "a score can't be tuned without changing the published results first" does not cover. So the registry is in this repo, every row carries its captured evidence and the date it was refreshed, and a behaviour enters only once confirmed across regions.
+When the suite surfaces a divergence in a target and you want to raise it on that
+target's own issue tracker, the reference carries weight because the suite is not
+the engine's own test harness: every target is scored against the same live-AWS
+baseline, so "the conformance suite flags this" says more than a self-written
+test can.
 
 Fill in the bracketed parts. The block is the same whichever engine the finding concerns:
 
@@ -618,7 +611,7 @@ Fill in the bracketed parts. The block is the same whichever engine the finding 
 Two details keep the citation honest:
 
 - **Link the specific test, and pin it.** Use a commit SHA or tag (`.../blob/<sha>/...`), never `.../blob/main/...`: a `main` link rots the moment the file is reformatted or the lines shift, while a pinned link points at the exact assertion for good. Link the test itself, not a bare in-repo path, so it resolves for anyone reading the issue.
-- **Pinned test for a specific finding; site row only for a general claim.** The pinned test is durable evidence that this exact case diverged. The row on [Parity Suite, the DynamoDB conformance suite](https://paritysuite.org) (paritysuite.org) is a live score that moves with every run, so it answers "how does this engine do overall", not "what broke here". Don't cite a moving score as evidence for a fixed bug.
+- **Pinned test for a specific finding; site row only for a general claim.** The pinned test is durable evidence that this exact case diverged. A row on [the board](https://paritysuite.org) is a live score that moves with every run, so it answers "how does this engine do overall", not "what broke here". Don't cite a moving score as evidence for a fixed bug.
 
 Real AWS DynamoDB is the ground truth here as everywhere: the "expected" line is what AWS does, captured against a named region, not what any emulator does. If the behaviour is one where regions disagree, say so and name the regions on each side - the admitted cases are in `registry/splits.json`.
 
