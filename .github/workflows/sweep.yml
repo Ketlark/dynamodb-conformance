@@ -9,9 +9,15 @@ name: Ground Truth Sweep
 # Output goes to ground-truth/, never results/: any results/<slug>.json is
 # automatically scored, badged and published as a target row, so a per-region
 # file landing there would fabricate phantom targets and redden the PR gate.
+#
+# It also carries the two daily orphan cleanups, one per table namespace: the
+# `_conformance_` sweep the runs here strand tables in, and the `_capture_`
+# sweep backstopping ad-hoc local capture sessions. Separate crons and separate
+# jobs, so each namespace's failure is its own alarm.
 on:
   schedule:
     - cron: '0 3 * * 6' # sweep: 3am UTC Saturday, clear of Sunday's gating run
+    - cron: '0 4 * * *' # cleanup: daily, the _capture_ namespace's backstop
     - cron: '30 5 * * *' # cleanup: daily, catching tables a dead run stranded
   workflow_dispatch:
     inputs:
@@ -291,12 +297,15 @@ jobs:
 
   cleanup:
     name: Clean up orphaned tables
-    # Runs after every sweep (skipped or not - the daily cron skips the matrix
+    # Runs after every sweep (skipped or not - the 5.30 cron skips the matrix
     # and comes straight here) so tables stranded by a dead run never sit for
     # more than a day. The age gate inside the cleanup is what keeps runs still
     # in flight safe; see scripts/cleanup-orphans.mjs.
+    #
+    # The 4am cron belongs to the capture job below, so it is excluded here:
+    # this run stays exactly as narrow as the by-prefix teardown it backstops.
     needs: sweep
-    if: always()
+    if: always() && github.event.schedule != '0 4 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -322,3 +331,44 @@ jobs:
 
       - name: Clean up orphans across all regions
         run: node scripts/cleanup-orphans.mjs
+
+  capture-cleanup:
+    name: Clean up orphaned capture tables
+    # The backstop for the `_capture_` namespace. A local capture session tears
+    # its own tables down by exact name when it ends; this catches what a
+    # session that died mid-flight left behind. Its own cron and its own job
+    # rather than a second prefix on the run above, so a capture-side failure
+    # reddens a run of its own and stays legible as a capture problem.
+    #
+    # No `needs`: the matrix never runs on this cron, and the two namespaces
+    # have nothing to sequence between them.
+    #
+    # Seven hours gates this the same as the conformance sweep, but as a
+    # convention rather than the derived credential bound it is there - nothing
+    # stops a local session running longer. See scripts/cleanup-orphans.mjs.
+    if: github.event.schedule == '0 4 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    environment: conformance-testing
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+          role-duration-seconds: 3600
+
+      - name: Clean up capture orphans across all regions
+        run: node scripts/cleanup-orphans.mjs --prefix _capture_
