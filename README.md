@@ -42,7 +42,7 @@ _Scored against real DynamoDB's recorded behaviour in each observed region (`af-
 | [Dynalite](https://github.com/architect/dynalite) | 91.4% | 30.0% | 80.9% | 84.6% | 26 regions | 675 | 123 | 200 | 4.0.0 | 2026-08-12 |
 | [LocalStack](https://github.com/localstack/localstack) | 93.5% | 81.2% | 72.5% | 84.2% | 26 regions | 834 | 156 | 8 | 2026.7.3 | 2026-08-12 |
 | [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | 92.2% | 82.0% | 72.2% | 83.7% | 26 regions | 818 | 159 | 21 | ff89bd48ff32 | 2026-08-12 |
-| [Floci](https://github.com/floci-io/floci) | 91.4% | 61.6% | 70.7% | 78.9% | all regions | 780 | 209 | 9 | eab36252ea43 | 2026-08-12 |
+| [Floci](https://github.com/floci-io/floci) | 91.4% | 62.1% | 70.7% | 79.0% | all regions | 781 | 208 | 9 | eab36252ea43 | 2026-08-12 |
 
 _† Dynoxide (wasm) is a browser/OPFS preview, scored over the operations it implements. Its Skip count is unimplemented surface (PartiQL, transactions, tags, TTL), not passing behaviour, so read its percentage as correctness on what it implements - not a like-for-like comparison with an engine that implements everything._
 <!-- results:end -->
