@@ -60,8 +60,8 @@
     "@aws-sdk/client-application-auto-scaling": "^3.1097.0",
     "@aws-sdk/client-kinesis": "^3.1097.0",
     "@aws-sdk/client-s3": "^3.1097.0",
-    "@types/node": "^26.0.1",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }
