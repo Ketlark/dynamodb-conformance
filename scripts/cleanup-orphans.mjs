@@ -1,30 +1,50 @@
 #!/usr/bin/env node
 
 /**
- * Delete orphaned `_conformance_` tables, per region, across the commercial
- * region set. A sweep that dies mid-flight strands tables in every region it
- * touched; this cleanup finishes the job the dead run could not.
+ * Delete orphaned test tables, per region, across the commercial region set. A
+ * sweep that dies mid-flight strands tables in every region it touched; this
+ * cleanup finishes the job the dead run could not.
  *
  * Idempotent and resumable: it selects from a fresh listing every time, so
  * running it twice is harmless and running it after a partial failure finishes
  * the job. Per region, so one unreachable region never blocks the others.
  *
- * The one thing it must never do is delete tables out from under a run still
- * in flight, so selection is age-based: a live run cannot outlive the OIDC
- * credentials it holds, so no legitimate `_conformance_` table can be older
- * than its run's credential ceiling. That ceiling is the largest
- * role-duration-seconds across the workflows - six hours, set by the GSI
- * lifecycle lane, whose backfills need it. The seven-hour default adds slack
- * on top of that hard bound; do not lower it below the credential ceiling,
- * and raise it whenever a lane raises role-duration-seconds past six hours.
+ * Two prefixes exist, one per identity, and each is swept on its own schedule.
+ * `_conformance_` is the CI role's namespace, torn down by prefix at the end
+ * of every run. `_capture_` is the local capture identity's, named
+ * `_capture_<yyyymmdd>_<short-code>_<name>` with the code unique per session
+ * and torn down by exact name when the session ends. That split is the whole
+ * point: a run's by-prefix cleanup can no longer delete an ad-hoc capture
+ * session's tables out from under it. So this script sweeps only the prefixes
+ * it is asked for, defaulting to `_conformance_` alone - widening the default
+ * would hand back the race the split just removed.
  *
- * Tables without the `_conformance_` prefix are never touched, in any region,
- * under any condition - the same contract the IAM role enforces.
+ * The one thing it must never do is delete tables out from under work still in
+ * flight, so selection is age-based. On the `_conformance_` side that age is a
+ * hard bound: a live run cannot outlive the OIDC credentials it holds, so no
+ * legitimate table can be older than its run's credential ceiling. That
+ * ceiling is the largest role-duration-seconds across the workflows - six
+ * hours, set by the GSI lifecycle lane, whose backfills need it. The
+ * seven-hour default adds slack on top; do not lower it below the credential
+ * ceiling, and raise it whenever a lane raises role-duration-seconds past six
+ * hours.
+ *
+ * Nothing binds a local capture session that way - it holds no OIDC
+ * credentials and can in principle run all day. Seven hours stays the gate for
+ * `_capture_` as a convention (no capture session should run that long), not
+ * as a derived bound, and the exact-name teardown at session end is the real
+ * cleanup. This sweep is only the backstop for a session that died first.
+ *
+ * A table carrying neither prefix is never touched, in any region, under any
+ * condition - the same contract the IAM roles enforce.
  *
  * Usage:
- *   node scripts/cleanup-orphans.mjs [--dry-run] [--max-age-hours N] [region ...]
+ *   node scripts/cleanup-orphans.mjs [--dry-run] [--max-age-hours N]
+ *                                    [--prefix P] [region ...]
  *
- * With no regions named it walks the full commercial set (src/regions.ts).
+ * `--prefix` repeats, or takes a comma-separated list, and accepts only the
+ * known prefixes. With no regions named it walks the full commercial set
+ * (src/regions.ts).
  */
 
 import {
@@ -35,19 +55,28 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { COMMERCIAL_REGIONS } from '../src/regions.ts'
 
-const TABLE_PREFIX = '_conformance_'
+/**
+ * Every prefix this cleanup may ever delete under. An allowlist rather than a
+ * free-text option: the script holds DeleteTable in every commercial region,
+ * so a typo'd or over-broad prefix is the one input that could turn it into an
+ * outage. A new prefix is a deliberate edit here, reviewed alongside the IAM
+ * grant that makes it deletable.
+ */
+export const KNOWN_PREFIXES = ['_conformance_', '_capture_']
+
+export const DEFAULT_PREFIXES = ['_conformance_']
 
 export const DEFAULT_MAX_AGE_HOURS = 7
 
 /**
  * Pure selection: the table names safe to delete. A table qualifies only when
- * it carries the `_conformance_` prefix AND is provably older than the
+ * it carries one of the prefixes being swept AND is provably older than the
  * threshold. A table whose age cannot be established is left alone - deleting
  * on missing evidence is how a cleanup becomes an outage.
  */
-export function selectOrphans(tables, { now = Date.now(), maxAgeMs }) {
+export function selectOrphans(tables, { now = Date.now(), maxAgeMs, prefixes = DEFAULT_PREFIXES }) {
   return tables
-    .filter((t) => typeof t.name === 'string' && t.name.startsWith(TABLE_PREFIX))
+    .filter((t) => typeof t.name === 'string' && prefixes.some((p) => t.name.startsWith(p)))
     .filter((t) => {
       const created = t.creationDateTime ? new Date(t.creationDateTime).getTime() : NaN
       return Number.isFinite(created) && now - created > maxAgeMs
@@ -73,7 +102,7 @@ export async function cleanupAll(regions, { cleanup }) {
   return { cleaned, failures }
 }
 
-async function cleanupRegion(region, { maxAgeMs, dryRun }) {
+async function cleanupRegion(region, { maxAgeMs, dryRun, prefixes }) {
   const client = new DynamoDBClient({ region })
   try {
     const names = []
@@ -82,7 +111,7 @@ async function cleanupRegion(region, { maxAgeMs, dryRun }) {
       const res = await client.send(
         new ListTablesCommand({ ExclusiveStartTableName: start }),
       )
-      names.push(...(res.TableNames ?? []).filter((n) => n.startsWith(TABLE_PREFIX)))
+      names.push(...(res.TableNames ?? []).filter((n) => prefixes.some((p) => n.startsWith(p))))
       start = res.LastEvaluatedTableName
     } while (start)
 
@@ -97,7 +126,7 @@ async function cleanupRegion(region, { maxAgeMs, dryRun }) {
       }
     }
 
-    const orphans = selectOrphans(tables, { maxAgeMs })
+    const orphans = selectOrphans(tables, { maxAgeMs, prefixes })
     const deleted = []
     const failed = []
     for (const name of orphans) {
@@ -122,7 +151,7 @@ async function cleanupRegion(region, { maxAgeMs, dryRun }) {
 }
 
 export function parseArgs(argv) {
-  const args = { regions: [], maxAgeHours: DEFAULT_MAX_AGE_HOURS, dryRun: false }
+  const args = { regions: [], prefixes: [], maxAgeHours: DEFAULT_MAX_AGE_HOURS, dryRun: false }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--dry-run') args.dryRun = true
@@ -131,10 +160,23 @@ export function parseArgs(argv) {
       if (!Number.isFinite(args.maxAgeHours) || args.maxAgeHours <= 0) {
         throw new Error('--max-age-hours needs a positive number')
       }
+    } else if (a === '--prefix') {
+      const named = (argv[++i] ?? '')
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean)
+      if (named.length === 0) throw new Error('--prefix needs at least one prefix')
+      for (const prefix of named) {
+        if (!KNOWN_PREFIXES.includes(prefix)) {
+          throw new Error(`unknown prefix ${prefix}; expected one of ${KNOWN_PREFIXES.join(', ')}`)
+        }
+        if (!args.prefixes.includes(prefix)) args.prefixes.push(prefix)
+      }
     } else if (a.startsWith('--')) throw new Error(`unknown option ${a}`)
     else args.regions.push(a)
   }
   if (args.regions.length === 0) args.regions = [...COMMERCIAL_REGIONS]
+  if (args.prefixes.length === 0) args.prefixes = [...DEFAULT_PREFIXES]
   return args
 }
 
@@ -169,7 +211,8 @@ async function main() {
   const args = parseArgs(process.argv.slice(2))
   const maxAgeMs = args.maxAgeHours * 60 * 60 * 1000
   const { cleaned, failures } = await cleanupAll(args.regions, {
-    cleanup: (region) => cleanupRegion(region, { maxAgeMs, dryRun: args.dryRun }),
+    cleanup: (region) =>
+      cleanupRegion(region, { maxAgeMs, dryRun: args.dryRun, prefixes: args.prefixes }),
   })
 
   let strays = 0
@@ -187,8 +230,12 @@ async function main() {
   for (const { region, message } of failures) {
     console.error(`${region}: unreachable, skipped: ${message}`)
   }
+  // The prefixes are named in the summary because two cleanup runs a day now
+  // land in the same workflow's history, and the count alone cannot tell you
+  // which namespace a given run walked.
   console.log(
-    `${args.regions.length} region(s): ${strays} orphan(s) ${args.dryRun ? 'found' : 'deleted'}, ` +
+    `${args.prefixes.join(', ')} in ${args.regions.length} region(s): ` +
+      `${strays} orphan(s) ${args.dryRun ? 'found' : 'deleted'}, ` +
       `${stuck} undeletable, ${failures.length} region(s) unreachable`,
   )
   const verdict = exitVerdict({
