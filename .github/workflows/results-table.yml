@@ -170,10 +170,19 @@ jobs:
           node scripts/strip-lane-detail.mjs \
             results/dynamodb.integrations.json results/dynamodb.gsi.json
 
-      # The sanitiser rewrites account IDs inside ARNs and IAM principals; this
-      # is the check that it worked. It was written for exactly this path and
-      # had never been wired to anything, so nothing verified the sanitising
-      # before these files were committed.
+      # Only the real-AWS lanes sanitise before upload, because only they can
+      # carry an account ID. Vitest absolutises every test path against the
+      # checkout it ran in regardless, so every emulator artefact arrives
+      # carrying the runner's `/home/runner/work/...` prefix. Sanitising here
+      # covers all of them on the one path that commits, whatever each lane
+      # uploaded.
+      - name: Sanitize account IDs and machine paths
+        run: node scripts/sanitize-arns.mjs
+
+      # The check that the step above did its job, on the exact files about to
+      # be committed. It was written for this path and had never been wired to
+      # anything, so nothing verified the sanitising before these files were
+      # committed.
       - name: Refuse to commit a leaked account ID
         run: node scripts/check-account-ids.mjs
 
