@@ -21,3 +21,11 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 5
+    groups:
+      # One PR a month for the lot. Ungrouped, each action arrived on its own,
+      # and every one of them costs a full conformance run on merge: the
+      # workflows live outside conformance.yml's paths-ignore and it has no
+      # concurrency group, so the runs do not cancel each other.
+      github-actions:
+        patterns:
+          - "*"
