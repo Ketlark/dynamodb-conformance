@@ -215,7 +215,7 @@ jobs:
           role-duration-seconds: 7200
 
       - name: Download the per-region results
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: ground-truth-*
           path: ground-truth
