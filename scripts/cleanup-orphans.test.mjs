@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_MAX_AGE_HOURS,
+  DEFAULT_PREFIXES,
+  KNOWN_PREFIXES,
   exitVerdict,
   parseArgs,
   cleanupAll,
@@ -59,6 +61,46 @@ describe('selectOrphans', () => {
     ])
   })
 
+  it('sweeps only the prefixes it is asked for: a capture table survives a conformance sweep', () => {
+    // The whole point of the prefix split: the run's cleanup must not reach
+    // into the capture identity's namespace, however old the table looks.
+    const tables = [
+      table('_capture_20260812_wk1_dup', 100),
+      table('_conformance_stray_170000_5', 100),
+    ]
+    expect(selectOrphans(tables, { now: NOW, maxAgeMs })).toEqual([
+      '_conformance_stray_170000_5',
+    ])
+    expect(selectOrphans(tables, { now: NOW, maxAgeMs, prefixes: ['_capture_'] })).toEqual([
+      '_capture_20260812_wk1_dup',
+    ])
+  })
+
+  it('sweeps both namespaces when asked for both, and neither owns a foreign table', () => {
+    const tables = [
+      table('_capture_20260812_wk2_vidx', 100),
+      table('_conformance_stray_170000_5', 100),
+      table('production-users', 24 * 365),
+      table('capture_missing_underscore', 100),
+    ]
+    expect(selectOrphans(tables, { now: NOW, maxAgeMs, prefixes: KNOWN_PREFIXES })).toEqual([
+      '_capture_20260812_wk2_vidx',
+      '_conformance_stray_170000_5',
+    ])
+  })
+
+  it('age-gates the capture prefix on the same threshold, convention or not', () => {
+    // Seven hours is a hard bound for _conformance_ (the OIDC credential
+    // ceiling) and a convention for _capture_ (nothing stops a local session
+    // running longer). Selection does not care which: both are gated.
+    const young = [table('_capture_20260812_wk1_live', DEFAULT_MAX_AGE_HOURS - 1)]
+    expect(selectOrphans(young, { now: NOW, maxAgeMs, prefixes: ['_capture_'] })).toEqual([])
+    const old = [table('_capture_20260812_wk1_dead', DEFAULT_MAX_AGE_HOURS + 1)]
+    expect(selectOrphans(old, { now: NOW, maxAgeMs, prefixes: ['_capture_'] })).toEqual([
+      '_capture_20260812_wk1_dead',
+    ])
+  })
+
   it('leaves a table whose age cannot be established alone: no deletion on missing evidence', () => {
     const tables = [
       { name: '_conformance_undated_170000_6' },
@@ -89,16 +131,50 @@ describe('cleanupAll', () => {
 })
 
 describe('parseArgs', () => {
-  it('defaults to every commercial region and the default age threshold', () => {
+  it('defaults to every commercial region, the default age threshold, and _conformance_ alone', () => {
     const args = parseArgs([])
     expect(args.regions).toEqual([...COMMERCIAL_REGIONS])
     expect(args.maxAgeHours).toBe(DEFAULT_MAX_AGE_HOURS)
     expect(args.dryRun).toBe(false)
+    // A silently widening default would hand back the race the prefix split
+    // removed: an unasked-for sweep of the capture namespace.
+    expect(args.prefixes).toEqual(['_conformance_'])
+    expect(DEFAULT_PREFIXES).toEqual(['_conformance_'])
   })
 
   it('accepts a region subset, a threshold override, and dry-run', () => {
     const args = parseArgs(['--dry-run', '--max-age-hours', '6', 'eu-west-2', 'us-east-1'])
-    expect(args).toEqual({ regions: ['eu-west-2', 'us-east-1'], maxAgeHours: 6, dryRun: true })
+    expect(args).toEqual({
+      regions: ['eu-west-2', 'us-east-1'],
+      prefixes: ['_conformance_'],
+      maxAgeHours: 6,
+      dryRun: true,
+    })
+  })
+
+  it('takes a prefix repeated, comma-separated, or on its own', () => {
+    expect(parseArgs(['--prefix', '_capture_']).prefixes).toEqual(['_capture_'])
+    expect(parseArgs(['--prefix', '_capture_,_conformance_']).prefixes).toEqual([
+      '_capture_',
+      '_conformance_',
+    ])
+    expect(
+      parseArgs(['--prefix', '_conformance_', '--prefix', ' _capture_ ']).prefixes,
+    ).toEqual(['_conformance_', '_capture_'])
+  })
+
+  it('names a prefix once however often it is repeated', () => {
+    expect(parseArgs(['--prefix', '_capture_,_capture_', '--prefix', '_capture_']).prefixes)
+      .toEqual(['_capture_'])
+  })
+
+  it('rejects a prefix outside the allowlist rather than sweeping under it', () => {
+    // The script holds DeleteTable in every commercial region, so a typo must
+    // not become the prefix it deletes by.
+    expect(() => parseArgs(['--prefix', '_conformance'])).toThrow(/unknown prefix/)
+    expect(() => parseArgs(['--prefix', '_'])).toThrow(/unknown prefix/)
+    expect(() => parseArgs(['--prefix', ''])).toThrow(/at least one prefix/)
+    expect(() => parseArgs(['--prefix'])).toThrow(/at least one prefix/)
   })
 
   it('rejects a threshold that is not a positive number', () => {
