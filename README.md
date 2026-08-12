@@ -65,7 +65,7 @@ _Measured 2026-08-12, except where a row carries its own date._
 | [DynamoDB](https://aws.amazon.com/dynamodb/) | baseline | live (AWS) | 0.0% | 100.0% | 0 | 0 | 0.0% | 0.0% | 0.0% | 32 of 32 |  |
 | [Dynoxide](https://github.com/nubo-db/dynoxide) · native | A | 0.13.0 | 0.9% | 94.7% | 10 | 56 | 2.0% | 0.0% | 0.0% | 4 of 32 |  |
 | ↳ WebAssembly / OPFS | B | 0.13.0 | 0.9% | 83.4% | 10 | 175 | 2.0% | 0.0% | 0.0% | 4 of 32 |  |
-| [ExtendDB](https://github.com/ExtendDB/extenddb) · PostgreSQL | B | v0.1.3 | 2.0% | 87.8% | 21 | 129 | 0.8% | 2.7% | 3.2% | 27 of 32 |  |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) · PostgreSQL | B | v0.1.3 | 2.2% | 87.8% | 23 | 129 | 1.2% | 2.7% | 3.2% | 27 of 32 |  |
 | [Ministack](https://github.com/ministackorg/ministack) | B | 63621de32116 | 11.9% | 96.0% | 125 | 42 | 5.7% | 15.1% | 18.5% | 27 of 32 |  |
 | [Dynalite](https://github.com/architect/dynalite) | C | 4.0.0 | 12.8% | 77.0% | 135 | 242 | 10.8% | 12.4% | 15.9% | 23 of 32 |  |
 | [LocalStack](https://github.com/localstack/localstack) | C | 2026.7.3 | 14.8% | 95.3% | 156 | 50 | 6.3% | 16.0% | 26.2% | 25 of 32 |  |
