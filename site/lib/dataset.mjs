@@ -178,10 +178,11 @@ function targetRow(row) {
     project: projectOf(row.slug),
     configuration: configurationOf(row.slug),
     isVariant: isVariant(row.slug),
-    // Whether the board folded this build into its parent's row because the
-    // two scored the same. Published because the endpoints are otherwise the
-    // one surface where a consumer counting rows would come out with a
-    // different set of targets from the board, with nothing to explain it.
+    // Whether the board starts this build's row closed, because it reads the
+    // same grade, divergence and coverage as its project's reference build.
+    // Published because a consumer reading the endpoints and the board side by
+    // side would otherwise find a build here that the board did not appear to
+    // show, with nothing to explain it.
     collapsedIntoProject: row.collapsed === true,
     counts: { passed: row.passed, failed: row.failed, skipped: row.skipped, implemented: row.implemented, total: row.count },
     tiers: tierScores(row.tiers),
@@ -341,13 +342,13 @@ export function buildIndex(conformance, site, summary = null) {
     suiteSize: latest?.suiteSize ?? null,
     tiers: TIERS,
     capabilities: CAPABILITIES.map((c) => ({ key: c.key, label: c.label, group: c.group })),
-    // A consumer counting rows here and rows on the board would otherwise come
-    // out with two different sets of targets and nothing to explain the gap.
+    // A consumer reading the endpoints beside the board would otherwise find
+    // builds here that the board does not appear to show, and nothing to say why.
     projects: {
       description:
         "A project can ship more than one build of the same engine: a storage backend swapped underneath it, or the query layer compiled for somewhere else to run. Every build is its own target here, with its own figures, and `project` groups them while `configuration` names what distinguishes each one. `isVariant` says a target is a build of the project rather than its reference build.",
       collapsedIntoProject:
-        "True when a build measured identically to its project's reference build, on every figure published: version, run date, the raw pass, fail and skip counts, the suite size, the region cohort and the per-tier breakdown. The board then names it on the reference build's row instead of drawing a second row that would repeat it. It was still measured in full, its figures here are its own, and the flag is re-derived every run, so a build that later diverges gets its row back.",
+        "True when the board starts this build's row closed, because the build reads the same grade, divergence and coverage as its project's reference build. Every build has a row and its own figures either way; this says only whether a reader sees it without opening the disclosure. Re-derived every run, so a build that later diverges starts open again.",
     },
     regions: {
       pinned: "eu-west-2",

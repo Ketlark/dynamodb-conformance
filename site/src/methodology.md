@@ -84,11 +84,11 @@ One consequence worth spelling out: [the suite grows](/changelog). It had 526 te
 
 Some projects ship the same engine in more than one shape: a storage backend swapped underneath it, or the query layer compiled for somewhere else to run. Those builds are nested under the project rather than seated beside it, because a reader chooses between projects first and the build follows from where their code runs. Seating them as rivals would let one engine take several places near the top.
 
-A nested build earns its row by scoring differently. It is named on the row above instead only when every figure that row publishes is identical: the version it was built from, the day it was measured, its pass, fail and skip counts, the size of the suite it ran, the region cohort behind its headline, and its per-tier breakdown. The reason is the same reason the nesting exists: a row that repeats its parent in every column sizes a project's presence here by how many builds it ships, and how many builds a project ships is not something this suite measures.
+Every build is measured in full, and every build has its own row, its own figures and its own page. The nesting decides only how much of that you see at once: a project's other builds sit behind a disclosure on its row, which starts closed when a build reads the same grade, divergence and coverage as the one above it and open when it differs. A build repeating all three is a click away rather than three more lines of the same numbers, and one that differs is already showing.
 
-Nothing is hidden by that. Both builds are run in full, both keep their own page and their own entry in the data endpoints, and the row that absorbed the other names it and links to it. The comparison is on the counts behind the figures rather than the figures as printed, because two builds can print the same percentage while differing by a failure, and a row that folded those would publish one build's numbers as though they were both. Builds measured on different days, or from different releases, are not folded either: they were never run against the same suite at the same time, so they have not been shown to agree.
+That comparison is made from each run rather than from a setting anyone maintains, so it goes both ways: a build that converges with the one above starts closed on the next run, and one that later diverges starts open again. It picks a starting state and nothing else, so no figure is withheld by it either way.
 
-The rule reads each run rather than a setting anyone maintains, so it works in both directions. A build that converges with its parent folds into it, and a build that later diverges gets its row back on the run that shows it.
+The README table in the suite repository has no disclosure to offer, so it lists every build outright.
 
 ## How runs and movement are reconstructed
 

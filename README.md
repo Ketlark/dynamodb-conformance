@@ -102,17 +102,15 @@ coverage figure says how narrow.
 
 An indented row (`↳`) is a second build of the project above it: the same
 engine with a storage backend swapped underneath, or compiled for somewhere
-else to run. It gets that row by scoring differently. It is named on the row
-above instead only when every figure that row publishes is identical: the
-version, the run date, the pass, fail and skip counts, the suite size, the
-region cohort and the tier breakdown. A row repeating its parent in every
-column would size a project's place on the board by how many builds it ships
-rather than by anything measured. Both builds are still run and still have
-their own page.
+else to run. Every build the suite runs has a row here, with its own figures,
+whether or not they match the build above.
 
-The rule reads each run rather than a setting, so it goes both ways: a build
-that converges with its parent folds in, and one that later diverges gets its
-row back.
+On [paritysuite.org](https://paritysuite.org) a project's other builds sit
+behind a disclosure on its row, which starts closed when a build reads the same
+grade, divergence and coverage as the one above it and open when it differs.
+That comparison is made from each run, so a build that converges starts closed
+next time and one that diverges starts open again. Markdown has no disclosure
+to offer, so this table lists them all outright.
 
 A skipped test is deliberate: each test file probes for feature support in
 `beforeAll` and skips itself when the target doesn't implement that operation,
