@@ -498,16 +498,16 @@ test("the collapse annotation adds no second reference to a build's row", () => 
   assert.deepEqual(extra, [], `sortRows added row-bearing arrays beside variants: ${extra}`);
 });
 
-test("a folded build stays findable in the standings, so its history is unbroken", () => {
+test("a build starting closed is still in the standings, so its history is unbroken", () => {
   // history.mjs builds each target's series by looking its slug up in every
-  // run's standings. Filtering a folded build out of that list rather than
+  // run's standings. Dropping a matching build from that list rather than
   // flagging it would end its trend on the run it converged, which reads as the
-  // target being dropped rather than as it agreeing with the build above it.
+  // target disappearing rather than as it agreeing with the build above it.
   const parent = buildRow({ slug: "extenddb" });
-  const folded = buildRow({ slug: "extenddb-sqlite" });
-  const standings = sortRows([parent, folded]);
+  const build = buildRow({ slug: "extenddb-sqlite" });
+  const standings = sortRows([parent, build]);
 
-  assert.equal(folded.collapsed, true);
+  assert.equal(build.collapsed, true);
   assert.ok(standings.find((r) => r.slug === "extenddb-sqlite"));
 });
 

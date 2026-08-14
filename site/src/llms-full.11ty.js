@@ -57,8 +57,8 @@ function latestResults(conformance) {
     // No disclosure in plain text, so every build is simply listed with its own
     // figures. The note says what the board does with it, which is the only
     // thing a reader of this file cannot see for themselves.
-    const folded = r.collapsed ? " (shown closed on the board, same figures)" : "";
-    return `- ${r.display}${baseline}${build}${folded} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
+    const closed = r.collapsed ? " (shown closed on the board, same figures)" : "";
+    return `- ${r.display}${baseline}${build}${closed} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
   });
   return [
     `# Latest results`,
