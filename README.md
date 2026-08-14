@@ -390,6 +390,37 @@ CONFORMANCE_TARGET=extenddb npm test            # writes results/extenddb.json
 Use `127.0.0.1` or `localhost` (both are in the cert's SANs). ExtendDB does
 not implement PartiQL, so those Tier 2 tests skip.
 
+#### The SQLite build
+
+ExtendDB selects its storage backend at build time, and v0.1.3 added SQLite
+beside PostgreSQL. It is the same server over a single file, so it needs no
+database service. `scripts/run-extenddb.sh` handles the bring-up either way:
+
+```bash
+eval "$(EXTENDDB_DIR=/path/to/extenddb EXTENDDB_BACKEND=sqlite ./scripts/run-extenddb.sh)"
+CONFORMANCE_TARGET=extenddb-sqlite npm test   # writes results/extenddb-sqlite.json
+```
+
+By hand it is the PostgreSQL flow with one line changed, the feature at build
+time. SQLite takes no connection details, so `init` only names the backend:
+
+```bash
+cargo build --release -p extenddb --no-default-features --features sqlite
+./target/release/extenddb init --backend sqlite   # database at ./extenddb.sqlite
+```
+
+The database path comes from the config file. ExtendDB documents
+`serve --sqlite-path <path>` for overriding it, but v0.1.3 declares that flag
+on no subcommand and rejects it, so `[storage.sqlite].path` is the only way in.
+Checked against v0.1.3 rather than assumed.
+
+`init` refuses to overwrite an existing database, so a repeat local run wants
+`extenddb destroy` first.
+
+ExtendDB also ships a `dev-mode` build feature that serves plain HTTP with open
+authorization. The suite deliberately does not use it. It would change the
+security posture, and these two rows are meant to differ only in storage engine.
+
 ### Floci
 
 ```bash

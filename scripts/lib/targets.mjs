@@ -185,10 +185,12 @@ export const TARGETS = {
       { channel: 'jar', url: 'https://github.com/floci-io/floci-cli' },
     ],
   },
-  // ExtendDB's storage backend is pluggable and PostgreSQL is the only one
-  // implemented (AWS calls it the reference backend). A second backend would be
-  // a different engine under one wire protocol, so it would land as a variant
-  // here rather than a new project.
+  // ExtendDB's storage backend is pluggable, chosen at build time by Cargo
+  // feature, and exactly one is compiled into a given binary. A backend is
+  // therefore a different engine under one wire protocol, which is a variant of
+  // this project rather than a row of its own. PostgreSQL is the reference
+  // backend and carries the parent row; SQLite shipped in v0.1.3 and nests
+  // below it. MongoDB is merged to main but is in no release, so it is not here.
   extenddb: {
     display: 'ExtendDB',
     project: 'extenddb',
@@ -197,13 +199,38 @@ export const TARGETS = {
     url: 'https://github.com/ExtendDB/extenddb',
     requires: 'PostgreSQL 14+, and a Rust toolchain to build it',
     // Source only, checked rather than assumed: every release has zero assets,
-    // the crate is not on crates.io, and there is no Dockerfile in the repo.
-    // The install scripts build from source; they do not fetch a binary.
+    // the crate is not on crates.io, and while a Dockerfile and a Docker Hub
+    // repository now exist, the only tags published there are commit-addressed
+    // build candidates - no version tag and no `latest`. The install scripts
+    // build from source; they do not fetch a binary. Revisit when the promotion
+    // job lands: `curl -s https://hub.docker.com/v2/repositories/extenddb/
+    // extenddb-postgres/tags/latest` returning 200 is the check.
     note:
       'An adapter over an external PostgreSQL rather than a self-contained ' +
       'store. TLS and SigV4 are mandatory, and it listens on 18443.',
     distribution: [
       { channel: 'source', url: 'https://github.com/ExtendDB/extenddb' },
+    ],
+  },
+  'extenddb-sqlite': {
+    display: 'ExtendDB (SQLite)',
+    project: 'extenddb',
+    configuration: 'SQLite',
+    url: 'https://github.com/ExtendDB/extenddb',
+    requires: 'a Rust toolchain to build it, and no external database',
+    // The same server, wire protocol and auth stack as the parent row, over a
+    // single SQLite file. Built WITHOUT the `dev-mode` feature: dev-mode serves
+    // plain HTTP with open authorization, which is a different security posture
+    // and so not the same thing to measure. Holding that fixed leaves the
+    // storage engine as the only variable between these two rows.
+    note:
+      'The PostgreSQL build\'s server over a single SQLite file rather than ' +
+      'an external database. TLS and SigV4 stay mandatory.',
+    distribution: [
+      {
+        channel: 'source',
+        url: 'https://github.com/ExtendDB/extenddb/blob/main/crates/storage-sqlite/README.md',
+      },
     ],
   },
 }

@@ -7,7 +7,7 @@
 #   scripts/record-version.sh <target>
 #
 # Per-target inputs:
-#   EXTENDDB_REF       extenddb - the release tag/ref that was built
+#   EXTENDDB_REF       extenddb, extenddb-sqlite - the release tag/ref built
 #   DYNOXIDE_WASM_REF  dynoxide-wasm - the dynoxide release the bundle came from
 #   TARGET_IMAGE       container targets - the image ref, used to resolve a digest
 #
@@ -18,7 +18,9 @@
 #                         the wasm preview ships inside the dynoxide release
 #                         rather than as its own published package
 #   localstack            its /_localstack/info version endpoint
-#   extenddb              the built release tag
+#   extenddb              the built release tag; the SQLite row reports the
+#   extenddb-sqlite       same tag, being the same release built with a
+#                         different storage feature rather than its own build
 #   container `:latest`   the resolved image digest (pins what latest was)
 set -uo pipefail
 
@@ -28,7 +30,7 @@ mkdir -p results
 ver=""
 case "$target" in
   dynamodb)   ver="live (AWS)" ;;
-  extenddb)   ver="${EXTENDDB_REF:-}" ;;
+  extenddb | extenddb-sqlite) ver="${EXTENDDB_REF:-}" ;;
   dynoxide)   ver=$(npm view dynoxide version 2>/dev/null) ;;
   dynoxide-wasm)
     # The ref is a release tag (v0.13.0) while the native row reads its version
