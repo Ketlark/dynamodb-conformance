@@ -24,6 +24,7 @@ import {
   gradeForRow,
   gradeLineOf,
   regionClauseOf,
+  sortRows,
 } from "./scoring.mjs";
 import * as suite from "dynamodb-conformance/scripts/summarise.mjs";
 import * as suiteScore from "dynamodb-conformance/scripts/lib/score.mjs";
@@ -414,4 +415,67 @@ test("the baseline is never given a letter by any of them", () => {
   const baseline = { divergenceValue: 0, coverageValue: 100, slug: GROUND_TRUTH_SLUG };
   assert.equal(gradeForRow(baseline, GROUND_TRUTH_SLUG).letter, null);
   assert.equal(capClauseOf(baseline, GROUND_TRUTH_SLUG), "");
+});
+
+// ── Which builds of a project earn a row ────────────────────────────────────
+//
+// The standings nest a project's builds under it. A build that scored the same
+// as the parent is named on it instead of drawing a row that repeats it, and
+// the annotation is what the template reads to decide.
+
+const buildRow = (over = {}) => ({
+  slug: "extenddb-sqlite",
+  grade: "B",
+  divergence: "2.0%",
+  coverage: "87.8%",
+  divergenceValue: 2.0,
+  coverageValue: 87.8,
+  count: 1054,
+  ...over,
+});
+
+test("sortRows returns every build, annotating which of them earn a row", () => {
+  // The full list stays: the target index, the per-target pages and the JSON
+  // endpoints all want every build whether or not the standings drew it a row.
+  const parent = buildRow({ slug: "extenddb" });
+  const matching = buildRow({ slug: "extenddb-sqlite" });
+  const rows = sortRows([parent, matching]);
+
+  assert.deepEqual(rows.map((r) => r.slug), ["extenddb", "extenddb-sqlite"]);
+  assert.equal(matching.collapsed, true);
+  assert.deepEqual(parent.shownVariants, []);
+  assert.deepEqual(parent.collapsedVariants.map((r) => r.slug), ["extenddb-sqlite"]);
+});
+
+test("a build that scores differently keeps its own row", () => {
+  // Dynoxide's wasm build today: the coverage it cannot reach drops it a grade.
+  const parent = buildRow({ slug: "dynoxide", grade: "A", coverage: "94.7%", coverageValue: 94.7 });
+  const wasm = buildRow({ slug: "dynoxide-wasm", grade: "B", coverage: "83.4%", coverageValue: 83.4 });
+  sortRows([parent, wasm]);
+
+  assert.equal(wasm.collapsed, false);
+  assert.deepEqual(parent.shownVariants.map((r) => r.slug), ["dynoxide-wasm"]);
+  assert.deepEqual(parent.collapsedVariants, []);
+});
+
+test("sortRows annotates the caller's own rows rather than copies", () => {
+  // history.mjs relies on a standings row and the matching perTarget[].current
+  // being the same object when it back-fills a version. Copies would break that
+  // quietly, which is why the assignment is deliberate rather than tidyable.
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite" });
+  const rows = sortRows([parent, variant]);
+
+  assert.equal(rows[0], parent);
+  assert.equal(rows[1], variant);
+});
+
+test("sorting the same rows twice gives the same answer", () => {
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite" });
+  const first = sortRows([parent, variant]).map((r) => r.slug);
+  const second = sortRows([parent, variant]).map((r) => r.slug);
+
+  assert.deepEqual(second, first);
+  assert.equal(parent.collapsedVariants.length, 1);
 });

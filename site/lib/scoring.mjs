@@ -22,6 +22,7 @@ import {
   label,
 } from "dynamodb-conformance/scripts/summarise.mjs";
 import { GROUND_TRUTH_SLUG, axesOf, passRate, scoreResults, tierOf } from "dynamodb-conformance/scripts/lib/score.mjs";
+import { splitVariants } from "dynamodb-conformance/scripts/lib/standings.mjs";
 import { classifyResults } from "dynamodb-conformance/scripts/lib/classify.mjs";
 import {
   A_PLUS,
@@ -596,6 +597,16 @@ export function sortRows(rows) {
   for (const group of byProject.values()) {
     const parent = group.find((r) => !isVariant(r.slug)) ?? group[0];
     parent.variants = group.filter((r) => r !== parent).sort(byRisk);
+    // A build that scored the same as the parent would repeat it in every
+    // column, so it is named on the parent instead of seated beneath it. The
+    // split is annotated rather than applied: `variants` stays whole, because
+    // the target index, the per-target pages and the JSON endpoints all want
+    // every build whether or not the standings drew it a row.
+    const { shown, collapsed } = splitVariants(parent);
+    for (const v of shown) v.collapsed = false;
+    for (const v of collapsed) v.collapsed = true;
+    parent.shownVariants = shown;
+    parent.collapsedVariants = collapsed;
     groups.push(parent);
   }
   return groups.sort(byRisk).flatMap((parent) => [parent, ...parent.variants]);
