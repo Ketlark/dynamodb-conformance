@@ -93,7 +93,11 @@ export const TARGETS = {
     display: 'Dynoxide',
     project: 'dynoxide',
     reference: true,
-    configuration: 'native',
+    // Named for the storage under the shared query layer, like every other
+    // configuration here, rather than for the compile target. "native" alone
+    // said only that this build is not the wasm one, which is the single thing
+    // a reader who has not met that build cannot use.
+    configuration: 'native SQLite',
     url: 'https://github.com/nubo-db/dynoxide',
     requires: 'none - a native binary',
     distribution: [
