@@ -54,13 +54,36 @@ test("an entry body stops at the next heading", () => {
 // silence is what let the site render a stale page on a green build.
 test("reports unparseable headings instead of dropping them quietly", () => {
   const { entries, skipped } = parseChangelog(
-    ["## Unreleased", "", "Pending.", "", "## 2026-07-01", "", "Added a tier."].join("\n"),
+    ["## Coming soon", "", "Pending.", "", "## 2026-07-01", "", "Added a tier."].join("\n"),
   );
   assert.deepEqual(
     entries.map((e) => e.date),
     ["2026-07-01"],
   );
-  assert.deepEqual(skipped, ["Unreleased"]);
+  assert.deepEqual(skipped, ["Coming soon"]);
+});
+
+// Branches write their changelog with the work, so an Unreleased section is
+// expected rather than a heading nobody anticipated. It must not reach
+// `skipped`, which fails the scheduled build by design.
+test("holds an Unreleased section back without reporting it as unreadable", () => {
+  const { entries, skipped, unreleased } = parseChangelog(
+    ["## Unreleased", "", "Pending note.", "", "## 2026-07-01", "", "Added a tier."].join("\n"),
+  );
+  assert.deepEqual(
+    entries.map((e) => e.date),
+    ["2026-07-01"],
+  );
+  assert.deepEqual(skipped, []);
+  assert.match(unreleased.bodyHtml, /Pending note\./);
+});
+
+test("an Unreleased section stops at the next heading, and is null when absent", () => {
+  const { unreleased } = parseChangelog(
+    ["## Unreleased", "", "Pending note.", "", "## 2026-07-01", "", "Older note."].join("\n"),
+  );
+  assert.doesNotMatch(unreleased.bodyHtml, /Older note\./);
+  assert.equal(parseChangelog("## 2026-07-01\n\nAdded a tier.").unreleased, null);
 });
 
 test("the committed fallback parses cleanly", async () => {

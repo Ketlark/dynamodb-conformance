@@ -3,6 +3,21 @@
 A dated log of how the conformance test suite has grown: tests added, tiers
 broadened, and targets brought into the run. Newest first.
 
+Work lands its notes under `## Unreleased` as it merges. The release gives that
+section its date and version, so several branches can write ahead of one.
+
+## Unreleased
+
+ExtendDB's SQLite backend joins the run, built from the same release as the
+PostgreSQL one and held to the same TLS, SigV4 and IAM posture, so the storage
+engine is the only thing that differs between them.
+
+A build of a project now earns its own row by scoring differently. One landing
+the same grade, divergence and coverage as the build above it is named on that
+row instead of repeating it across every column. Both are still measured, and
+both keep their own page and their own entry in the data endpoints. The rule
+reads each run, so a build can fold into its parent and come back out again.
+
 ## 2026-08-12 (3.0.0)
 
 **Read this first if you consume the JSON.** The data endpoints go from schema 2

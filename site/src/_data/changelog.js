@@ -49,7 +49,10 @@ export default async function () {
   const { body, source, error } = await loadMarkdown();
   if (error) loudSignal(`remote fetch failed (${error}); using committed fallback`);
 
-  const { entries, skipped } = parseChangelog(body);
+  // `unreleased` is deliberately not rendered: the page is a dated history and
+  // a pending section has no date yet. It is returned so the build can see it
+  // exists rather than discarding it without a word.
+  const { entries, skipped, unreleased } = parseChangelog(body);
 
   // A heading we can't read is an entry missing from the page. Say so: the site
   // rendering short on a green build is exactly how it went stale before.
@@ -63,5 +66,5 @@ export default async function () {
 
   // Lookup by run date, so run and target pages can surface the matching note.
   const byDate = Object.fromEntries(entries.map((e) => [e.date, e]));
-  return { entries, byDate, source, skipped, fetchedAt: new Date().toISOString() };
+  return { entries, byDate, source, skipped, unreleased, fetchedAt: new Date().toISOString() };
 }
