@@ -100,6 +100,18 @@ than telling you which one to pick, because that depends on the operations you
 need: a target with no divergences over a narrow surface sits high, and its
 coverage figure says how narrow.
 
+An indented row (`↳`) is a second build of the project above it: the same
+engine with a storage backend swapped underneath, or compiled for somewhere
+else to run. It gets that row by scoring differently. A build that lands the
+same grade, divergence and coverage as the one above it is named on that row
+instead, because a row repeating its parent in every column would size a
+project's place on the board by how many builds it ships rather than by
+anything measured. Both builds are still run and still have their own page.
+
+The rule reads each run rather than a setting, so it goes both ways: a build
+that converges with its parent folds in, and one that later diverges gets its
+row back.
+
 A skipped test is deliberate: each test file probes for feature support in
 `beforeAll` and skips itself when the target doesn't implement that operation,
 so a skip records scope rather than a gap in correctness. An indeterminate test

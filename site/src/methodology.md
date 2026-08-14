@@ -80,6 +80,16 @@ The two figures are not properties of the same thing. Coverage is a property of 
 <!-- literal-figures: historical, suite sizes at two named points in 2026, quoted to show the growth -->
 One consequence worth spelling out: [the suite grows](/changelog). It had 526 tests in March 2026 and over 600 by May. Raw counts from different runs aren't comparable, so every chart and every movement figure on this site is a **percentage**, never a count.
 
+## When a project has more than one build
+
+Some projects ship the same engine in more than one shape: a storage backend swapped underneath it, or the query layer compiled for somewhere else to run. Those builds are nested under the project rather than seated beside it, because a reader chooses between projects first and the build follows from where their code runs. Seating them as rivals would let one engine take several places near the top.
+
+A nested build earns its row by scoring differently. When a build lands the same grade, the same divergence and the same coverage as the one above it, the board names it on that row instead of drawing a second one. The reason is the same reason the nesting exists: a row that repeats its parent in every column sizes a project's presence here by how many builds it ships, and how many builds a project ships is not something this suite measures.
+
+Nothing is hidden by that. Both builds are run in full, both keep their own page and their own entry in the data endpoints, and the row that absorbed the other names it and links to it. The comparison is on the figures as published rather than the values behind them, so a difference too small to print does not make a row appear and disappear between runs, and the suite sizes have to match as well - divergence and coverage are both ratios, and equal percentages over different denominators are not the same result.
+
+The rule reads each run rather than a setting anyone maintains, so it works in both directions. A build that converges with its parent folds into it, and a build that later diverges gets its row back on the run that shows it.
+
 ## How runs and movement are reconstructed
 
 The suite publishes each run's results as JSON in its repository, and it has done since the first run. That means the full history is sitting in the git log, and this site rebuilds the timeline from it: it reads every version of those result files, scores each one with the suite's own logic, and assembles the runs you browse here.
