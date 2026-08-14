@@ -206,3 +206,17 @@ test("the Unreleased heading is accepted in the spellings people actually write"
     assert.ok(unreleased, `${heading} should be kept as the pending section`);
   }
 });
+
+test("an Unreleased heading with nothing under it is not a pending note", () => {
+  // A release dates the section and leaves the heading behind, so a bodyless
+  // one is the standing state between releases. Read as pending, every build
+  // between releases would warn that notes were being held back.
+  const { unreleased, entries, skipped } = parseChangelog(
+    "# Changelog\n\n## Unreleased\n\n## 2026-08-12 (3.0.0)\n\nReal notes.\n",
+  );
+
+  assert.equal(unreleased, null);
+  assert.equal(entries.length, 1, "the dated entry still parses");
+  assert.deepEqual(skipped, [], "and the empty heading is not reported as unreadable");
+});
+

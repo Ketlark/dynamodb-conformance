@@ -23,7 +23,9 @@
 #   EXTENDDB_ADMIN_PASSWORD   admin password (generated if unset; init reads it)
 #   ACCOUNT_ID=123456789012   12-digit account the conformance user lives in
 #   IAM_USER=conformance
-#   BUILD=1                   set 0 to skip the cargo build when already built
+#   BUILD=1                   set 0 to skip the cargo build. The run then
+#                             refuses a binary that is missing, or stamped for
+#                             a different backend, rather than measuring it.
 #
 # On success it emits the suite env (DYNAMODB_ENDPOINT, NODE_EXTRA_CA_CERTS,
 # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION). In CI ($GITHUB_ENV set)

@@ -58,7 +58,12 @@ export function parseChangelog(body) {
       // Appended, not overwritten. Branches write their notes ahead of the
       // release, so a merge landing two of these is the expected case, and
       // dropping the older one would lose a note nothing else records.
-      unreleased = { bodyHtml: (unreleased?.bodyHtml ?? "") + md.render(block) };
+      // An empty heading is not a pending note. A release dates the section and
+      // leaves the heading behind, so a bodyless one is the standing state
+      // between releases - and reporting it as notes held back would warn on
+      // every build until someone wrote the next line.
+      const rendered = (unreleased?.bodyHtml ?? "") + md.render(block);
+      unreleased = rendered.trim() ? { bodyHtml: rendered } : unreleased;
       return;
     }
 

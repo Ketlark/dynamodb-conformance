@@ -859,10 +859,26 @@ describe('renderTable variant nesting', () => {
     expect(nested).toHaveLength(1)
   })
 
-  it('keeps a build carried from an earlier run out of the fold', () => {
+  it('does not print a promoted build\u2019s configuration twice', () => {
+    // With no result for the reference build, the grouping promotes a build to
+    // stand for the project. Its display name already carries the
+    // configuration, so appending it again read "ExtendDB (SQLite) · SQLite".
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: { 'extenddb-sqlite': one(97.7), dynoxide: one(96.3) },
+    }
+    const row = renderTable(summary).split('\n').find((l) => l.includes('ExtendDB'))
+
+    expect(row).toContain('ExtendDB (SQLite)')
+    expect(row).not.toContain('· SQLite')
+  })
+
+  it('gives a build carried from an earlier run its own row and its own date', () => {
     // Two builds measured weeks apart were never shown to agree, whatever their
-    // percentages say. Folding them would publish one build's version and date
-    // as the other's, so the carried one keeps its row and states its own date.
+    // percentages say. This table nests every build outright, so what matters
+    // here is that the carried one states its own date rather than borrowing
+    // the caption's.
     const summary = {
       groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
       regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },

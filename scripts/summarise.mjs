@@ -902,7 +902,10 @@ export function renderTable(summary) {
   const rendered = rows.flatMap((r) => [
     {
       row: r,
-      name: configurationOf(r.slug) ? `${r.target} · ${configurationOf(r.slug)}` : r.target,
+      // A build promoted to stand for its project already carries its
+      // configuration in the display name the registry gives it, so appending
+      // it again read "ExtendDB (SQLite) · SQLite".
+      name: configurationOf(r.slug) && !isVariant(r.slug) ? `${r.target} · ${configurationOf(r.slug)}` : r.target,
       date: r.runDate,
     },
     ...(r.variants ?? []).map((v) => ({

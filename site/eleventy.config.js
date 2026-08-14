@@ -145,9 +145,8 @@ export default function (eleventyConfig) {
   }));
   eleventyConfig.addFilter("configurationOf", (slug) => configurationOf(slug));
   eleventyConfig.addFilter("isVariant", (slug) => isVariant(slug));
-  // A build whose figures matched its parent gets no row on the board, so its
-  // own page is the only place a reader can see it was measured. These two give
-  // that page the way back to the row carrying its figures.
+  // A build's own page names the project it is a build of and links back to it.
+  // These two give it the way there.
   eleventyConfig.addFilter("projectOf", (slug) => projectOf(slug));
   eleventyConfig.addFilter("display", (slug) => display(slug));
   // Whether this row is the one that stands for its project on a board. Not the

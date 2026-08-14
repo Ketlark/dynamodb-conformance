@@ -271,8 +271,12 @@ them apart. So the correction is an explicit `MEASURED_BY` entry naming the
 right run. It names a run, never a figure, so the count still comes from that
 run's results and the derived-figures rule holds. Keep it to genuine
 corrections the suite's own prose evidences; it isn't a place to author
-numbers. Entry headings are `## YYYY-MM-DD` with an optional release tag;
-anything else comes back as `skipped` and is reported rather than dropped.
+numbers. Entry headings are `## YYYY-MM-DD` with an optional release tag.
+`## Unreleased` is the one other heading the parser knows: work writes its notes
+there as it merges and the release gives the section its date, so it is held off
+the page rather than rendered, and an empty one is the ordinary state between
+releases. Anything else comes back as `skipped` and is reported rather than
+dropped.
 
 ### Templates
 
