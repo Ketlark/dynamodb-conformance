@@ -586,6 +586,32 @@ const byRisk = (a, b) =>
 // (see the note where it back-fills a version), so handing back copies here
 // would quietly break that. The assignment always overwrites, so sorting the
 // same rows twice gives the same answer.
+/**
+ * Re-decide which builds fold, for rows whose published figures were rewritten
+ * after they were first grouped.
+ *
+ * The model back-fills the latest run's `version` from the suite's summary once
+ * everything else is assembled, because the version a reader should see is the
+ * build currently shipped rather than the one captured at the run's commit, and
+ * those genuinely differ (a release that moved the label without a fresh run).
+ * The fold had already been decided by then, on the versions being replaced, so
+ * two builds sharing a tested version could fold and then be handed different
+ * shipped ones - leaving the row publishing a version for a build that never
+ * carried it. That is the same false statement the fold rule exists to prevent,
+ * arriving after the rule had finished.
+ *
+ * Only the flags are re-derived: the grouping and the order stand, so this
+ * cannot disturb the baseline's seat at the top of the standings or the object
+ * identity `perTarget[].current` depends on.
+ */
+export function refoldRows(rows) {
+  for (const row of rows ?? []) {
+    if (!row?.variants?.length) continue;
+    const { collapsed } = splitVariants(row);
+    for (const v of row.variants) v.collapsed = collapsed.includes(v);
+  }
+}
+
 export function sortRows(rows) {
   const byProject = new Map();
   for (const row of rows) {

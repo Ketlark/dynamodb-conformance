@@ -23,6 +23,7 @@ import {
   capClauseOf,
   gradeForRow,
   gradeLineOf,
+  refoldRows,
   regionClauseOf,
   sortRows,
 } from "./scoring.mjs";
@@ -530,4 +531,37 @@ test("a build travelling under its parent is not marked as standing for the proj
 
   assert.equal(parent.isParent, true);
   assert.equal(variant.isParent, false);
+});
+
+test("refoldRows re-decides the fold after a row's published version is rewritten", () => {
+  // The model back-fills the latest run's version from the suite's summary
+  // after the fold has been decided. Two builds sharing a tested version fold,
+  // then take different shipped ones - and the row would state a version for a
+  // build that never carried it unless the fold is asked again.
+  const parent = buildRow({ slug: "extenddb", version: "-" });
+  const variant = buildRow({ slug: "extenddb-sqlite", version: "-" });
+  sortRows([parent, variant]);
+  assert.equal(variant.collapsed, true, "identical rows fold on the tested version");
+
+  // The overlay hands them different shipped versions.
+  parent.version = "v0.1.3";
+  variant.version = "v0.1.2";
+  refoldRows([parent, variant]);
+
+  assert.equal(variant.collapsed, false, "a build on another release keeps its row");
+});
+
+test("refoldRows leaves the grouping and the order alone", () => {
+  // Only the flags are re-derived. Re-sorting here would move the baseline out
+  // of its seat at the top of the standings.
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite" });
+  const rows = sortRows([parent, variant]);
+  const before = rows.map((r) => r.slug);
+
+  refoldRows(rows);
+
+  assert.deepEqual(rows.map((r) => r.slug), before);
+  assert.deepEqual(parent.variants.map((v) => v.slug), ["extenddb-sqlite"]);
+  assert.equal(parent.isParent, true);
 });
