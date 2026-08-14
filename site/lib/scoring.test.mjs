@@ -443,8 +443,7 @@ test("sortRows returns every build, annotating which of them earn a row", () => 
 
   assert.deepEqual(rows.map((r) => r.slug), ["extenddb", "extenddb-sqlite"]);
   assert.equal(matching.collapsed, true);
-  assert.deepEqual(parent.shownVariants, []);
-  assert.deepEqual(parent.collapsedVariants.map((r) => r.slug), ["extenddb-sqlite"]);
+  assert.deepEqual(parent.variants.map((r) => r.slug), ["extenddb-sqlite"]);
 });
 
 test("a build that scores differently keeps its own row", () => {
@@ -454,8 +453,7 @@ test("a build that scores differently keeps its own row", () => {
   sortRows([parent, wasm]);
 
   assert.equal(wasm.collapsed, false);
-  assert.deepEqual(parent.shownVariants.map((r) => r.slug), ["dynoxide-wasm"]);
-  assert.deepEqual(parent.collapsedVariants, []);
+  assert.deepEqual(parent.variants.map((r) => r.slug), ["dynoxide-wasm"]);
 });
 
 test("sortRows annotates the caller's own rows rather than copies", () => {
@@ -477,5 +475,31 @@ test("sorting the same rows twice gives the same answer", () => {
   const second = sortRows([parent, variant]).map((r) => r.slug);
 
   assert.deepEqual(second, first);
-  assert.equal(parent.collapsedVariants.length, 1);
+  assert.equal(variant.collapsed, true);
+});
+
+test("the collapse annotation adds no second reference to a build's row", () => {
+  // leanForFallback strips findings by walking `variants`. A parallel array
+  // holding the same row objects would carry every finding it had just removed
+  // back into the committed fallback through the second reference, so the split
+  // is derived from a flag rather than stored beside them.
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite" });
+  sortRows([parent, variant]);
+
+  const extra = Object.keys(parent).filter((k) => Array.isArray(parent[k]) && k !== "variants");
+  assert.deepEqual(extra, [], `sortRows added row-bearing arrays beside variants: ${extra}`);
+});
+
+test("a folded build stays findable in the standings, so its history is unbroken", () => {
+  // history.mjs builds each target's series by looking its slug up in every
+  // run's standings. Filtering a folded build out of that list rather than
+  // flagging it would end its trend on the run it converged, which reads as the
+  // target being dropped rather than as it agreeing with the build above it.
+  const parent = buildRow({ slug: "extenddb" });
+  const folded = buildRow({ slug: "extenddb-sqlite" });
+  const standings = sortRows([parent, folded]);
+
+  assert.equal(folded.collapsed, true);
+  assert.ok(standings.find((r) => r.slug === "extenddb-sqlite"));
 });

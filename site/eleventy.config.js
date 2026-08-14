@@ -150,6 +150,12 @@ export default function (eleventyConfig) {
   // that page the way back to the row carrying its figures.
   eleventyConfig.addFilter("projectOf", (slug) => projectOf(slug));
   eleventyConfig.addFilter("display", (slug) => display(slug));
+  // The two halves of a project's builds, derived from the flag rather than
+  // stored beside `variants`: a second reference to the same rows would carry
+  // their findings back into the committed history fallback, which strips them
+  // by walking `variants` alone.
+  eleventyConfig.addFilter("shownVariants", (row) => (row?.variants ?? []).filter((v) => !v.collapsed));
+  eleventyConfig.addFilter("foldedVariants", (row) => (row?.variants ?? []).filter((v) => v.collapsed));
   // Every way a target can be run, as marks. Uncapped: seeing all of them at a
   // glance is the point, and an icon costs a fraction of the room a label does.
   eleventyConfig.addFilter("channels", (slug) =>

@@ -602,11 +602,14 @@ export function sortRows(rows) {
     // split is annotated rather than applied: `variants` stays whole, because
     // the target index, the per-target pages and the JSON endpoints all want
     // every build whether or not the standings drew it a row.
-    const { shown, collapsed } = splitVariants(parent);
-    for (const v of shown) v.collapsed = false;
-    for (const v of collapsed) v.collapsed = true;
-    parent.shownVariants = shown;
-    parent.collapsedVariants = collapsed;
+    //
+    // A flag per build, rather than the split arrays this first carried. Those
+    // arrays held the same row objects a second time, and leanForFallback
+    // strips findings by destructuring `variants` alone - so every finding it
+    // had just removed travelled back into the committed fallback through the
+    // second reference. The renderers derive their two lists from this flag.
+    const { collapsed } = splitVariants(parent);
+    for (const v of parent.variants) v.collapsed = collapsed.includes(v);
     groups.push(parent);
   }
   return groups.sort(byRisk).flatMap((parent) => [parent, ...parent.variants]);
