@@ -67,6 +67,25 @@ describe('whether a build earns its own row', () => {
     expect(earnsOwnRow(row({ cohort: '4 of 32' }), parentRow())).toBe(true)
   })
 
+  it('reads the cohort the site publishes, not only the table\'s', () => {
+    // Site rows carry no `cohort`; they reach it through the region label. A
+    // rule reading only the table's field compared undefined against undefined
+    // here and folded two builds measured across different cohorts.
+    const site = (regions) => ({
+      slug: 'extenddb-sqlite',
+      version: 'v0.1.3',
+      runDate: '2026-08-14',
+      passed: 904,
+      failed: 21,
+      skipped: 129,
+      count: 1054,
+      regionLabel: { regions: new Array(regions).fill('eu-west-2') },
+      tiers: { tier1: {}, tier2: {}, tier3: {} },
+    })
+    expect(earnsOwnRow(site(4), { ...site(27), slug: 'extenddb' })).toBe(true)
+    expect(earnsOwnRow(site(27), { ...site(27), slug: 'extenddb' })).toBe(false)
+  })
+
   it('gives a row to a build with nothing above it to compare against', () => {
     // The grouping promotes a build to parent when the reference build has no
     // result. It then stands for the project and must render.
@@ -166,5 +185,64 @@ describe('joining those names into a phrase', () => {
     expect(listOf(['PostgreSQL', 'SQLite'])).toBe('PostgreSQL and SQLite')
     expect(listOf(['PostgreSQL'])).toBe('PostgreSQL')
     expect(listOf([])).toBe('')
+  })
+})
+
+describe('the regional evidence a row prints', () => {
+  const site = (over = {}) => ({
+    slug: 'extenddb-sqlite',
+    version: 'v0.1.3',
+    runDate: '2026-08-14',
+    passed: 904,
+    failed: 21,
+    skipped: 129,
+    count: 1054,
+    regionLabel: { regions: new Array(6).fill('eu-west-2') },
+    tiers: { tier1: {}, tier2: {}, tier3: {} },
+    ...over,
+  })
+
+  it('gives a row to a build that diverges worse outside its headline region', () => {
+    // The standings print "in 6 regions, up to X in the other 26". Two builds
+    // can share the cohort and disagree on X, and folding them published one
+    // build's worst-region figure as though it were both.
+    const variant = site({ divergenceWorstLabel: '4.8%' })
+    const parent = site({ slug: 'extenddb', divergenceWorstLabel: '1.2%' })
+    expect(earnsOwnRow(variant, parent)).toBe(true)
+  })
+
+  it('folds when the whole regional clause matches', () => {
+    const variant = site({ divergenceWorstLabel: '1.2%' })
+    const parent = site({ slug: 'extenddb', divergenceWorstLabel: '1.2%' })
+    expect(earnsOwnRow(variant, parent)).toBe(false)
+  })
+})
+
+describe('the tier fingerprint', () => {
+  // The two surfaces build these objects in different key orders, and one may
+  // be enriched from the summary overlay while the other is not.
+  const withTiers = (t1) => ({
+    slug: 'extenddb-sqlite',
+    version: 'v0.1.3',
+    runDate: '2026-08-14',
+    passed: 904,
+    failed: 21,
+    skipped: 129,
+    count: 1054,
+    tiers: { tier1: t1, tier2: {}, tier3: {} },
+  })
+
+  it('ignores the order the keys were written in', () => {
+    const a = withTiers({ divergence: '0.8%', coverage: '100.0%' })
+    const b = withTiers({ coverage: '100.0%', divergence: '0.8%' })
+    b.slug = 'extenddb'
+    expect(earnsOwnRow(a, b)).toBe(false)
+  })
+
+  it('still separates tiers that genuinely differ', () => {
+    const a = withTiers({ divergence: '0.8%', coverage: '100.0%' })
+    const b = withTiers({ divergence: '3.5%', coverage: '100.0%' })
+    b.slug = 'extenddb'
+    expect(earnsOwnRow(a, b)).toBe(true)
   })
 })

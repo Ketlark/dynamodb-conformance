@@ -71,3 +71,20 @@ test("the folded-build filters split a parent's builds on the flag, not the slug
   assert.deepEqual(shownVariants({}), []);
   assert.deepEqual(foldedVariants({}), []);
 });
+
+test("standsForProject reads the row's flag, falling back to the slug", () => {
+  // Three templates ask this. Two of them were still asking it the old way
+  // after the first was fixed, which is why it is a filter now.
+  const { standsForProject } = registeredFilters();
+  assert.ok(standsForProject, "the filter is registered");
+
+  // A fresh model carries the flag, and it is authoritative - including for a
+  // build promoted to stand for its project because the reference has none.
+  assert.equal(standsForProject({ slug: "dynoxide-wasm", isParent: true }), true);
+  assert.equal(standsForProject({ slug: "extenddb-sqlite", isParent: false }), false);
+
+  // A model restored from the committed fallback carries no flag at all, so the
+  // slug is the reading. Getting this wrong emptied the board once already.
+  assert.equal(standsForProject({ slug: "dynoxide" }), true);
+  assert.equal(standsForProject({ slug: "dynoxide-wasm" }), false);
+});

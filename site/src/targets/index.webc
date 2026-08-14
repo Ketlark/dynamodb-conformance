@@ -20,10 +20,16 @@
   <div class="grid sm:grid-cols-2 gap-4">
     <!-- One card per project. A build of one is named on its parent's card
          instead of taking a card beside it, so the page does not read as though
-         a project shipping two builds is two engines. -->
+         a project shipping two builds is two engines.
+         Which row that is comes from the row itself, not its slug: when the
+         reference build has no result the grouping promotes another build to
+         stand for the project, and reading the slug dropped the reference card
+         (no current row) and the promoted one (a build) both, losing the
+         project from this page. The slug stays as the reading for a model
+         restored from the committed fallback, which predates the flag. -->
     <target-card
       webc:for="slug of $data.conformance.targets"
-      webc:if="!isVariant(slug) && $data.conformance.perTarget[slug].current"
+      webc:if="$data.conformance.perTarget[slug].current && standsForProject($data.conformance.perTarget[slug].current)"
       :row="$data.conformance.perTarget[slug].current"></target-card>
   </div>
 

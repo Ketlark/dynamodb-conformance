@@ -33,7 +33,7 @@ const DATED = /^(\d{4}-\d{2}-\d{2})(?:\s+\((.+)\))?$/;
 // sets FAIL_ON_FALLBACK unconditionally, so a heading this does not recognise
 // does not degrade quietly - it takes the deploy down on the commit that
 // introduces it.
-const UNRELEASED = /^\[?unreleased\]?(?:\s+\(.*\))?$/i;
+const UNRELEASED = /^\[?unreleased\]?\b/i;
 
 // Split a changelog into newest-first dated entries. Returns the parsed
 // entries, the pending Unreleased section when there is one, and any heading

@@ -44,10 +44,44 @@ import { configurationOf } from './targets.mjs'
 // builds measured weeks apart, or from different releases, have not been shown
 // to agree - they were never run against the same suite on the same day - and
 // folding them would restate one build's version and date as the other's.
+// Two rows are only ever compared against another row from the same surface, so
+// these read whichever field that surface publishes rather than insisting both
+// carry one shape. The published table holds the tier figures flat and names the
+// cohort as a rendered count; the site holds tiers as objects and reaches the
+// cohort through its region label. Reading only one of each silently compared
+// undefined against undefined on the other surface, which is how an earlier
+// version of this rule ended up ignoring the grade entirely on the site.
+// Named explicitly rather than stringified whole. The two surfaces build their
+// tier objects in different key orders, and one enriches a row from the summary
+// overlay while the other does not, so comparing the object as JSON made two
+// numerically identical tiers read as different - a silent refusal to fold
+// rather than a wrong one, but wrong all the same.
+const tierOf = (t) =>
+  t == null
+    ? null
+    : typeof t === 'string'
+      ? t
+      : [
+          t.passed ?? t.p ?? null,
+          t.failed ?? t.f ?? null,
+          t.skipped ?? t.s ?? null,
+          t.indeterminate ?? t.i ?? null,
+          t.divergence ?? null,
+          t.coverage ?? null,
+        ]
+
 const tiersOf = (row) =>
-  row.tiers
-    ? [row.tiers.tier1, row.tiers.tier2, row.tiers.tier3]
-    : [row.tier1, row.tier2, row.tier3]
+  (row.tiers ? [row.tiers.tier1, row.tiers.tier2, row.tiers.tier3] : [row.tier1, row.tier2, row.tier3]).map(tierOf)
+
+// The regional evidence a row prints, which is more than the size of the cohort:
+// the standings say "in N regions, up to X in the other M", so two builds can
+// agree on N and disagree on X. Comparing only the count folded a build that
+// diverged several times worse outside its headline region into a row
+// publishing the other build's figure.
+const regionalOf = (row) => [
+  row.cohort ?? row.regionLabel?.regions?.length ?? null,
+  row.divergenceWorstLabel ?? null,
+]
 
 export function publishedFigures(row) {
   return JSON.stringify([
@@ -57,7 +91,7 @@ export function publishedFigures(row) {
     row.failed ?? null,
     row.skipped ?? null,
     row.count ?? null,
-    row.cohort ?? null,
+    regionalOf(row),
     tiersOf(row),
   ])
 }

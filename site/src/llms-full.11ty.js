@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { capClauseOf, display, gradeForRow, projectOf } from "../lib/scoring.mjs";
+import { capClauseOf, display, gradeForRow, isVariant, projectOf } from "../lib/scoring.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -43,14 +43,19 @@ function latestResults(conformance) {
     // agent reads cannot phrase a cap differently from the board a human reads.
     const clause = capClauseOf(r);
     const cap = clause ? ` (${clause})` : "";
-    // A build that matched the one above it draws no row on the board, and this
-    // list is flat, so without saying so it prints two entries with identical
-    // figures and nothing joining them - the duplicate the board exists to
-    // avoid, on the surface a reader cannot ask about it.
-    const folded = r.collapsed
-      ? `, folded into ${display(projectOf(r.slug))}'s row on the board after measuring identically`
-      : "";
-    return `- ${r.display}${baseline}${folded} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
+    // This list is flat, so a build of a project reads as a rival to it unless
+    // it says otherwise. The board has the indent to carry that; here it has to
+    // be words, or two builds of one engine print as two unrelated entries with
+    // near-identical figures.
+    //
+    // Relatedness comes from the registry, which is always available, and only
+    // the fold clause depends on the run. A model restored from the committed
+    // fallback predates the flag, so keying the whole sentence on it would have
+    // dropped the relationship entirely on exactly the builds most likely to
+    // look like duplicates.
+    const build = isVariant(r.slug) ? `, a build of ${display(projectOf(r.slug))}` : "";
+    const folded = r.collapsed ? ", folded into its row on the board after measuring identically" : "";
+    return `- ${r.display}${baseline}${build}${folded} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
   });
   return [
     `# Latest results`,

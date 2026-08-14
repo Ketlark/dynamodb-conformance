@@ -182,3 +182,27 @@ test("an entry newer than every run gets no badge", () => {
 test("no runs yields no badges", () => {
   assert.deepEqual(entryRunBadges(["2026-07-13"], []), {});
 });
+
+// The gate that was missing. PR CI stubs fetch, so every build check parses the
+// committed fallback and never the repository's own CHANGELOG.md - which is
+// what deploy.yml fetches on a push to main with FAIL_ON_FALLBACK set. A
+// heading this parser cannot read therefore passed every check and took the
+// deploy down on the commit that merged it. This puts that failure on the PR.
+test("the repository's own CHANGELOG.md parses cleanly", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, join } = await import("node:path");
+  const path = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "CHANGELOG.md");
+  const { entries, skipped } = parseChangelog(await readFile(path, "utf8"));
+
+  assert.ok(entries.length > 0, "CHANGELOG.md should yield dated entries");
+  assert.deepEqual(skipped, [], "a heading here fails the deploy; fix it before merging");
+});
+
+test("the Unreleased heading is accepted in the spellings people actually write", () => {
+  for (const heading of ["## Unreleased", "## [Unreleased]", "## Unreleased (next)", "## [Unreleased] - 2026-08-20"]) {
+    const { skipped, unreleased } = parseChangelog([heading, "", "Pending.", "", "## 2026-07-01", "", "Dated."].join("\n"));
+    assert.deepEqual(skipped, [], `${heading} should not be reported as unreadable`);
+    assert.ok(unreleased, `${heading} should be kept as the pending section`);
+  }
+});

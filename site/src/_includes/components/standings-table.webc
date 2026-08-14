@@ -148,6 +148,6 @@
          carries no flag, so keying on it alone emptied the board entirely on
          every fallback render - which is the path PR CI and any failed fetch
          take. The fallback keeps the old reading, which is what it had anyway. -->
-    <standings-row webc:for="row of $data.conformance.latest.standings" webc:if="(row.isParent ?? !isVariant(row.slug)) && !row.baseline" :row="row"></standings-row>
+    <standings-row webc:for="row of $data.conformance.latest.standings" webc:if="standsForProject(row) && !row.baseline" :row="row"></standings-row>
   </ol>
 </section>

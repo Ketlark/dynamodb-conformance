@@ -150,6 +150,15 @@ export default function (eleventyConfig) {
   // that page the way back to the row carrying its figures.
   eleventyConfig.addFilter("projectOf", (slug) => projectOf(slug));
   eleventyConfig.addFilter("display", (slug) => display(slug));
+  // Whether this row is the one that stands for its project on a board. Not the
+  // same question as whether its slug is a build: when the reference build has
+  // no result the grouping promotes another to stand in, and reading the slug
+  // dropped the whole project. Three templates ask this, and two of them were
+  // still asking it the old way after the first was fixed - so it is a filter
+  // rather than an expression repeated per template. The slug stays as the
+  // reading for a model restored from the committed fallback, which predates
+  // the flag; drop that half once a regenerated snapshot carries it.
+  eleventyConfig.addFilter("standsForProject", (row) => row?.isParent ?? !isVariant(row?.slug));
   // The two halves of a project's builds, derived from the flag rather than
   // stored beside `variants`: a second reference to the same rows would carry
   // their findings back into the committed history fallback, which strips them

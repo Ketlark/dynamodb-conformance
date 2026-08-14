@@ -101,6 +101,20 @@ try {
   check(docs.some((d) => d.path === "/index.html"), "builds a home page");
   check(docs.some((d) => /^\/targets\/[^/]+\/\d{4}-\d{2}-\d{2}\//.test(d.path)), "builds per-run target pages");
 
+  // The board actually has rows on it. Every other check here passes on an
+  // empty board: the home page still builds, its links still resolve, and the
+  // per-target pages are paginated from a different list entirely.
+  //
+  // This is the check that would have caught the standings filter keying on a
+  // field the committed fallback does not carry, which rendered a home page
+  // with no engines on it while all 315 unit tests stayed green. A hermetic run
+  // is exactly the case it broke in, because that is the run that reads the
+  // fallback. Counting distinct target links rather than list items keeps it
+  // honest about what a row is for: getting the reader to an engine.
+  const homeDoc = docs.find((d) => d.path === "/index.html");
+  const linked = new Set([...(homeDoc?.html ?? "").matchAll(/href="\/targets\/([a-z0-9-]+)"/g)].map((m) => m[1]));
+  check(linked.size >= 5, "the board lists the scored engines", `home page links ${linked.size} target(s)`);
+
   // Every internal link has to resolve. This is the check that would have caught
   // 55 dead links when the synthesised baseline stopped getting dated pages but
   // two templates carried on linking to them.

@@ -99,7 +99,7 @@
     <a :href="'/targets/' + projectOf($data.target.slug)"
       class="font-medium underline decoration-dotted underline-offset-2 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
       @text="display(projectOf($data.target.slug)) + (configurationOf(projectOf($data.target.slug)) ? ' · ' + configurationOf(projectOf($data.target.slug)) : '')"></a>
-    on grade, divergence and coverage, so the board names it there instead of
+    on every figure that row publishes, so the board names it there instead of
     repeating the row. It was measured in full, and the figures below are its
     own. A build that later diverges gets its row back.
   </p>

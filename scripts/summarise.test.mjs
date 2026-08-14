@@ -855,7 +855,10 @@ describe('renderTable variant nesting', () => {
       },
     }
     const table = renderTable(summary)
-    expect(table).toContain('Measured')
+    // The column, not the caption: the caption says "Measured <date>" on every
+    // render, so asserting the bare word passed whether or not the column came
+    // back. This is the header the column adds.
+    expect(table).toContain('| Regions | Measured |')
     // Rendered as its own nested row, carrying its own date.
     const nested = table.split('\n').find((l) => l.includes('↳'))
     expect(nested).toContain('2026-07-20')
