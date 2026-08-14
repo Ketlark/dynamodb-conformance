@@ -298,3 +298,20 @@ test("the split registry is discoverable from the data index", () => {
   assert.ok(endpoint, "the index does not name the split registry");
   assert.match(endpoint.url, /registry\/splits\.json$/);
 });
+
+test("every target says whether the board folded it into its parent", () => {
+  // The endpoints are otherwise the one surface where a consumer counting rows
+  // comes out with a different set of targets from the board and has nothing
+  // to explain the difference.
+  const latest = buildLatest(model, site);
+  for (const t of latest.targets) {
+    assert.equal(
+      typeof t.collapsedIntoProject,
+      "boolean",
+      `target ${t.slug} does not say whether it was folded in`,
+    );
+  }
+  // A build that scores differently from its parent keeps its own row.
+  const wasm = latest.targets.find((t) => t.slug === "dynoxide-wasm");
+  assert.equal(wasm.collapsedIntoProject, false);
+});

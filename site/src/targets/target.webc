@@ -89,6 +89,21 @@
     <tier-bar :detail="true" :name="'Tier 3'" :display="$data.target.display" :tier="$data.target.current.tiers.tier3"></tier-bar>
   </div>
 
+  <!-- This build measured the same as the one it is a build of, so the board
+       carries one row for both rather than two that read identically. Stated
+       here because the page is the only surface a reader can see it on: an
+       absence from the board explains nothing by itself, and the obvious wrong
+       reading is that the build was never run. -->
+  <p webc:if="$data.target.current.collapsed" class="mb-8 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50/70 dark:bg-white/[0.03] px-4 py-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 max-w-2xl">
+    This build scored the same as
+    <a :href="'/targets/' + projectOf($data.target.slug)"
+      class="font-medium underline decoration-dotted underline-offset-2 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
+      @text="display(projectOf($data.target.slug)) + (configurationOf(projectOf($data.target.slug)) ? ' · ' + configurationOf(projectOf($data.target.slug)) : '')"></a>
+    on grade, divergence and coverage, so the board names it there instead of
+    repeating the row. It was measured in full, and the figures below are its
+    own. A build that later diverges gets its row back.
+  </p>
+
   <!-- Other builds of this project. Nesting them in the standings keeps a
        project to one row, but it also takes away the row a reader would have
        clicked, so the parent page has to carry the way through. -->

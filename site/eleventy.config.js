@@ -9,7 +9,7 @@ import { controlObservation, controlProvenance, controlSplit, regionCount, regio
 import { renderSplitEvidence, splitCoverageNote } from "./lib/splits.mjs";
 import { regionalSpread, renderCappedExamples, renderCheapestWithdrawal } from "./lib/worked-examples.mjs";
 import { carriedEach, countWord } from "./lib/suite-shape.mjs";
-import { GRADING_CRITERIA_EFFECTIVE, GRADING_VERSION, TARGETS, capClauseOf, configurationOf, coverageShareSentenceOf, distributionOf, fallsShort, gradeForRow, gradeLegendOf, gradeLineOf, gradeOf, gradingCriteriaEffectiveLabel, isSelfMaintained, isVariant, notAttempted, regionClauseOf, scoredOnCorrectness } from "./lib/scoring.mjs";
+import { GRADING_CRITERIA_EFFECTIVE, GRADING_VERSION, TARGETS, capClauseOf, configurationOf, coverageShareSentenceOf, display, distributionOf, fallsShort, gradeForRow, gradeLegendOf, gradeLineOf, gradeOf, gradingCriteriaEffectiveLabel, isSelfMaintained, isVariant, notAttempted, projectOf, regionClauseOf, scoredOnCorrectness } from "./lib/scoring.mjs";
 import { channelIcon } from "./lib/channel-icons.mjs";
 import { targetLinks, targetRunHref } from "./lib/links.mjs";
 import { areaFailures, sourceUrl } from "./lib/findings.mjs";
@@ -145,6 +145,11 @@ export default function (eleventyConfig) {
   }));
   eleventyConfig.addFilter("configurationOf", (slug) => configurationOf(slug));
   eleventyConfig.addFilter("isVariant", (slug) => isVariant(slug));
+  // A build whose figures matched its parent gets no row on the board, so its
+  // own page is the only place a reader can see it was measured. These two give
+  // that page the way back to the row carrying its figures.
+  eleventyConfig.addFilter("projectOf", (slug) => projectOf(slug));
+  eleventyConfig.addFilter("display", (slug) => display(slug));
   // Every way a target can be run, as marks. Uncapped: seeing all of them at a
   // glance is the point, and an icon costs a fraction of the room a label does.
   eleventyConfig.addFilter("channels", (slug) =>

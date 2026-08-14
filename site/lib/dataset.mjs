@@ -178,6 +178,11 @@ function targetRow(row) {
     project: projectOf(row.slug),
     configuration: configurationOf(row.slug),
     isVariant: isVariant(row.slug),
+    // Whether the board folded this build into its parent's row because the
+    // two scored the same. Published because the endpoints are otherwise the
+    // one surface where a consumer counting rows would come out with a
+    // different set of targets from the board, with nothing to explain it.
+    collapsedIntoProject: row.collapsed === true,
     counts: { passed: row.passed, failed: row.failed, skipped: row.skipped, implemented: row.implemented, total: row.count },
     tiers: tierScores(row.tiers),
     region: regionSummary(row),
