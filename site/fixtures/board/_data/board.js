@@ -15,6 +15,10 @@
 //
 // Nothing here is published. The pages this renders are built into a temporary
 // directory by scripts/check-build.mjs, asserted on, and thrown away.
+//
+// It sits here rather than beside the JSON fixtures in test/ because node's
+// test runner treats every .js file under a test/ directory as a test file,
+// and this one would have joined the run as a green tick that asserts nothing.
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
