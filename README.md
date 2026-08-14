@@ -106,13 +106,14 @@ else to run. Every build the suite runs has a row here, with its own figures,
 whether or not they match the build above.
 
 On [paritysuite.org](https://paritysuite.org) a project's other builds sit
-behind a disclosure on its row, which starts closed when a build reads the same
-grade, divergence and coverage as the one above it and both were measured in
-the same run. A build carried from an earlier run starts open whatever it
-reads, because two builds measured weeks apart have not been shown to agree.
-The comparison is made from each run, so a build that converges starts closed
-next time and one that diverges starts open again. Markdown has no disclosure
-to offer, so this table lists them all outright.
+behind a disclosure on its row. It starts closed only when every build under it
+reads the same grade, divergence and coverage as the row above, and only when
+each of them was measured in that run: a row carried from an earlier run, on
+either side, opens the disclosure whatever the percentages say, and so does a
+run the suite declined to score. The comparison is made from each run, so a
+build that converges starts closed next time and one that diverges starts open
+again. Markdown has no disclosure to offer, so this table lists them all
+outright.
 
 A skipped test is deliberate: each test file probes for feature support in
 `beforeAll` and skips itself when the target doesn't implement that operation,

@@ -165,9 +165,12 @@ export function axesOf({ passed, failed, count, indeterminate = 0 }) {
   // and a target can induce one by answering 503 (see isTransport in
   // src/indeterminate.ts). Both readings grade a partial run.
   //
-  // So neither figure is published for one. The row falls back to its last
-  // clean measurement, carried and dated like any other untested row, which
-  // is what the board already does for a run-level indeterminate.
+  // So neither figure is published for one. The row stays in the run and prints
+  // "-" for both figures; it is not replaced by the previous measurement and it
+  // is not marked carried, because the target did report - it just reported
+  // something nobody can score. Carrying the last clean measurement forward is
+  // what happens to the baseline's unobserved lanes, a different thing in a
+  // nearby place.
   if (indeterminate > 0) return { divergence: null, coverage: null }
   return {
     divergence: count === 0 || implemented === 0 ? null : (failed / count) * 100,

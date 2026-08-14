@@ -316,6 +316,41 @@ test("every target says whether its row starts closed on the board", () => {
   assert.equal(wasm.collapsedIntoProject, false);
 });
 
+test("every target says which row stands for its project", () => {
+  // `isVariant` cannot answer it. When a project's reference build records no
+  // result a build is promoted to stand for it, and every row of that project
+  // then reads `isVariant: true` - so a consumer grouping by `project` and
+  // looking for the one that is not a variant would find none. That is the
+  // mistake the board itself made before it read this flag.
+  const latest = buildLatest(model, site);
+  for (const t of latest.targets) {
+    assert.equal(typeof t.standsForProject, "boolean", `target ${t.slug} does not say`);
+  }
+  assert.equal(latest.targets.find((t) => t.slug === "dynoxide").standsForProject, true);
+  assert.equal(latest.targets.find((t) => t.slug === "dynoxide-wasm").standsForProject, false);
+
+  // Every project has exactly one row standing for it.
+  const byProject = new Map();
+  for (const t of latest.targets.filter((t) => t.slug !== "dynamodb")) {
+    byProject.set(t.project, (byProject.get(t.project) ?? 0) + (t.standsForProject ? 1 : 0));
+  }
+  for (const [project, standing] of byProject) {
+    assert.equal(standing, 1, `${project} has ${standing} rows standing for it`);
+  }
+});
+
+test("a promoted build says it stands for its project, though it is a variant", () => {
+  // The case the field exists for: drop the reference build's row and the
+  // grouping promotes the one below it.
+  const seeded = structuredClone(model);
+  seeded.latest.standings = seeded.latest.standings.filter((r) => r.slug !== "dynoxide");
+  sortRows(seeded.latest.standings);
+
+  const wasm = buildLatest(seeded, site).targets.find((t) => t.slug === "dynoxide-wasm");
+  assert.equal(wasm.isVariant, true, "it is still a build by the registry");
+  assert.equal(wasm.standsForProject, true, "but it is the row standing for the project");
+});
+
 test("a build reading the same figures as its reference build starts closed", () => {
   // No committed run holds a matching pair, so make one: copy the reference
   // build's figures onto its variant and re-derive. Without this the true

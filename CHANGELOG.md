@@ -14,16 +14,33 @@ engine is the only thing that differs between them.
 
 A project's other builds now sit behind a disclosure on its row. Every build is
 measured in full and has a row of its own with its own figures; the disclosure
-starts closed when a build reads the same grade, divergence and coverage as the
-one above it and both were measured in the same run. A build carried from an
-earlier run starts open whatever it reads. It is read from each run, so a build
-can start closed on one and open on the next. The README table has no disclosure
-to offer, so it lists every build outright.
+starts closed only when every build under it reads the same grade, divergence
+and coverage as the row above, and only when each of them was measured in that
+run: a carried row on either side opens it, and so does a run the suite declined
+to score. It is read from each run, so a build can start closed on one and open
+on the next. The README table has no disclosure to offer, so it lists every
+build outright.
 
-Every target in the data endpoints gains `collapsedIntoProject`, true when the
-board starts that build's row closed. Additive, so `schemaVersion` is unchanged.
-`/data/index.json` gains a `projects` block documenting it alongside the existing
-`project`, `configuration` and `isVariant` fields.
+Every target in the data endpoints gains two fields. `collapsedIntoProject` is
+true when the board starts that build's row closed. `standsForProject` says
+which row the board treats as a project's own, which `isVariant` cannot answer:
+on a run where a project's reference build recorded nothing, a build is promoted
+to stand for it and every row of that project reads `isVariant: true`. Both are
+additive, so `schemaVersion` is unchanged, and `/data/index.json` gains a
+`projects` block documenting them.
+
+`/data/index.json` also gains a `schema` block saying what the version number
+entitles a consumer to: a field you already read will not change type or meaning
+while `schemaVersion` stays put, and new fields can appear at any version. The
+grading criteria are named there as a separate axis, since a change to the bands
+changes what a letter means without the schema moving.
+
+The `coverage` description said a partial run was carried forward on its last
+clean measurement. It is not: the row stays in the run, publishes null for both
+figures and reads `carried: false`, because the target did report. Carrying
+forward is what happens to the baseline's unobserved lanes. Corrected, along
+with Dynoxide's build label, which now names its storage (`native SQLite`) like
+every other build in the registry rather than its compile target.
 
 ## 2026-08-12 (3.0.0)
 
