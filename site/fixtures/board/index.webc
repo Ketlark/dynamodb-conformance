@@ -1,0 +1,12 @@
+---
+permalink: /board.html
+---
+<!-- The standings rows on their own, over a seeded model (_data/board.js), so
+     the disclosure renders both ways in one page. The real board only ever
+     renders one of them, because no recorded run holds two builds that agree.
+     scripts/check-build.mjs builds this and asserts on the output. -->
+<main>
+  <ul>
+    <standings-row webc:for="row of board.rows" :row="row" :run-id="board.runId"></standings-row>
+  </ul>
+</main>

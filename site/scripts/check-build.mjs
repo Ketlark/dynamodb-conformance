@@ -101,9 +101,10 @@ try {
   check(docs.some((d) => d.path === "/index.html"), "builds a home page");
   check(docs.some((d) => /^\/targets\/[^/]+\/\d{4}-\d{2}-\d{2}\//.test(d.path)), "builds per-run target pages");
 
-  // The board actually has rows on it. Every other check here passes on an
-  // empty board: the home page still builds, its links still resolve, and the
-  // per-target pages are paginated from a different list entirely.
+  // The board actually has rows on it, and it has all of them. Every other
+  // check here passes on an empty board: the home page still builds, its links
+  // still resolve, and the per-target pages are paginated from a different list
+  // entirely.
   //
   // This is the check that would have caught the standings filter keying on a
   // field the committed fallback does not carry, which rendered a home page
@@ -111,9 +112,23 @@ try {
   // is exactly the case it broke in, because that is the run that reads the
   // fallback. Counting distinct target links rather than list items keeps it
   // honest about what a row is for: getting the reader to an engine.
+  //
+  // The expected set comes from the endpoint this same build wrote, rather than
+  // a floor typed here. "At least five" passed on eight real targets, so losing
+  // one or two projects - which is what a disclosure rendering the wrong branch
+  // could look like - passed silently, and the number needed maintaining every
+  // time a target joined.
   const homeDoc = docs.find((d) => d.path === "/index.html");
   const linked = new Set([...(homeDoc?.html ?? "").matchAll(/href="\/targets\/([a-z0-9-]+)"/g)].map((m) => m[1]));
-  check(linked.size >= 5, "the board lists the scored engines", `home page links ${linked.size} target(s)`);
+  const scored = JSON.parse(await readFile(join(out, "data", "latest.json"), "utf8"))
+    .targets.filter((t) => t.slug !== "dynamodb")
+    .map((t) => t.slug);
+  const missing = scored.filter((slug) => !linked.has(slug));
+  check(
+    scored.length > 0 && missing.length === 0,
+    "the board reaches every scored engine, builds included",
+    `${linked.size} of ${scored.length} linked${missing.length ? `; missing ${missing.join(", ")}` : ""}`,
+  );
 
   // Every internal link has to resolve. This is the check that would have caught
   // 55 dead links when the synthesised baseline stopped getting dated pages but
@@ -494,6 +509,58 @@ try {
   // lib/premise.test.mjs, which does not depend on the board.
   if (guarded === 0) {
     console.log("  ok    the A+ premise check is vacuous: no zero-divergence row on this board");
+  }
+
+  // ── The disclosure, both ways round ────────────────────────────────────────
+  //
+  // A project's other builds sit behind a disclosure that starts closed when a
+  // build reads the same figures as the one above it. No run the suite has
+  // recorded holds a pair that agrees, so on real data that branch never
+  // renders and a change breaking it would look exactly like a normal board.
+  //
+  // So this builds a second, throwaway page from a seeded model
+  // (fixtures/board) through the same config, components and filters, and
+  // asserts both branches. It is hermetic and it publishes nothing.
+  const fixtureOut = await mkdtemp(join(tmpdir(), "paritysuite-fixture-"));
+  try {
+    execFileSync("npx", ["@11ty/eleventy", "--input", "fixtures/board", "--output", fixtureOut], {
+      stdio: ["ignore", "ignore", "inherit"],
+      env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import ./scripts/no-network.mjs`.trim() },
+    });
+    const board = await readFile(join(fixtureOut, "board.html"), "utf8");
+    // The disclosures in document order: the seeded agreement first, then the
+    // build that differs. The "no <details> in between" clause is what keeps
+    // this reading the right tag - each row opens with a tier breakdown, and a
+    // lazy match happily ran from that one's attributes to this one's summary,
+    // which reported the tier disclosure's state under the builds' name.
+    const disclosures = [...board.matchAll(/<details([^>]*)>((?:(?!<details)[\s\S])*?)Also built for ([^<]*)</g)]
+      .map((m) => ({ open: /\bopen\b/.test(m[1]), names: m[3].trim() }));
+
+    check(disclosures.length === 2, "the fixture board renders both disclosures", `got ${disclosures.length}`);
+    check(
+      disclosures[0] && disclosures[0].open === false,
+      "a build reading the same figures starts closed",
+      disclosures[0] ? `${disclosures[0].names} rendered open` : "no disclosure rendered",
+    );
+    check(
+      disclosures[1] && disclosures[1].open === true,
+      "a build reading different figures starts open",
+      disclosures[1] ? `${disclosures[1].names} rendered closed` : "no disclosure rendered",
+    );
+    check(
+      /same figures/.test(board),
+      "a closed disclosure says why it is closed",
+    );
+    // Closed is not withheld: the figures are in the page either way, which is
+    // the difference between this design and the fold it replaced.
+    for (const slug of ["dynoxide-wasm", "extenddb-sqlite"]) {
+      check(
+        board.includes(`/targets/${slug}"`),
+        `the fixture board carries ${slug}'s own row`,
+      );
+    }
+  } finally {
+    await rm(fixtureOut, { recursive: true, force: true });
   }
 } finally {
   // Only clean up a directory this script made. In --built mode `out` is the

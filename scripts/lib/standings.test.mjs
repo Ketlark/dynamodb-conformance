@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { figuresDiffer } from './standings.mjs'
+import { gradeOf } from './grade.mjs'
 
 // ── The rule as a starting-state hint ────────────────────────────────────────
 //
@@ -65,5 +66,82 @@ describe('whether two builds print different figures', () => {
     // are not evidence of agreement, and starting open costs nothing.
     const unscored = { slug: 'x', divergence: '-', coverage: '-' }
     expect(figuresDiffer(unscored, printed({ slug: 'extenddb' }))).toBe(true)
+  })
+})
+
+// ── The property, rather than one more example ───────────────────────────────
+//
+// Six figures were missed in turn by the rule this replaces, each found after
+// the last was fixed, because the rule listed what to compare and the board
+// kept growing columns. This asserts the shape instead: whenever the predicate
+// says two builds read the same, the three cells each surface prints for them
+// really are the same - including the letter, which the published table stamps
+// onto the row and the site derives at render time.
+//
+// It is cheap now rather than load-bearing. A figure the predicate ignores
+// costs a reader a click, not a false statement about someone else's engine.
+
+describe('the figures it compares are the figures both surfaces print', () => {
+  const pct = (v) => (v == null ? '-' : `${v.toFixed(1)}%`)
+
+  // A row as each surface holds it. The published table stamps a `grade` field
+  // (summarise.mjs); a site row carries none and its letter is computed where
+  // it is drawn. Same two values underneath, two different routes to a letter.
+  const published = (divergenceValue, coverageValue) => ({
+    grade: gradeOf(divergenceValue, coverageValue).letter ?? '-',
+    divergence: pct(divergenceValue),
+    coverage: pct(coverageValue),
+    divergenceValue,
+    coverageValue,
+  })
+  const onSite = (divergenceValue, coverageValue) => ({
+    divergence: pct(divergenceValue),
+    coverage: pct(coverageValue),
+    divergenceValue,
+    coverageValue,
+  })
+
+  // Dense around the band boundaries, where a letter can change under figures
+  // that print the same, and out across the range the board actually holds.
+  const AXIS = [0, 0.04, 0.06, 0.9, 4.9, 4.94, 4.96, 5.1, 11.8, 12.8, 14.8, 20.9, 24.96, 25.1, 40]
+  const COVERAGE = [100, 99.96, 96, 94.7, 87.8, 80.04, 79.96, 78.7, 50]
+
+  const rows = []
+  for (const d of AXIS) for (const c of COVERAGE) rows.push([d, c])
+
+  it('gives two builds the same cells on both surfaces whenever it calls them equal', () => {
+    let sameCount = 0
+    for (const [d1, c1] of rows) {
+      for (const [d2, c2] of rows) {
+        if (figuresDiffer(published(d1, c1), published(d2, c2))) continue
+        sameCount++
+        const a = published(d1, c1)
+        const b = published(d2, c2)
+        // The published table's own letter, which the predicate never reads.
+        expect([a.grade, a.divergence, a.coverage]).toEqual([b.grade, b.divergence, b.coverage])
+        // And the site's, computed from the values at render time.
+        const sa = onSite(d1, c1)
+        const sb = onSite(d2, c2)
+        expect(gradeOf(sa.divergenceValue, sa.coverageValue).letter).toEqual(
+          gradeOf(sb.divergenceValue, sb.coverageValue).letter,
+        )
+        expect([sa.divergence, sa.coverage]).toEqual([sb.divergence, sb.coverage])
+      }
+    }
+    // A grid that never calls anything equal would pass the loop above without
+    // asserting a thing.
+    expect(sameCount).toBeGreaterThan(rows.length)
+  })
+
+  it('reaches the same answer whichever surface holds the row', () => {
+    // The two surfaces build rows differently, and the predicate serves both.
+    // If it ever read a field only one of them carries, this is where it shows.
+    for (const [d1, c1] of rows) {
+      for (const [d2, c2] of rows) {
+        expect(figuresDiffer(onSite(d1, c1), onSite(d2, c2))).toBe(
+          figuresDiffer(published(d1, c1), published(d2, c2)),
+        )
+      }
+    }
   })
 })
