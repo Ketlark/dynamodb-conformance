@@ -163,7 +163,11 @@
     <summary class="inline-flex items-center gap-1.5 cursor-pointer list-none text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 dark:focus-visible:outline-brand-400">
       <svg class="w-3 h-3 transition-transform group-open:rotate-90 motion-reduce:transition-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
       <span @text="'Also built for ' + buildNames(row)"></span>
-      <span webc:if="!buildsStartOpen(row)" class="font-normal">· same figures</span>
+      <!-- Names the three it compared rather than "same figures". The row below
+           prints a regional clause the comparison never reads, so the broader
+           word claimed agreement on a figure nobody had checked - and the
+           closed disclosure was hiding that very figure. -->
+      <span webc:if="!buildsStartOpen(row)" class="font-normal">· same grade, divergence and coverage</span>
     </summary>
   <ul class="mt-3 space-y-2">
     <li webc:for="v of buildsOf(row)" class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">

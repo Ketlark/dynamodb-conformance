@@ -586,6 +586,29 @@ const byRisk = (a, b) =>
 // (see the note where it back-fills a version), so handing back copies here
 // would quietly break that. The assignment always overwrites, so sorting the
 // same rows twice gives the same answer.
+/**
+ * Whether a project's disclosure starts closed.
+ *
+ * One answer for the project rather than one per build, because the disclosure
+ * holds every build and opens as a whole: a per-build answer could say a row
+ * starts closed while a disagreeing sibling has already forced it open, and
+ * that answer is published.
+ *
+ * Named rather than inlined so the rule can be read and tested in one place.
+ * The mixed case it exists for - one build agreeing, another not - cannot be
+ * reached through `sortRows` today, because no project in the registry ships
+ * two builds and an unregistered slug forms a project of its own. So this
+ * function is where that case is exercised, and `sortRows` assigns its single
+ * answer to every build rather than deciding per build.
+ */
+export function buildsAgree(parent) {
+  const builds = parent?.variants ?? [];
+  if (!builds.length) return false;
+  // A carried row on either side means the two were never measured together.
+  if (parent.carried) return false;
+  return builds.every((v) => !v.carried && !figuresDiffer(v, parent));
+}
+
 export function sortRows(rows) {
   const byProject = new Map();
   for (const row of rows) {
@@ -597,30 +620,35 @@ export function sortRows(rows) {
   for (const group of byProject.values()) {
     const parent = group.find((r) => !isVariant(r.slug)) ?? group[0];
     parent.variants = group.filter((r) => r !== parent).sort(byRisk);
-    // Whether each build's figures start visible. Every build renders either
-    // way; this only picks what the disclosure does on arrival, so a build
-    // reading the same figures as the row above it starts closed.
+    // Whether this project's builds start visible. Every build renders either
+    // way; this only picks what the disclosure does on arrival.
     //
-    // A flag per build, rather than the split arrays this first carried. Those
+    // One answer for the project, not one per build. The disclosure holds every
+    // build of a project and opens as a whole, so a per-build flag could say a
+    // row starts closed while a disagreeing sibling has already forced it open -
+    // and that flag is published, so the endpoints would have said it too.
+    //
+    // Three things have to hold. The figures have to match. Both builds have to
+    // have been measured in this run, on either side: a build carried from an
+    // earlier one has figures frozen at the run that measured it, and so does a
+    // parent, so a carried row on either side means the two were never measured
+    // beside each other. And a row the suite declined to score is excluded by
+    // the predicate itself, since two rows printing "-" are not agreement.
+    //
+    // Nothing here reads `version`, so the summary overlay that rewrites it
+    // further down the build cannot move this answer. That was not always true:
+    // an earlier comparison read the whole row, which made the order of the two
+    // load-bearing and led to re-deriving the flag after the overlay - which
+    // then let a back-fill merge two builds the measurement had kept apart.
+    // Widening the comparison would bring that ordering problem back with it.
+    //
+    // A flag per build rather than the split arrays this first carried. Those
     // arrays held the same row objects a second time, and leanForFallback
     // strips findings by destructuring `variants` alone - so every finding it
     // had just removed travelled back into the committed fallback through the
-    // second reference. The renderers derive their lists from this flag.
-    //
-    // Read before the summary overlay rewrites `version` further down the
-    // build. That ordering is deliberate rather than overlooked: a build whose
-    // shipped version differs from its tested one can start open when it could
-    // have started closed, and re-deriving afterwards to avoid that is what
-    // previously let the back-fill merge two builds the measurement had kept
-    // apart. A disclosure opening when it need not is worth a click; a row
-    // speaking for a build it is not, is not.
-    //
-    // A build not re-tested this run always starts open, whatever it reads.
-    // Its figures are frozen at the run that measured it, and the date saying
-    // so renders inside the disclosure - so a closed one would take the date
-    // with it and leave a summary claiming the two agree, when they were
-    // measured weeks apart against a suite that may have grown in between.
-    for (const v of parent.variants) v.collapsed = !v.carried && !figuresDiffer(v, parent);
+    // second reference.
+    const agree = buildsAgree(parent);
+    for (const v of parent.variants) v.collapsed = agree;
     // Which row stands for the project on the board. The standings used to work
     // this out from the slug - anything `isVariant` was a build and got skipped
     // - which dropped a whole project whenever its reference build had no
@@ -629,6 +657,10 @@ export function sortRows(rows) {
     // its rows from the same grouping rather than from the slug, still printed
     // the project, so the two surfaces disagreed about which targets exist.
     parent.isParent = true;
+    // Nothing holds a parent behind a disclosure, and a row promoted to parent may
+    // still carry the flag from a grouping where it was a build. Cleared rather
+    // than left to every caller passing rows built fresh from a snapshot.
+    parent.collapsed = false;
     for (const v of parent.variants) v.isParent = false;
     groups.push(parent);
   }

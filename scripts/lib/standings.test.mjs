@@ -52,13 +52,17 @@ describe('whether two builds print different figures', () => {
     expect(figuresDiffer(site, parent)).toBe(false)
   })
 
-  it('says yes when there is nothing to compare against', () => {
-    // A build promoted to stand for its project, or a row compared with
-    // itself. Both start open, which shows everything.
-    const only = printed()
-    expect(figuresDiffer(only, null)).toBe(true)
-    expect(figuresDiffer(only, undefined)).toBe(true)
-    expect(figuresDiffer(only, only)).toBe(true)
+  it('says yes when one build is exactly zero and the other only rounds to it', () => {
+    // The A+ gate reads the raw values while the bands read one decimal, so
+    // these two print the same cell and grade differently. It is the one shape
+    // where identical printed figures carry different letters, and it is why
+    // the grade is derived here rather than taken from a printed cell. The
+    // test above it turns on a band boundary, which fails for another reason.
+    const perfect = printed({ divergence: '0.0%', coverage: '100.0%', divergenceValue: 0, coverageValue: 100 })
+    const nearly = printed({ slug: 'extenddb', divergence: '0.0%', coverage: '100.0%', divergenceValue: 0.04, coverageValue: 100 })
+    expect(gradeOf(0, 100).letter).toBe('A+')
+    expect(gradeOf(0.04, 100).letter).toBe('A')
+    expect(figuresDiffer(perfect, nearly)).toBe(true)
   })
 
   it('treats two unscored rows as differing, not as agreeing', () => {
@@ -68,6 +72,10 @@ describe('whether two builds print different figures', () => {
     // not carried, so the carried guard in sortRows does not reach it.
     const unscored = (slug) => ({ slug, divergence: '-', coverage: '-', divergenceValue: null, coverageValue: null })
     expect(figuresDiffer(unscored('extenddb-sqlite'), unscored('extenddb'))).toBe(true)
+    // Both ways round. The rule is about either row being unscored, and a test
+    // that only ever passes the unscored one first pins half of it.
+    expect(figuresDiffer(unscored('extenddb-sqlite'), printed({ slug: 'extenddb' }))).toBe(true)
+    expect(figuresDiffer(printed({ slug: 'extenddb' }), unscored('extenddb-sqlite'))).toBe(true)
   })
 
   it('treats a row with no figures at all as differing', () => {

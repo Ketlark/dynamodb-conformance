@@ -17,8 +17,10 @@
 // fixed. Nothing here has to be exhaustive now. A cell it does not compare costs
 // a click.
 //
-// It lives here, beside the registry both renderers read, so the two surfaces
-// answer the question the same way.
+// It lives here, beside the registry, rather than in the site that reads it: the
+// figures it compares are the suite's own. The published table used to ask the
+// same question and no longer does - it renders every build outright - so the
+// site is the only caller today.
 import { gradeOf } from './grade.mjs'
 
 // The three figures a reader compares between two builds, as they are printed.
@@ -45,12 +47,17 @@ const printedFigures = (row) => [
  * This chooses whether a build's row starts open. It does not decide whether
  * anything is published: every build renders with its own figures either way.
  *
- * With nothing to compare against - a build standing for its project because the
- * reference has no result, or a row against itself - the answer is that they
- * differ, so the build starts open. Every uncertain case shows more.
+ * Every uncertain case shows more: a row the suite declined to score differs
+ * from everything, including another row it declined to score.
+ *
+ * Total on the two rows it is given. It used to guard against a missing row as
+ * well, on the reasoning that a build standing for its project could reach it
+ * with nothing to compare against - but that build becomes the parent and has
+ * no builds under it, so the predicate is never called for it. The guard
+ * defended a case that cannot happen, and a caller that passes nothing now
+ * fails at build time rather than being absorbed into "differs".
  */
 export function figuresDiffer(a, b) {
-  if (!a || !b || a === b) return true
   // A run that recorded an indeterminate is not scored, and the row prints "-"
   // for both figures (axesOf, scripts/lib/score.mjs). Two of those match each
   // other on all three cells, so without this the disclosure would close over

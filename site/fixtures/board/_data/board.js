@@ -55,19 +55,23 @@ export default async function () {
   });
 
   // And a build that differs, so both branches render in one page. ExtendDB's
-  // SQLite build is in the registry and has yet to record a run, so its row
-  // here is its PostgreSQL sibling's with the figures moved.
-  const sqlite = {
-    ...structuredClone(extenddb),
-    slug: "extenddb-sqlite",
-    display: "ExtendDB (SQLite)",
-    target: "[ExtendDB (SQLite)](https://github.com/extenddb/extenddb)",
-    divergence: "4.8%",
-    coverage: "83.4%",
-    divergenceValue: 4.8,
-    coverageValue: 83.4,
-  };
-  rows.push(sqlite);
+  // SQLite build is in the registry; when it has recorded a run the model
+  // already holds its row and only the figures are moved, and until then one
+  // is synthesised from its PostgreSQL sibling. Pushing unconditionally would
+  // put the slug in twice the moment the first run lands - two links to the
+  // same page under "Also built for SQLite and SQLite", with check-build
+  // still green.
+  const differs = { divergence: "4.8%", coverage: "83.4%", divergenceValue: 4.8, coverageValue: 83.4, carried: false, reTested: true };
+  const existing = rows.find((r) => r.slug === "extenddb-sqlite");
+  const sqlite = existing
+    ? Object.assign(existing, differs)
+    : rows[rows.push({
+        ...structuredClone(extenddb),
+        slug: "extenddb-sqlite",
+        display: "ExtendDB (SQLite)",
+        target: "[ExtendDB (SQLite)](https://github.com/extenddb/extenddb)",
+        ...differs,
+      }) - 1];
 
   sortRows(rows);
   return {

@@ -25,7 +25,9 @@ import {
   gradeLineOf,
   regionClauseOf,
   sortRows,
+  buildsAgree,
 } from "./scoring.mjs";
+import { figuresDiffer } from "dynamodb-conformance/scripts/lib/standings.mjs";
 import * as suite from "dynamodb-conformance/scripts/summarise.mjs";
 import * as suiteScore from "dynamodb-conformance/scripts/lib/score.mjs";
 
@@ -417,11 +419,11 @@ test("the baseline is never given a letter by any of them", () => {
   assert.equal(capClauseOf(baseline, GROUND_TRUTH_SLUG), "");
 });
 
-// ── Which builds of a project earn a row ────────────────────────────────────
+// ── Which builds of a project start visible ─────────────────────────────────
 //
-// The standings nest a project's builds under it. A build that scored the same
-// as the parent is named on it instead of drawing a row that repeats it, and
-// the annotation is what the template reads to decide.
+// The standings nest a project's builds under it, behind a disclosure. Every
+// build draws its own row whatever it scored; the annotation these tests cover
+// is what the template reads to decide whether that disclosure starts open.
 
 // The shape a real site row has. It deliberately carries no `grade`: the site
 // computes the letter at render time, so a fixture that invented one would
@@ -533,6 +535,50 @@ test("a build re-tested this run still starts closed when its figures match", ()
   sortRows([parent, build]);
 
   assert.equal(build.collapsed, true, "a build measured this run and reading the same figures was left open");
+});
+
+test("a parent not re-tested this run opens its builds, however they read", () => {
+  // The other half of the same rule. A carried parent's figures are frozen at
+  // the run that measured it, so a build matching them was not measured beside
+  // it either - and the guard used to ask only about the build.
+  const parent = buildRow({ slug: "extenddb", carried: true });
+  const build = buildRow({ slug: "extenddb-sqlite", carried: false });
+  sortRows([parent, build]);
+
+  assert.equal(build.collapsed, false, "a build under a carried parent was closed over");
+});
+
+test("one build disagreeing opens the disclosure for all of them", () => {
+  // The disclosure holds every build of a project and opens as a whole, so the
+  // answer has to be the project's, not each build's - otherwise a build that
+  // agrees publishes "starts closed" while a disagreeing sibling has already
+  // forced it open.
+  //
+  // Exercised through buildsAgree rather than sortRows, and that is a real
+  // limit rather than a preference: no project in the registry ships two
+  // builds, and an unregistered slug forms a project of its own, so a mixed
+  // group cannot be built through sortRows at all. sortRows takes this one
+  // answer and assigns it to every build, so the property holds structurally
+  // there; here is where the rule itself is pinned.
+  const parent = buildRow({ slug: "extenddb" });
+  const agrees = buildRow({ slug: "extenddb-sqlite" });
+  const differs = buildRow({ slug: "extenddb-mongo", divergenceValue: 19.9, coverageValue: 50 });
+
+  assert.equal(buildsAgree({ ...parent, variants: [agrees] }), true, "an agreeing build alone should close");
+  assert.equal(buildsAgree({ ...parent, variants: [agrees, differs] }), false, "one disagreeing build must open all of them");
+  assert.equal(buildsAgree({ ...parent, variants: [] }), false, "a project with no builds has no disclosure to close");
+  assert.equal(buildsAgree({ ...parent, carried: true, variants: [agrees] }), false, "a carried parent must open its builds");
+});
+
+test("a build promoted to parent carries no closed flag", () => {
+  // It stands for its project and nothing holds it behind a disclosure. Its
+  // safety rests on the flag never reading true, rather than on the template
+  // filter treating an absent flag as open, so it is asserted here.
+  const wasm = buildRow({ slug: "dynoxide-wasm", collapsed: true });
+  sortRows([wasm]);
+
+  assert.equal(wasm.isParent, true);
+  assert.equal(wasm.collapsed, false, "a promoted build kept a closed flag from an earlier grouping");
 });
 
 test("a build promoted to parent is marked so the board still shows its project", () => {

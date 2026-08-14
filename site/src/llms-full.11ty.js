@@ -49,15 +49,16 @@ function latestResults(conformance) {
     // near-identical figures.
     //
     // Relatedness comes from the registry, which is always available, and only
-    // the fold clause depends on the run. A model restored from the committed
+    // the closed-state clause depends on the run. A model restored from the committed
     // fallback predates the flag, so keying the whole sentence on it would have
     // dropped the relationship entirely on exactly the builds most likely to
     // look like duplicates.
     const build = isVariant(r.slug) ? `, a build of ${display(projectOf(r.slug))}` : "";
     // No disclosure in plain text, so every build is simply listed with its own
     // figures. The note says what the board does with it, which is the only
-    // thing a reader of this file cannot see for themselves.
-    const closed = r.collapsed ? " (shown closed on the board, same figures)" : "";
+    // thing a reader of this file cannot see for themselves - named to the three
+    // figures the board compared, because it compares no others.
+    const closed = r.collapsed ? " (shown closed on the board: same grade, divergence and coverage as the build above)" : "";
     return `- ${r.display}${baseline}${build}${closed} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
   });
   return [

@@ -533,23 +533,41 @@ try {
     // this reading the right tag - each row opens with a tier breakdown, and a
     // lazy match happily ran from that one's attributes to this one's summary,
     // which reported the tier disclosure's state under the builds' name.
-    const disclosures = [...board.matchAll(/<details([^>]*)>((?:(?!<details)[\s\S])*?)Also built for ([^<]*)</g)]
-      .map((m) => ({ open: /\bopen\b/.test(m[1]), names: m[3].trim() }));
+    const disclosures = [...board.matchAll(/<details([^>]*)>((?:(?!<details)[\s\S])*?)<\/summary>/g)]
+      .filter((m) => /Also built for/.test(m[2]))
+      .map((m) => ({
+        open: /\bopen\b/.test(m[1]),
+        names: (m[2].match(/Also built for ([^<]*)/) ?? [, ""])[1].trim(),
+        // The whole summary, so an assertion about what it says can be scoped
+        // to the disclosure that says it.
+        summary: m[2].replace(/<[^>]*>/g, " ").replace(/\s+/g, " "),
+      }));
 
     check(disclosures.length === 2, "the fixture board renders both disclosures", `got ${disclosures.length}`);
+    // By name, not by position. The rows are sorted by divergence over real
+    // committed figures, so indexing assumed Dynoxide keeps sorting above
+    // ExtendDB - and a weekly refresh that reversed them would have failed this
+    // check for a reason that has nothing to do with disclosures.
+    const byName = (needle) => disclosures.find((d) => d.names.includes(needle));
+    const agreeing = byName("WebAssembly");
+    const differing = byName("SQLite");
     check(
-      disclosures[0] && disclosures[0].open === false,
+      agreeing && agreeing.open === false,
       "a build reading the same figures starts closed",
-      disclosures[0] ? `${disclosures[0].names} rendered open` : "no disclosure rendered",
+      agreeing ? `${agreeing.names} rendered open` : "no disclosure named the agreeing build",
     );
     check(
-      disclosures[1] && disclosures[1].open === true,
+      differing && differing.open === true,
       "a build reading different figures starts open",
-      disclosures[1] ? `${disclosures[1].names} rendered closed` : "no disclosure rendered",
+      differing ? `${differing.names} rendered closed` : "no disclosure named the differing build",
     );
+    // Scoped to the summary of the disclosure that is actually closed. Asserted
+    // page-wide it passed on the words appearing anywhere at all, including
+    // inside the open one.
     check(
-      /same figures/.test(board),
-      "a closed disclosure says why it is closed",
+      /same grade, divergence and coverage/.test(agreeing?.summary ?? ""),
+      "a closed disclosure names the three figures it compared",
+      agreeing ? `summary read "${agreeing.summary.trim()}"` : "nothing to read",
     );
 
     // The clause that overrides the figures. A build carried from an earlier
