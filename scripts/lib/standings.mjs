@@ -20,19 +20,55 @@
 // README against the site would have no way to tell which was right.
 import { configurationOf } from './targets.mjs'
 
+// A row's whole published content, as one comparable value.
+//
+// This compares the measurement rather than the rendering, which is the only
+// version of the rule that is safe to fold on. An earlier version compared the
+// grade and the two headline percentages as printed, and that let two builds
+// fold while disagreeing about columns nobody had compared: the same divergence
+// spread differently across the tiers, or one extra failure that rounded to the
+// same percentage over a suite this size. The row then published the parent's
+// numbers for both builds, which is a false statement about someone else's
+// engine on a board whose only job is not making those.
+//
+// Counts are exact, so every figure derived from them - the grade, both
+// headline percentages, the fail and skip columns, the tier breakdown - is
+// equal whenever these are. That also makes the rule surface-independent: the
+// published table and the site derive their cells from the same counts, so they
+// cannot reach different answers, and neither has to be trusted to carry a
+// pre-computed field the other one does not. The site's rows, for one, carry no
+// grade at all: it is computed at render time, so a rule that compared `grade`
+// was silently comparing undefined against undefined there.
+//
+// Version and run date are part of it because the row publishes both. Two
+// builds measured weeks apart, or from different releases, have not been shown
+// to agree - they were never run against the same suite on the same day - and
+// folding them would restate one build's version and date as the other's.
+const tiersOf = (row) =>
+  row.tiers
+    ? [row.tiers.tier1, row.tiers.tier2, row.tiers.tier3]
+    : [row.tier1, row.tier2, row.tier3]
+
+export function publishedFigures(row) {
+  return JSON.stringify([
+    row.version ?? null,
+    row.runDate ?? null,
+    row.passed ?? null,
+    row.failed ?? null,
+    row.skipped ?? null,
+    row.count ?? null,
+    row.cohort ?? null,
+    tiersOf(row),
+  ])
+}
+
 /**
  * Whether `variant` differs from the build above it by enough to deserve its
- * own row.
+ * own row. It does unless every figure the row would publish is identical.
  *
- * The comparison is on the figures as rendered, not the raw values behind them.
- * Two builds separated in the fourth decimal print the same percentages, and
- * comparing raw values would have a row appear and vanish between runs over a
- * difference nobody can see on the board.
- *
- * The suite size is checked alongside them because divergence and coverage are
- * both ratios: equal percentages over different denominators describe different
- * work, and folding those together would put one set of figures over two runs
- * that never matched.
+ * Erring towards a row is deliberate. An extra row states something true twice;
+ * a wrong fold states something false once, and only the second is a claim the
+ * suite cannot defend.
  *
  * A build with nothing above it earns a row by default. The grouping promotes a
  * build to parent when the reference build has no result, and that build then
@@ -40,12 +76,7 @@ import { configurationOf } from './targets.mjs'
  */
 export function earnsOwnRow(variant, parent) {
   if (!parent || parent === variant) return true
-  return (
-    variant.grade !== parent.grade ||
-    variant.divergence !== parent.divergence ||
-    variant.coverage !== parent.coverage ||
-    variant.count !== parent.count
-  )
+  return publishedFigures(variant) !== publishedFigures(parent)
 }
 
 /**
@@ -73,4 +104,12 @@ export function splitVariants(parent) {
  */
 export function configurationsOf(parent, collapsed = []) {
   return [parent, ...collapsed].map((row) => configurationOf(row.slug)).filter(Boolean)
+}
+
+/**
+ * Those names as one phrase: "PostgreSQL and SQLite", or "PostgreSQL, SQLite
+ * and MongoDB" once a third arrives.
+ */
+export function listOf(names) {
+  return names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
 }

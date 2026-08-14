@@ -423,14 +423,20 @@ test("the baseline is never given a letter by any of them", () => {
 // as the parent is named on it instead of drawing a row that repeats it, and
 // the annotation is what the template reads to decide.
 
+// The shape a real site row has. It deliberately carries no `grade`: the site
+// computes the letter at render time, so a fixture that invented one would
+// exercise a shape this surface never produces.
 const buildRow = (over = {}) => ({
   slug: "extenddb-sqlite",
-  grade: "B",
-  divergence: "2.0%",
-  coverage: "87.8%",
+  version: "v0.1.3",
+  runDate: "2026-08-14",
+  passed: 904,
+  failed: 21,
+  skipped: 129,
+  count: 1054,
   divergenceValue: 2.0,
   coverageValue: 87.8,
-  count: 1054,
+  tiers: { tier1: { divergence: "0.8%" }, tier2: { divergence: "2.7%" }, tier3: { divergence: "3.2%" } },
   ...over,
 });
 
@@ -447,9 +453,10 @@ test("sortRows returns every build, annotating which of them earn a row", () => 
 });
 
 test("a build that scores differently keeps its own row", () => {
-  // Dynoxide's wasm build today: the coverage it cannot reach drops it a grade.
-  const parent = buildRow({ slug: "dynoxide", grade: "A", coverage: "94.7%", coverageValue: 94.7 });
-  const wasm = buildRow({ slug: "dynoxide-wasm", grade: "B", coverage: "83.4%", coverageValue: 83.4 });
+  // Dynoxide's wasm build today: the same failures as the native one, but a lot
+  // more of the suite it cannot run, which is what drops it a grade.
+  const parent = buildRow({ slug: "dynoxide", passed: 988, failed: 10, skipped: 56, coverageValue: 94.7 });
+  const wasm = buildRow({ slug: "dynoxide-wasm", passed: 869, failed: 10, skipped: 175, coverageValue: 83.4 });
   sortRows([parent, wasm]);
 
   assert.equal(wasm.collapsed, false);

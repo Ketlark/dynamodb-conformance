@@ -9,7 +9,7 @@
 # The storage backend is compiled in rather than chosen at runtime, and exactly
 # one is installed per binary, so EXTENDDB_BACKEND drives the cargo features as
 # well as the init flags. `dev-mode` is deliberately never enabled: it serves
-# plain HTTP with open authorization, which is a different security posture from
+# plain HTTP with open authorisation, which is a different security posture from
 # the PostgreSQL build and so not the same thing to measure.
 #
 # Required:
@@ -90,9 +90,17 @@ if [ "${BUILD:-1}" = "1" ] && { [ ! -x "$BIN" ] || [ "$built" != "$BACKEND" ]; }
     sqlite) cargo build --release -p extenddb --no-default-features --features sqlite ;;
   esac
   printf '%s\n' "$BACKEND" >"$STAMP"
-elif [ "$built" != "$BACKEND" ] && [ -n "$built" ]; then
-  echo "ERROR: $BIN was built with the '$built' backend, not '$BACKEND'." >&2
-  echo "       Unset BUILD=0 to rebuild it." >&2
+elif [ "$built" != "$BACKEND" ]; then
+  # Fails closed, including when there is no stamp at all. An unstamped binary
+  # is the state this guard exists for - a hand-built or pre-stamp one - and
+  # treating "unknown" as "agrees" made the check pass in exactly the case it
+  # was added to catch.
+  if [ -z "$built" ]; then
+    echo "ERROR: cannot confirm which backend $BIN was built with (no stamp)." >&2
+  else
+    echo "ERROR: $BIN was built with the '$built' backend, not '$BACKEND'." >&2
+  fi
+  echo "       Rebuild it: unset BUILD (or set BUILD=1) and run again." >&2
   exit 1
 fi
 
@@ -113,7 +121,7 @@ echo "==> extenddb init ($BACKEND)" >&2
 # working directory, so the two agree.
 case "$BACKEND" in
   postgres)
-    "$BIN" init --pg-host "$PGHOST" --pg-port "$PGPORT" --pg-user "$PGUSER" --pg-pass "$PGPASSWORD" >&2
+    "$BIN" init --backend postgres --pg-host "$PGHOST" --pg-port "$PGPORT" --pg-user "$PGUSER" --pg-pass "$PGPASSWORD" >&2
     ;;
   sqlite)
     "$BIN" init --backend sqlite >&2

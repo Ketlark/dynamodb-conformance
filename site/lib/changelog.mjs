@@ -27,7 +27,13 @@ const DATED = /^(\d{4}-\d{2}-\d{2})(?:\s+\((.+)\))?$/;
 // silently rendering short is how it went stale before. An Unreleased section
 // is expected, so it must not trip that alarm - and it is not published
 // either, because the page is a dated history and this has no date yet.
-const UNRELEASED = /^unreleased$/i;
+// `## Unreleased`, `## [Unreleased]` (the Keep a Changelog spelling), and a
+// parenthetical after either. Accepting the near misses matters more than it
+// looks: deploy.yml runs on every push to main that touches CHANGELOG.md and
+// sets FAIL_ON_FALLBACK unconditionally, so a heading this does not recognise
+// does not degrade quietly - it takes the deploy down on the commit that
+// introduces it.
+const UNRELEASED = /^\[?unreleased\]?(?:\s+\(.*\))?$/i;
 
 // Split a changelog into newest-first dated entries. Returns the parsed
 // entries, the pending Unreleased section when there is one, and any heading
@@ -49,7 +55,10 @@ export function parseChangelog(body) {
     const block = body.slice(heading.end, blockEnd).trim();
 
     if (UNRELEASED.test(heading.text)) {
-      unreleased = { bodyHtml: md.render(block) };
+      // Appended, not overwritten. Branches write their notes ahead of the
+      // release, so a merge landing two of these is the expected case, and
+      // dropping the older one would lose a note nothing else records.
+      unreleased = { bodyHtml: (unreleased?.bodyHtml ?? "") + md.render(block) };
       return;
     }
 

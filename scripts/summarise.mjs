@@ -66,7 +66,7 @@ import {
   label,
   projectOf,
 } from './lib/targets.mjs'
-import { configurationsOf, splitVariants } from './lib/standings.mjs'
+import { configurationsOf, listOf, splitVariants } from './lib/standings.mjs'
 
 /** Version of the results/summary.json contract the site consumes. */
 export const SUMMARY_SCHEMA_VERSION = 1
@@ -893,11 +893,6 @@ export function renderTable(summary) {
   // rather than repeating it, so the split comes before anything counts rows.
   const splits = new Map(rows.map((r) => [r, splitVariants(r)]))
 
-  // "PostgreSQL and SQLite", or "PostgreSQL, SQLite and MongoDB" once a third
-  // arrives. The reference leads, because the row carries its figures.
-  const listOf = (names) =>
-    names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
-
   // The parent's figures are its reference configuration's, so name that
   // configuration inline when the project has more than one shape. Without it a
   // reader cannot tell which storage engine or build was measured, and the row
@@ -909,19 +904,13 @@ export function renderTable(summary) {
     return configs.length ? `${r.target} · ${listOf(configs)}` : r.target
   }
 
-  // A row that absorbed other builds speaks for their runs too, so it reports
-  // the oldest date behind it. Without this a parent could sit silently at the
-  // table date while a build it now names was carried from an earlier one.
-  const dateOf = (r) => {
-    const dates = [r, ...(splits.get(r)?.collapsed ?? [])]
-      .map((x) => x.runDate)
-      .filter((d) => d && d !== '-')
-      .sort()
-    return dates[0] ?? r.runDate
-  }
-
+  // A row reports its own date and nothing else has to be reconciled: a build
+  // only folds when every figure it would publish matches the row above it, and
+  // the run date is one of those figures. A build carried from an earlier run
+  // therefore keeps its own row and states its own date, rather than being
+  // absorbed into a row measured on a different day.
   const rendered = rows.flatMap((r) => [
-    { row: r, name: nameOf(r), date: dateOf(r) },
+    { row: r, name: nameOf(r), date: r.runDate },
     ...(splits.get(r)?.shown ?? []).map((v) => ({
       row: v,
       name: `${VARIANT_PREFIX}${configurationOf(v.slug) ?? display(v.slug)}`,

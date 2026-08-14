@@ -430,7 +430,7 @@ Checked against v0.1.3 rather than assumed.
 `extenddb destroy` first.
 
 ExtendDB also ships a `dev-mode` build feature that serves plain HTTP with open
-authorization. The suite deliberately does not use it. It would change the
+authorisation. The suite deliberately does not use it. It would change the
 security posture, and these two rows are meant to differ only in storage engine.
 
 ### Floci

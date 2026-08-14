@@ -54,6 +54,14 @@ export default async function () {
   // exists rather than discarding it without a word.
   const { entries, skipped, unreleased } = parseChangelog(body);
 
+  // Said out loud, because holding notes back is the one behaviour here that
+  // looks identical to losing them. Before the section was recognised, an
+  // Unreleased heading failed the build; now it passes, so without this a
+  // release that never dated its notes would publish a changelog missing them
+  // and no build would have mentioned it. Not fatal - pending notes are the
+  // normal state of a branch, not an error.
+  if (unreleased) loudSignal("an Unreleased section is pending; it is held off the page until a release dates it");
+
   // A heading we can't read is an entry missing from the page. Say so: the site
   // rendering short on a green build is exactly how it went stale before.
   if (skipped.length) {

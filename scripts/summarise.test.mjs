@@ -841,10 +841,10 @@ describe('renderTable variant nesting', () => {
     expect(rows).toHaveLength(1)
   })
 
-  it('keeps a folded build’s carried date on the row that absorbed it', () => {
-    // The parent now speaks for both runs, so it reports the older of the two.
-    // Without this the board would date the row to the newer run and quietly
-    // claim the other build was measured then too.
+  it('keeps a build carried from an earlier run out of the fold', () => {
+    // Two builds measured weeks apart were never shown to agree, whatever their
+    // percentages say. Folding them would publish one build's version and date
+    // as the other's, so the carried one keeps its row and states its own date.
     const summary = {
       groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
       regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
@@ -856,9 +856,32 @@ describe('renderTable variant nesting', () => {
     }
     const table = renderTable(summary)
     expect(table).toContain('Measured')
-    const row = table.split('\n').find((l) => l.includes('ExtendDB'))
-    expect(row).toContain('2026-07-20')
+    // Rendered as its own nested row, carrying its own date.
+    const nested = table.split('\n').find((l) => l.includes('↳'))
+    expect(nested).toContain('2026-07-20')
+    // And the parent is not relabelled as though it spoke for both.
+    const parent = table.split('\n').find((l) => l.includes('[ExtendDB]'))
+    expect(parent).not.toContain('and SQLite')
   })
+
+  it('gives a build one extra failure its own row, though both print the same divergence', () => {
+    // 0 and 1 failures over 998 both round to a printed figure the other could
+    // claim. Comparing counts rather than the printed figure is what stops the
+    // row publishing the parent's fail count for a build that failed more.
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: {
+        'extenddb-sqlite': one(97.7, { passed: 784, failed: 1, skipped: 213 }),
+        extenddb: one(97.7),
+      },
+    }
+    const table = renderTable(summary)
+    expect(table).toContain('↳')
+    const parent = table.split('\n').find((l) => l.includes('[ExtendDB]'))
+    expect(parent).not.toContain('and SQLite')
+  })
+
 })
 
 // ── The committed artefacts: freshness, no-drift, and the shape contract ────

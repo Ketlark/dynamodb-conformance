@@ -220,7 +220,7 @@ export const TARGETS = {
     requires: 'a Rust toolchain to build it, and no external database',
     // The same server, wire protocol and auth stack as the parent row, over a
     // single SQLite file. Built WITHOUT the `dev-mode` feature: dev-mode serves
-    // plain HTTP with open authorization, which is a different security posture
+    // plain HTTP with open authorisation, which is a different security posture
     // and so not the same thing to measure. Holding that fixed leaves the
     // storage engine as the only variable between these two rows.
     note:
