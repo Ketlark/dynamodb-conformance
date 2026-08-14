@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { capClauseOf, gradeForRow } from "../lib/scoring.mjs";
+import { capClauseOf, display, gradeForRow, projectOf } from "../lib/scoring.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -43,7 +43,14 @@ function latestResults(conformance) {
     // agent reads cannot phrase a cap differently from the board a human reads.
     const clause = capClauseOf(r);
     const cap = clause ? ` (${clause})` : "";
-    return `- ${r.display}${baseline} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
+    // A build that matched the one above it draws no row on the board, and this
+    // list is flat, so without saying so it prints two entries with identical
+    // figures and nothing joining them - the duplicate the board exists to
+    // avoid, on the surface a reader cannot ask about it.
+    const folded = r.collapsed
+      ? `, folded into ${display(projectOf(r.slug))}'s row on the board after measuring identically`
+      : "";
+    return `- ${r.display}${baseline}${folded} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
   });
   return [
     `# Latest results`,
