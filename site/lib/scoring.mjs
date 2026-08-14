@@ -614,7 +614,13 @@ export function sortRows(rows) {
     // previously let the back-fill merge two builds the measurement had kept
     // apart. A disclosure opening when it need not is worth a click; a row
     // speaking for a build it is not, is not.
-    for (const v of parent.variants) v.collapsed = !figuresDiffer(v, parent);
+    //
+    // A build not re-tested this run always starts open, whatever it reads.
+    // Its figures are frozen at the run that measured it, and the date saying
+    // so renders inside the disclosure - so a closed one would take the date
+    // with it and leave a summary claiming the two agree, when they were
+    // measured weeks apart against a suite that may have grown in between.
+    for (const v of parent.variants) v.collapsed = !v.carried && !figuresDiffer(v, parent);
     // Which row stands for the project on the board. The standings used to work
     // this out from the slug - anything `isVariant` was a build and got skipped
     // - which dropped a whole project whenever its reference build had no

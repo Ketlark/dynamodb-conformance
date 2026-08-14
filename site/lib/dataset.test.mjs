@@ -330,6 +330,13 @@ test("a build reading the same figures as its reference build starts closed", ()
     coverage: parent.coverage,
     divergenceValue: parent.divergenceValue,
     coverageValue: parent.coverageValue,
+    // Measured in the same run as the row above it. The committed model has
+    // this build carried from an earlier one, and a carried build starts open
+    // whatever it reads - so seeding the figures alone leaves it open, which
+    // is the guard working rather than the seed failing.
+    carried: false,
+    reTested: true,
+    runDate: parent.runDate,
   });
   sortRows(rows);
 

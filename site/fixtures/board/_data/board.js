@@ -45,6 +45,13 @@ export default async function () {
     coverage: dynoxide.coverage,
     divergenceValue: dynoxide.divergenceValue,
     coverageValue: dynoxide.coverageValue,
+    // And measured in the same run as the row above. Both clauses of the rule
+    // have to hold: the committed model carries this build from an earlier
+    // run, and a carried build starts open however its figures read. The
+    // carried case has its own page, carried.webc.
+    carried: false,
+    reTested: true,
+    runDate: dynoxide.runDate,
   });
 
   // And a build that differs, so both branches render in one page. ExtendDB's

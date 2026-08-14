@@ -551,6 +551,23 @@ try {
       /same figures/.test(board),
       "a closed disclosure says why it is closed",
     );
+
+    // The clause that overrides the figures. A build carried from an earlier
+    // run starts open however it reads, because the date qualifying its
+    // figures renders inside the disclosure - so a closed one would take the
+    // date with it and leave a summary saying the two agree.
+    const carriedPage = await readFile(join(fixtureOut, "carried.html"), "utf8");
+    const carriedDisclosure = [...carriedPage.matchAll(/<details([^>]*)>((?:(?!<details)[\s\S])*?)Also built for/g)]
+      .map((m) => /\bopen\b/.test(m[1]));
+    check(
+      carriedDisclosure.length === 1 && carriedDisclosure[0] === true,
+      "a build carried from an earlier run starts open even when its figures match",
+      `${carriedDisclosure.length} disclosure(s), open: ${carriedDisclosure.join(", ") || "none"}`,
+    );
+    check(
+      /last measured/.test(carriedPage),
+      "and the date qualifying those figures renders with them",
+    );
     // Closed is not withheld: the figures are in the page either way, which is
     // the difference between this design and the fold it replaced.
     for (const slug of ["dynoxide-wasm", "extenddb-sqlite"]) {

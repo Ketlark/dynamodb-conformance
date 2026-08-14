@@ -86,7 +86,9 @@ Some projects ship the same engine in more than one shape: a storage backend swa
 
 Every build is measured in full, and every build has its own row, its own figures and its own page. The nesting decides only how much of that you see at once: a project's other builds sit behind a disclosure on its row, which starts closed when a build reads the same grade, divergence and coverage as the one above it and open when it differs. A build repeating all three is a click away rather than three more lines of the same numbers, and one that differs is already showing.
 
-That comparison is made from each run rather than from a setting anyone maintains, so it goes both ways: a build that converges with the one above starts closed on the next run, and one that later diverges starts open again. It picks a starting state and nothing else, so no figure is withheld by it either way.
+Two things have to hold for a build to start closed, not one. The figures have to match, and both builds have to have been measured in the same run. A build carried from an earlier run starts open whatever it reads: its figures are frozen at the run that measured it, the date saying so sits with them, and two builds measured weeks apart have not been shown to agree about anything. A run the suite declined to score prints no figures at all, and two of those do not agree either.
+
+The comparison is made from each run rather than from a setting anyone maintains, so it goes both ways: a build that converges with the one above starts closed on the next run, and one that later diverges starts open again. It picks a starting state and nothing else, so no figure is withheld by it either way.
 
 The README table in the suite repository has no disclosure to offer, so it lists every build outright.
 

@@ -61,6 +61,15 @@ describe('whether two builds print different figures', () => {
     expect(figuresDiffer(only, only)).toBe(true)
   })
 
+  it('treats two unscored rows as differing, not as agreeing', () => {
+    // A run that recorded an indeterminate publishes neither figure, so the
+    // row prints "-" for both. Two of those match cell for cell while nobody
+    // knows what either target would have answered. The row is re-tested and
+    // not carried, so the carried guard in sortRows does not reach it.
+    const unscored = (slug) => ({ slug, divergence: '-', coverage: '-', divergenceValue: null, coverageValue: null })
+    expect(figuresDiffer(unscored('extenddb-sqlite'), unscored('extenddb'))).toBe(true)
+  })
+
   it('treats a row with no figures at all as differing', () => {
     // A target the suite refused to score prints "-" for both. Two of those
     // are not evidence of agreement, and starting open costs nothing.

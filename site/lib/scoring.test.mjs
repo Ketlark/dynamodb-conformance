@@ -440,9 +440,9 @@ const buildRow = (over = {}) => ({
   ...over,
 });
 
-test("sortRows returns every build, annotating which of them earn a row", () => {
+test("sortRows returns every build, annotating which of them start closed", () => {
   // The full list stays: the target index, the per-target pages and the JSON
-  // endpoints all want every build whether or not the standings drew it a row.
+  // endpoints all want every build whatever the disclosure does with it.
   const parent = buildRow({ slug: "extenddb" });
   const matching = buildRow({ slug: "extenddb-sqlite" });
   const rows = sortRows([parent, matching]);
@@ -509,6 +509,30 @@ test("a build starting closed is still in the standings, so its history is unbro
 
   assert.equal(build.collapsed, true);
   assert.ok(standings.find((r) => r.slug === "extenddb-sqlite"));
+});
+
+test("a build not re-tested this run starts open, however its figures read", () => {
+  // A carried build's figures are frozen at the run that measured it, and the
+  // date saying so renders inside the disclosure - so closing it would take
+  // the date with it and leave a summary saying the two agree, when they were
+  // measured weeks apart. Dynoxide's wasm build was in exactly this state on
+  // 2026-08-12: carried from 24 July under a parent measured that day.
+  const parent = buildRow({ slug: "extenddb" });
+  const build = buildRow({ slug: "extenddb-sqlite", carried: true });
+  sortRows([parent, build]);
+
+  assert.equal(build.collapsed, false, "a carried build was closed over");
+});
+
+test("a build re-tested this run still starts closed when its figures match", () => {
+  // The complement of the test above, and the reason it is here: a guard that
+  // returned false for every build would satisfy that one on its own. This is
+  // the case the disclosure exists for, and it has to keep working.
+  const parent = buildRow({ slug: "extenddb" });
+  const build = buildRow({ slug: "extenddb-sqlite", carried: false });
+  sortRows([parent, build]);
+
+  assert.equal(build.collapsed, true, "a build measured this run and reading the same figures was left open");
 });
 
 test("a build promoted to parent is marked so the board still shows its project", () => {

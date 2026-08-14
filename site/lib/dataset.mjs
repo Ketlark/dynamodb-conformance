@@ -178,8 +178,9 @@ function targetRow(row) {
     project: projectOf(row.slug),
     configuration: configurationOf(row.slug),
     isVariant: isVariant(row.slug),
-    // Whether the board starts this build's row closed, because it reads the
-    // same grade, divergence and coverage as its project's reference build.
+    // Whether the board starts this build's row closed: it reads the same
+    // grade, divergence and coverage as its project's reference build, and
+    // both were measured in the same run.
     // Published because a consumer reading the endpoints and the board side by
     // side would otherwise find a build here that the board did not appear to
     // show, with nothing to explain it.
@@ -348,7 +349,7 @@ export function buildIndex(conformance, site, summary = null) {
       description:
         "A project can ship more than one build of the same engine: a storage backend swapped underneath it, or the query layer compiled for somewhere else to run. Every build is its own target here, with its own figures, and `project` groups them while `configuration` names what distinguishes each one. `isVariant` says a target is a build of the project rather than its reference build.",
       collapsedIntoProject:
-        "True when the board starts this build's row closed, because the build reads the same grade, divergence and coverage as its project's reference build. Every build has a row and its own figures either way; this says only whether a reader sees it without opening the disclosure. Re-derived every run, so a build that later diverges starts open again.",
+        "True when the board starts this build's row closed. That takes two things: the build reads the same grade, divergence and coverage as its project's reference build, and both were measured in the same run - a build carried from an earlier run is false whatever it reads, because its figures are frozen at the run that measured it. Every build has a row and its own figures either way; this says only whether a reader sees it without opening the disclosure. Re-derived every run, so a build that later diverges starts open again.",
     },
     regions: {
       pinned: "eu-west-2",

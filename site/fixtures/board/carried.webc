@@ -1,0 +1,12 @@
+---
+permalink: /carried.html
+---
+<!-- One row, whose build reads the same figures as the row above it but was
+     carried from an earlier run. It must render open, with the date that
+     qualifies the figures visible beside them. scripts/check-build.mjs asserts
+     both halves of that. -->
+<main>
+  <ul>
+    <standings-row webc:for="row of carried.rows" :row="row" :run-id="carried.runId"></standings-row>
+  </ul>
+</main>

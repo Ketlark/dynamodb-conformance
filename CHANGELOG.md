@@ -15,9 +15,10 @@ engine is the only thing that differs between them.
 A project's other builds now sit behind a disclosure on its row. Every build is
 measured in full and has a row of its own with its own figures; the disclosure
 starts closed when a build reads the same grade, divergence and coverage as the
-one above it, and open when it differs. It is read from each run, so a build can
-start closed on one and open on the next. The README table has no disclosure to
-offer, so it lists every build outright.
+one above it and both were measured in the same run. A build carried from an
+earlier run starts open whatever it reads. It is read from each run, so a build
+can start closed on one and open on the next. The README table has no disclosure
+to offer, so it lists every build outright.
 
 Every target in the data endpoints gains `collapsedIntoProject`, true when the
 board starts that build's row closed. Additive, so `schemaVersion` is unchanged.

@@ -28,6 +28,11 @@ import { gradeOf } from './grade.mjs'
 // rule that read one compared undefined against undefined on that surface and
 // silently ignored the letter altogether. Deriving it from the two values both
 // surfaces do carry makes the answer the same wherever it is asked.
+// Whether the suite declined to score this row. Both figures go null together
+// on a partial run, but either one is enough to mean there is nothing to
+// compare.
+const unscored = (row) => row.divergenceValue == null || row.coverageValue == null
+
 const printedFigures = (row) => [
   gradeOf(row.divergenceValue, row.coverageValue).letter ?? '-',
   row.divergence ?? '-',
@@ -46,6 +51,13 @@ const printedFigures = (row) => [
  */
 export function figuresDiffer(a, b) {
   if (!a || !b || a === b) return true
+  // A run that recorded an indeterminate is not scored, and the row prints "-"
+  // for both figures (axesOf, scripts/lib/score.mjs). Two of those match each
+  // other on all three cells, so without this the disclosure would close over
+  // a pair whose figures nobody knows, under a summary saying they are the
+  // same. Unlike a carried row, such a row is `reTested` and not `carried`, so
+  // the flag on the row does not catch it.
+  if (unscored(a) || unscored(b)) return true
   const [ga, da, ca] = printedFigures(a)
   const [gb, db, cb] = printedFigures(b)
   return ga !== gb || da !== db || ca !== cb
