@@ -22,7 +22,7 @@ import {
   label,
 } from "dynamodb-conformance/scripts/summarise.mjs";
 import { GROUND_TRUTH_SLUG, axesOf, passRate, scoreResults, tierOf } from "dynamodb-conformance/scripts/lib/score.mjs";
-import { splitVariants } from "dynamodb-conformance/scripts/lib/standings.mjs";
+import { figuresDiffer } from "dynamodb-conformance/scripts/lib/standings.mjs";
 import { classifyResults } from "dynamodb-conformance/scripts/lib/classify.mjs";
 import {
   A_PLUS,
@@ -586,32 +586,6 @@ const byRisk = (a, b) =>
 // (see the note where it back-fills a version), so handing back copies here
 // would quietly break that. The assignment always overwrites, so sorting the
 // same rows twice gives the same answer.
-/**
- * Re-decide which builds fold, for rows whose published figures were rewritten
- * after they were first grouped.
- *
- * The model back-fills the latest run's `version` from the suite's summary once
- * everything else is assembled, because the version a reader should see is the
- * build currently shipped rather than the one captured at the run's commit, and
- * those genuinely differ (a release that moved the label without a fresh run).
- * The fold had already been decided by then, on the versions being replaced, so
- * two builds sharing a tested version could fold and then be handed different
- * shipped ones - leaving the row publishing a version for a build that never
- * carried it. That is the same false statement the fold rule exists to prevent,
- * arriving after the rule had finished.
- *
- * Only the flags are re-derived: the grouping and the order stand, so this
- * cannot disturb the baseline's seat at the top of the standings or the object
- * identity `perTarget[].current` depends on.
- */
-export function refoldRows(rows) {
-  for (const row of rows ?? []) {
-    if (!row?.variants?.length) continue;
-    const { collapsed } = splitVariants(row);
-    for (const v of row.variants) v.collapsed = collapsed.includes(v);
-  }
-}
-
 export function sortRows(rows) {
   const byProject = new Map();
   for (const row of rows) {
@@ -623,19 +597,24 @@ export function sortRows(rows) {
   for (const group of byProject.values()) {
     const parent = group.find((r) => !isVariant(r.slug)) ?? group[0];
     parent.variants = group.filter((r) => r !== parent).sort(byRisk);
-    // A build that scored the same as the parent would repeat it in every
-    // column, so it is named on the parent instead of seated beneath it. The
-    // split is annotated rather than applied: `variants` stays whole, because
-    // the target index, the per-target pages and the JSON endpoints all want
-    // every build whether or not the standings drew it a row.
+    // Whether each build's figures start visible. Every build renders either
+    // way; this only picks what the disclosure does on arrival, so a build
+    // reading the same figures as the row above it starts closed.
     //
     // A flag per build, rather than the split arrays this first carried. Those
     // arrays held the same row objects a second time, and leanForFallback
     // strips findings by destructuring `variants` alone - so every finding it
     // had just removed travelled back into the committed fallback through the
-    // second reference. The renderers derive their two lists from this flag.
-    const { collapsed } = splitVariants(parent);
-    for (const v of parent.variants) v.collapsed = collapsed.includes(v);
+    // second reference. The renderers derive their lists from this flag.
+    //
+    // Read before the summary overlay rewrites `version` further down the
+    // build. That ordering is deliberate rather than overlooked: a build whose
+    // shipped version differs from its tested one can start open when it could
+    // have started closed, and re-deriving afterwards to avoid that is what
+    // previously let the back-fill merge two builds the measurement had kept
+    // apart. A disclosure opening when it need not is worth a click; a row
+    // speaking for a build it is not, is not.
+    for (const v of parent.variants) v.collapsed = !figuresDiffer(v, parent);
     // Which row stands for the project on the board. The standings used to work
     // this out from the slug - anything `isVariant` was a build and got skipped
     // - which dropped a whole project whenever its reference build had no

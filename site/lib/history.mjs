@@ -10,7 +10,7 @@
 // the same day supersedes the earlier result), and a target not re-tested in a
 // run is carried forward at its last measured value.
 
-import { axesOf, dynamodbRow, gradeOf, label, display, refoldRows, repoUrl, sortRows, suiteSizeOf, CAPABILITIES, GRADING_CRITERIA_EFFECTIVE, GROUND_TRUTH_SLUG } from "./scoring.mjs";
+import { axesOf, dynamodbRow, gradeOf, label, display, repoUrl, sortRows, suiteSizeOf, CAPABILITIES, GRADING_CRITERIA_EFFECTIVE, GROUND_TRUTH_SLUG } from "./scoring.mjs";
 
 /**
  * Whether a run may carry a letter: measured on or after the day the criteria
@@ -644,14 +644,6 @@ export function buildModel(snapshots, summary = null) {
       const v = overlay.latest.targets[slug]?.version;
       if (v) t.currentVersion = v;
     }
-    // The version is one of the figures a build is folded on, and it has just
-    // been rewritten, so the fold has to be asked again. Without this the
-    // latest run keeps a decision made about versions it no longer publishes:
-    // two builds sharing a tested version fold, then take different shipped
-    // ones, and the row states a version for a build that never carried it.
-    // Only this run is re-derived - historical runs keep the versions they were
-    // tested at, so their folds were decided on what they still publish.
-    refoldRows(latest?.standings);
   }
 
   return { runs, latest, movement, movers, targets, perTarget, allAreas, regionHealth, targetRuns: targetRunsOf({ targets, perTarget }) };
