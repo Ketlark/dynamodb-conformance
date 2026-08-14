@@ -26,6 +26,8 @@ The baseline's `observation` block, in every endpoint's envelope, says how much 
 
 Every target carries the identical schema, live AWS DynamoDB included. The data is published under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): use it freely, just credit paritysuite.org. The schema is versioned with a `schemaVersion` field, and a breaking change bumps it.
 
+Expect more targets here than rows on the board, and do not treat the difference as a gap. A project can ship several builds of one engine, and each is its own target with its own figures: `project` groups them, `configuration` names what distinguishes each one, and `isVariant` says a target is a build rather than its project's reference build. When a build measures identically to that reference build on every published figure, `collapsedIntoProject` is true and the board names it on the reference build's row rather than drawing a second row that would repeat it. Nothing is withheld from you by that: the build was measured in full, its figures here are its own, and the flag is re-derived every run, so a build that later diverges gets its row back.
+
 Every endpoint also carries a `metrics` block naming each published figure, its formula and its `direction` (`lower_is_better` for divergence, `higher_is_better` for coverage and correctness). Read the direction from there rather than assuming it. Schema 3 reversed which way is good, and a consumer that re-derived its own ranking on the old assumption would have inverted with nothing in the shape of the data to catch it.
 
 ## Badges

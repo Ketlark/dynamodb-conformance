@@ -510,3 +510,24 @@ test("a folded build stays findable in the standings, so its history is unbroken
   assert.equal(folded.collapsed, true);
   assert.ok(standings.find((r) => r.slug === "extenddb-sqlite"));
 });
+
+test("a build promoted to parent is marked so the board still shows its project", () => {
+  // When the reference build has no result, the grouping promotes a build to
+  // stand for the project. The standings used to skip anything isVariant(slug),
+  // which dropped the row it had just promoted and lost the whole project -
+  // while the README, grouping the same way, still printed it.
+  const wasm = buildRow({ slug: "dynoxide-wasm" });
+  const rows = sortRows([wasm]);
+
+  assert.equal(rows.length, 1);
+  assert.equal(wasm.isParent, true, "the promoted build stands for its project");
+});
+
+test("a build travelling under its parent is not marked as standing for the project", () => {
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite", failed: 40, passed: 885 });
+  sortRows([parent, variant]);
+
+  assert.equal(parent.isParent, true);
+  assert.equal(variant.isParent, false);
+});

@@ -12,11 +12,18 @@ ExtendDB's SQLite backend joins the run, built from the same release as the
 PostgreSQL one and held to the same TLS, SigV4 and IAM posture, so the storage
 engine is the only thing that differs between them.
 
-A build of a project now earns its own row by scoring differently. One landing
-the same grade, divergence and coverage as the build above it is named on that
-row instead of repeating it across every column. Both are still measured, and
-both keep their own page and their own entry in the data endpoints. The rule
-reads each run, so a build can fold into its parent and come back out again.
+A build of a project now earns its own row by scoring differently. One matching
+the build above it on every published figure - version, run date, the raw pass,
+fail and skip counts, the suite size, the region cohort and the per-tier
+breakdown - is named on that row instead of repeating it across every column.
+Both are still measured, and both keep their own page and their own entry in
+the data endpoints. The rule reads each run, so a build can fold into its parent
+and come back out again.
+
+Every target in the data endpoints gains `collapsedIntoProject`, true when a
+build was folded into its project's row that way. Additive, so `schemaVersion`
+is unchanged. `/data/index.json` gains a `projects` block documenting it
+alongside the existing `project`, `configuration` and `isVariant` fields.
 
 ## 2026-08-12 (3.0.0)
 

@@ -610,6 +610,15 @@ export function sortRows(rows) {
     // second reference. The renderers derive their two lists from this flag.
     const { collapsed } = splitVariants(parent);
     for (const v of parent.variants) v.collapsed = collapsed.includes(v);
+    // Which row stands for the project on the board. The standings used to work
+    // this out from the slug - anything `isVariant` was a build and got skipped
+    // - which dropped a whole project whenever its reference build had no
+    // result: the grouping promotes a build to parent in that case, and the
+    // board then filtered out the row it had just promoted. The README, deriving
+    // its rows from the same grouping rather than from the slug, still printed
+    // the project, so the two surfaces disagreed about which targets exist.
+    parent.isParent = true;
+    for (const v of parent.variants) v.isParent = false;
     groups.push(parent);
   }
   return groups.sort(byRisk).flatMap((parent) => [parent, ...parent.variants]);

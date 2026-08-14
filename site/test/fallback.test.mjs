@@ -79,3 +79,43 @@ test("the fallback yields targetRuns whether or not the committed snapshot carri
     globalThis.fetch = originalFetch;
   }
 });
+
+// The other half of the changelog guard: a fetch that succeeds but returns a
+// heading the parser cannot read. Every test above mocks a rejecting fetch, so
+// this path - the one the Unreleased convention sits directly upstream of - was
+// never exercised. deploy.yml sets FAIL_ON_FALLBACK on every push to main that
+// touches CHANGELOG.md, so this is what a malformed heading does to a deploy.
+test("FAIL_ON_FALLBACK refuses a fetched changelog carrying an unreadable heading", async () => {
+  const originalFetch = globalThis.fetch;
+  const body = ["# History", "", "## Coming soon", "", "Pending.", "", "## 2026-07-01", "", "Added a tier."].join("\n");
+  globalThis.fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve(body) });
+  try {
+    // Lenient: renders what it could read, and says what it left off.
+    const lenient = await changelogData();
+    assert.equal(lenient.source, "remote");
+    assert.deepEqual(lenient.skipped, ["Coming soon"]);
+
+    process.env.FAIL_ON_FALLBACK = "1";
+    await assert.rejects(() => changelogData(), /refused to ship an incomplete changelog/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.FAIL_ON_FALLBACK;
+  }
+});
+
+// And the convention itself must not trip that guard.
+test("an Unreleased section does not count as an unreadable heading", async () => {
+  const originalFetch = globalThis.fetch;
+  const body = ["# History", "", "## Unreleased", "", "Pending.", "", "## 2026-07-01", "", "Added a tier."].join("\n");
+  globalThis.fetch = () => Promise.resolve({ ok: true, text: () => Promise.resolve(body) });
+  try {
+    process.env.FAIL_ON_FALLBACK = "1";
+    const data = await changelogData();
+    assert.deepEqual(data.skipped, []);
+    assert.ok(data.unreleased, "the pending section is kept, not discarded");
+    assert.deepEqual(data.entries.map((e) => e.date), ["2026-07-01"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.FAIL_ON_FALLBACK;
+  }
+});

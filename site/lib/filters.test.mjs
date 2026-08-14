@@ -49,3 +49,25 @@ test("the chartGeometry filter forwards its options, so both plots aren't the sa
   assert.notEqual(divergence.axisLabel, coverage.axisLabel);
   assert.notEqual(divergence.heading, coverage.heading);
 });
+
+test("the folded-build filters split a parent's builds on the flag, not the slug", () => {
+  // These decide what the standings draw. Re-deriving the fold rule here would
+  // put a third copy of it in the codebase, so they read the flag sortRows set;
+  // this checks the wiring does that rather than returning everything.
+  const { shownVariants, foldedVariants } = registeredFilters();
+  assert.ok(shownVariants && foldedVariants, "both filters are registered");
+
+  const row = {
+    variants: [
+      { slug: "extenddb-sqlite", collapsed: true },
+      { slug: "extenddb-mongodb", collapsed: false },
+    ],
+  };
+
+  assert.deepEqual(shownVariants(row).map((v) => v.slug), ["extenddb-mongodb"]);
+  assert.deepEqual(foldedVariants(row).map((v) => v.slug), ["extenddb-sqlite"]);
+
+  // A row with no builds at all, which is most of them.
+  assert.deepEqual(shownVariants({}), []);
+  assert.deepEqual(foldedVariants({}), []);
+});

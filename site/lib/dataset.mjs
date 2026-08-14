@@ -341,6 +341,14 @@ export function buildIndex(conformance, site, summary = null) {
     suiteSize: latest?.suiteSize ?? null,
     tiers: TIERS,
     capabilities: CAPABILITIES.map((c) => ({ key: c.key, label: c.label, group: c.group })),
+    // A consumer counting rows here and rows on the board would otherwise come
+    // out with two different sets of targets and nothing to explain the gap.
+    projects: {
+      description:
+        "A project can ship more than one build of the same engine: a storage backend swapped underneath it, or the query layer compiled for somewhere else to run. Every build is its own target here, with its own figures, and `project` groups them while `configuration` names what distinguishes each one. `isVariant` says a target is a build of the project rather than its reference build.",
+      collapsedIntoProject:
+        "True when a build measured identically to its project's reference build, on every figure published: version, run date, the raw pass, fail and skip counts, the suite size, the region cohort and the per-tier breakdown. The board then names it on the reference build's row instead of drawing a second row that would repeat it. It was still measured in full, its figures here are its own, and the flag is re-derived every run, so a build that later diverges gets its row back.",
+    },
     regions: {
       pinned: "eu-west-2",
       description:
