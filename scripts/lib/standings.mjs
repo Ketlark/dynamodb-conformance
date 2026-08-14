@@ -19,6 +19,43 @@
 // rule would eventually disagree about the same run, and a reader comparing the
 // README against the site would have no way to tell which was right.
 import { configurationOf } from './targets.mjs'
+import { gradeOf } from './grade.mjs'
+
+// The three figures a reader compares between two builds, as they are printed.
+//
+// The grade is derived here rather than read off the row. Only the published
+// table sets a `grade` field; the site computes its letter at render time, so a
+// rule that read one compared undefined against undefined on that surface and
+// silently ignored the letter altogether. Deriving it from the two values both
+// surfaces do carry makes the answer the same wherever it is asked.
+const printedFigures = (row) => [
+  gradeOf(row.divergenceValue, row.coverageValue).letter ?? '-',
+  row.divergence ?? '-',
+  row.coverage ?? '-',
+]
+
+/**
+ * Whether two builds print different figures.
+ *
+ * This chooses whether a build's row starts open on the board. It does not
+ * decide whether anything is published: every build renders with its own
+ * figures either way, so being wrong here costs a reader one click.
+ *
+ * That is a deliberate reduction. An earlier version of this rule decided
+ * whether a build was rendered at all, which meant every column the board grew
+ * was another cell it had to remember to compare, and six were missed in turn.
+ * Nothing here needs to be exhaustive any more.
+ *
+ * With nothing to compare against - a build standing for its project because
+ * the reference has no result, or a row against itself - the answer is that
+ * they differ, so the build starts open. Every uncertain case shows more.
+ */
+export function figuresDiffer(a, b) {
+  if (!a || !b || a === b) return true
+  const [ga, da, ca] = printedFigures(a)
+  const [gb, db, cb] = printedFigures(b)
+  return ga !== gb || da !== db || ca !== cb
+}
 
 // A row's whole published content, as one comparable value.
 //

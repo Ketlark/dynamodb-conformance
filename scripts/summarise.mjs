@@ -66,7 +66,6 @@ import {
   label,
   projectOf,
 } from './lib/targets.mjs'
-import { configurationsOf, listOf, splitVariants } from './lib/standings.mjs'
 
 /** Version of the results/summary.json contract the site consumes. */
 export const SUMMARY_SCHEMA_VERSION = 1
@@ -885,33 +884,28 @@ export function renderTable(summary) {
   // everything left every cell blank, and the table published an empty column to
   // whoever arrived from an announcement - a header promising something the rows
   // never deliver. The caption already carries the date they share, and the
-  // column returns with the first row carried forward. Builds are counted too,
-  // whether or not they render: one that folded into its parent has no row to
-  // state a date on, so its date is carried by the row that absorbed it.
+  // column returns with the first row carried forward. Every build is counted,
+  // because every build has a row of its own to state a date on.
 
-  // A build that scored the same as the row above it is named on that row
-  // rather than repeating it, so the split comes before anything counts rows.
-  const splits = new Map(rows.map((r) => [r, splitVariants(r)]))
-
-  // The parent's figures are its reference configuration's, so name that
-  // configuration inline when the project has more than one shape. Without it a
-  // reader cannot tell which storage engine or build was measured, and the row
-  // silently becomes ambiguous the moment a second one ships. Builds that
-  // folded in are named here too: the row speaks for them, and a reader who
-  // could not see them named would take the board for having never run them.
-  const nameOf = (r) => {
-    const configs = configurationsOf(r, splits.get(r)?.collapsed ?? [])
-    return configs.length ? `${r.target} · ${listOf(configs)}` : r.target
-  }
-
-  // A row reports its own date and nothing else has to be reconciled: a build
-  // only folds when every figure it would publish matches the row above it, and
-  // the run date is one of those figures. A build carried from an earlier run
-  // therefore keeps its own row and states its own date, rather than being
-  // absorbed into a row measured on a different day.
+  // Every build renders, whatever it scored. Markdown has no disclosure to put
+  // a matching build behind, so the choice here is between a redundant row and
+  // a row that speaks for a build it is not - and only one of those can be
+  // wrong. Two rows carrying the same figures says both were measured and they
+  // agree, which is worth reading; a row naming a build whose figures it does
+  // not carry is a claim nobody checked.
+  //
+  // The site can do better than this and does, behind a disclosure. The two
+  // surfaces agree on the data and differ in how much of it they show at once.
+  //
+  // The parent still names its own configuration, so a reader can tell which
+  // build the top row's figures belong to the moment a project ships a second.
   const rendered = rows.flatMap((r) => [
-    { row: r, name: nameOf(r), date: r.runDate },
-    ...(splits.get(r)?.shown ?? []).map((v) => ({
+    {
+      row: r,
+      name: configurationOf(r.slug) ? `${r.target} · ${configurationOf(r.slug)}` : r.target,
+      date: r.runDate,
+    },
+    ...(r.variants ?? []).map((v) => ({
       row: v,
       name: `${VARIANT_PREFIX}${configurationOf(v.slug) ?? display(v.slug)}`,
       date: v.runDate,

@@ -825,20 +825,38 @@ describe('renderTable variant nesting', () => {
     expect(table).not.toContain('preview')
   })
 
-  it('folds a build that scored the same into its parent, naming both', () => {
-    // The row would otherwise repeat its parent in every column, which sizes a
-    // project's presence on the board by how many builds it ships.
+  it('gives a build that scored the same its own row, carrying its own figures', () => {
+    // Markdown has no disclosure to put a matching build behind, so the table
+    // shows it. A redundant row says both were measured and they agree; a row
+    // naming a build whose figures it does not carry says something nobody
+    // checked. Only one of those can be wrong.
     const summary = {
       groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
       regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
       targets: { 'extenddb-sqlite': one(97.7), extenddb: one(97.7) },
     }
     const table = renderTable(summary)
-    expect(table).toMatch(/\[ExtendDB\]\([^)]+\) · PostgreSQL and SQLite/)
-    expect(table).not.toContain('↳')
-    // One row for the project, not two.
-    const rows = table.split('\n').filter((l) => l.startsWith('|') && l.includes('ExtendDB'))
-    expect(rows).toHaveLength(1)
+    const lines = table.split('\n').filter((l) => l.startsWith('|'))
+    const parent = lines.findIndex((l) => l.includes('[ExtendDB]'))
+    // A nested row is labelled by its configuration alone, so it is found by
+    // position rather than by the project name.
+    expect(parent).toBeGreaterThan(-1)
+    expect(lines[parent + 1]).toContain('↳ SQLite')
+    // The parent names its own configuration, never the other build's.
+    expect(table).toMatch(/\[ExtendDB\]\([^)]+\) · PostgreSQL \|/)
+    expect(table).not.toContain('and SQLite')
+  })
+
+  it('renders every build of a project with three of them', () => {
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: { dynoxide: one(96.3), 'dynoxide-wasm': one(96.3), extenddb: one(97.7) },
+    }
+    const table = renderTable(summary)
+    expect(table).toContain('↳ WebAssembly / OPFS')
+    const nested = table.split('\n').filter((l) => l.includes('↳'))
+    expect(nested).toHaveLength(1)
   })
 
   it('keeps a build carried from an earlier run out of the fold', () => {
