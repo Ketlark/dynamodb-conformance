@@ -159,12 +159,22 @@ export default function (eleventyConfig) {
   // reading for a model restored from the committed fallback, which predates
   // the flag; drop that half once a regenerated snapshot carries it.
   eleventyConfig.addFilter("standsForProject", (row) => row?.isParent ?? !isVariant(row?.slug));
-  // The two halves of a project's builds, derived from the flag rather than
-  // stored beside `variants`: a second reference to the same rows would carry
-  // their findings back into the committed history fallback, which strips them
-  // by walking `variants` alone.
-  eleventyConfig.addFilter("shownVariants", (row) => (row?.variants ?? []).filter((v) => !v.collapsed));
-  eleventyConfig.addFilter("foldedVariants", (row) => (row?.variants ?? []).filter((v) => v.collapsed));
+  // A project's other builds. Every one of them, always: the disclosure below
+  // decides how much is shown at once, never which of them exist.
+  eleventyConfig.addFilter("buildsOf", (row) => row?.variants ?? []);
+  // Whether the disclosure starts open. Open when any build reads different
+  // figures from the row above it, and open when the model carries no flag at
+  // all - a snapshot restored from the committed fallback predates it, and the
+  // safe reading of "unknown" is to show everything.
+  eleventyConfig.addFilter("buildsStartOpen", (row) =>
+    (row?.variants ?? []).some((v) => v.collapsed !== true),
+  );
+  // What is inside, for the closed state. Names rather than a count: "SQLite"
+  // tells a reader more than "1 other build" for the same room.
+  eleventyConfig.addFilter("buildNames", (row) => {
+    const names = (row?.variants ?? []).map((v) => configurationOf(v.slug) || v.display);
+    return names.length < 2 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  });
   // Every way a target can be run, as marks. Uncapped: seeing all of them at a
   // glance is the point, and an icon costs a fraction of the room a label does.
   eleventyConfig.addFilter("channels", (slug) =>

@@ -50,26 +50,39 @@ test("the chartGeometry filter forwards its options, so both plots aren't the sa
   assert.notEqual(divergence.heading, coverage.heading);
 });
 
-test("the folded-build filters split a parent's builds on the flag, not the slug", () => {
-  // These decide what the standings draw. Re-deriving the fold rule here would
-  // put a third copy of it in the codebase, so they read the flag sortRows set;
-  // this checks the wiring does that rather than returning everything.
-  const { shownVariants, foldedVariants } = registeredFilters();
-  assert.ok(shownVariants && foldedVariants, "both filters are registered");
+test("the build filters return every build, and open only when one differs", () => {
+  // These decide how much shows at once, never which builds exist. A filter
+  // that dropped one would be the old design coming back through the templates.
+  const { buildsOf, buildsStartOpen, buildNames } = registeredFilters();
+  assert.ok(buildsOf && buildsStartOpen && buildNames, "all three are registered");
 
-  const row = {
-    variants: [
-      { slug: "extenddb-sqlite", collapsed: true },
-      { slug: "extenddb-mongodb", collapsed: false },
-    ],
-  };
+  const matching = { slug: "extenddb-sqlite", collapsed: true };
+  const differing = { slug: "extenddb-mongodb", collapsed: false };
 
-  assert.deepEqual(shownVariants(row).map((v) => v.slug), ["extenddb-mongodb"]);
-  assert.deepEqual(foldedVariants(row).map((v) => v.slug), ["extenddb-sqlite"]);
+  assert.deepEqual(buildsOf({ variants: [matching, differing] }).map((v) => v.slug),
+    ["extenddb-sqlite", "extenddb-mongodb"]);
 
-  // A row with no builds at all, which is most of them.
-  assert.deepEqual(shownVariants({}), []);
-  assert.deepEqual(foldedVariants({}), []);
+  // Closed only when every build reads the same figures as the row above.
+  assert.equal(buildsStartOpen({ variants: [matching] }), false);
+  assert.equal(buildsStartOpen({ variants: [matching, differing] }), true);
+
+  // A model restored from the committed fallback carries no flag at all, and
+  // the safe reading of unknown is to show everything.
+  assert.equal(buildsStartOpen({ variants: [{ slug: "extenddb-sqlite" }] }), true);
+
+  // A row with no builds has no disclosure.
+  assert.deepEqual(buildsOf({}), []);
+  assert.equal(buildsStartOpen({}), false);
+});
+
+test("buildNames says what is inside the closed disclosure", () => {
+  const { buildNames } = registeredFilters();
+  assert.equal(buildNames({ variants: [{ slug: "extenddb-sqlite" }] }), "SQLite");
+  assert.equal(
+    buildNames({ variants: [{ slug: "extenddb-sqlite" }, { slug: "dynoxide-wasm" }] }),
+    "SQLite and WebAssembly / OPFS",
+  );
+  assert.equal(buildNames({}), "");
 });
 
 test("standsForProject reads the row's flag, falling back to the slug", () => {
