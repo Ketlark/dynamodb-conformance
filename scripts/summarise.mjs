@@ -66,6 +66,7 @@ import {
   label,
   projectOf,
 } from './lib/targets.mjs'
+import { configurationsOf, splitVariants } from './lib/standings.mjs'
 
 /** Version of the results/summary.json contract the site consumes. */
 export const SUMMARY_SCHEMA_VERSION = 1
@@ -884,28 +885,57 @@ export function renderTable(summary) {
   // everything left every cell blank, and the table published an empty column to
   // whoever arrived from an announcement - a header promising something the rows
   // never deliver. The caption already carries the date they share, and the
-  // column returns with the first row carried forward. Variants are counted too:
-  // they are rendered as rows, so a carried variant under a re-measured project
-  // still needs somewhere to say so.
-  const carried = rows
-    .flatMap((r) => [r, ...(r.variants ?? [])])
-    .some((r) => r.runDate !== tableDate)
-  const measured = (r) => (carried ? ` ${r.runDate === tableDate ? '' : r.runDate} |` : '')
-  const fmt = (r, name) =>
-    `| ${name} | ${r.grade} | ${r.version} | ${r.divergence} | ${r.coverage} | ${r.failed} | ${r.skipped} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.cohort ?? '-'} |${measured(r)}`
+  // column returns with the first row carried forward. Builds are counted too,
+  // whether or not they render: one that folded into its parent has no row to
+  // state a date on, so its date is carried by the row that absorbed it.
+
+  // A build that scored the same as the row above it is named on that row
+  // rather than repeating it, so the split comes before anything counts rows.
+  const splits = new Map(rows.map((r) => [r, splitVariants(r)]))
+
+  // "PostgreSQL and SQLite", or "PostgreSQL, SQLite and MongoDB" once a third
+  // arrives. The reference leads, because the row carries its figures.
+  const listOf = (names) =>
+    names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
+
+  // The parent's figures are its reference configuration's, so name that
+  // configuration inline when the project has more than one shape. Without it a
+  // reader cannot tell which storage engine or build was measured, and the row
+  // silently becomes ambiguous the moment a second one ships. Builds that
+  // folded in are named here too: the row speaks for them, and a reader who
+  // could not see them named would take the board for having never run them.
+  const nameOf = (r) => {
+    const configs = configurationsOf(r, splits.get(r)?.collapsed ?? [])
+    return configs.length ? `${r.target} · ${listOf(configs)}` : r.target
+  }
+
+  // A row that absorbed other builds speaks for their runs too, so it reports
+  // the oldest date behind it. Without this a parent could sit silently at the
+  // table date while a build it now names was carried from an earlier one.
+  const dateOf = (r) => {
+    const dates = [r, ...(splits.get(r)?.collapsed ?? [])]
+      .map((x) => x.runDate)
+      .filter((d) => d && d !== '-')
+      .sort()
+    return dates[0] ?? r.runDate
+  }
+
+  const rendered = rows.flatMap((r) => [
+    { row: r, name: nameOf(r), date: dateOf(r) },
+    ...(splits.get(r)?.shown ?? []).map((v) => ({
+      row: v,
+      name: `${VARIANT_PREFIX}${configurationOf(v.slug) ?? display(v.slug)}`,
+      date: v.runDate,
+    })),
+  ])
+  const carried = rendered.some((r) => r.date !== tableDate)
+  const measured = (date) => (carried ? ` ${date === tableDate ? '' : date} |` : '')
+  const fmt = ({ row: r, name, date }) =>
+    `| ${name} | ${r.grade} | ${r.version} | ${r.divergence} | ${r.coverage} | ${r.failed} | ${r.skipped} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.cohort ?? '-'} |${measured(date)}`
   const body = [
     `| Target | Grade | Version | Divergence | Coverage | Fail | Skip | Tier 1 | Tier 2 | Tier 3 | Regions |${carried ? ' Measured |' : ''}`,
     `|--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|${carried ? '----------|' : ''}`,
-    ...rows.flatMap((r) => [
-      // The parent's figures are its reference configuration's, so name that
-      // configuration inline when the project has more than one shape. Without
-      // it a reader cannot tell which storage engine or build was measured, and
-      // the row silently becomes ambiguous the moment a second one ships.
-      fmt(r, configurationOf(r.slug) ? `${r.target} · ${configurationOf(r.slug)}` : r.target),
-      ...(r.variants ?? []).map((v) =>
-        fmt(v, `${VARIANT_PREFIX}${configurationOf(v.slug) ?? display(v.slug)}`),
-      ),
-    ]),
+    ...rendered.map(fmt),
   ].join('\n')
   return `${tableCaption(summary.regions, summary.groundTruth, tableDate, carried)}\n\n${body}`
 }

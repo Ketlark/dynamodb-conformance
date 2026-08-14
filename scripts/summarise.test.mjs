@@ -766,7 +766,10 @@ describe('renderTable variant nesting', () => {
   // distinct. Markdown has no nested tables, so the indent carries the
   // relationship - and it is derived from declared metadata rather than from a
   // bracket in the display name, which is what used to stand in for it.
-  const one = (rate) => ({
+  // `rate` is the headline pass rate; it does not feed divergence or coverage,
+  // which come from the counts. A build that should read as different from its
+  // parent therefore has to differ in `over`, not in `rate`.
+  const one = (rate, over = {}) => ({
     headline: { region: 'eu-west-2', rate },
     regions: {
       'eu-west-2': {
@@ -781,17 +784,22 @@ describe('renderTable variant nesting', () => {
           tier2: { p: 1, f: 0, s: 0, i: 0 },
           tier3: { p: 1, f: 0, s: 0, i: 0 },
         },
+        ...over,
       },
     },
     version: '-',
-    runDate: '2026-07-24',
+    runDate: over.runDate ?? '2026-07-24',
   })
+
+  // A build that scores differently from its parent. Same suite size, so it is
+  // the figures rather than the totals guard that earns it the row.
+  const differing = (rate) => one(rate, { passed: 700, failed: 10, skipped: 288 })
 
   it('indents a variant under its project and labels it by configuration', () => {
     const summary = {
       groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
       regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
-      targets: { 'dynoxide-wasm': one(100), dynoxide: one(96.3) },
+      targets: { 'dynoxide-wasm': differing(100), dynoxide: one(96.3) },
     }
     const table = renderTable(summary)
     // Named by what distinguishes it, not by repeating the project name.
@@ -815,6 +823,41 @@ describe('renderTable variant nesting', () => {
     const table = renderTable(summary)
     expect(table).not.toContain('†')
     expect(table).not.toContain('preview')
+  })
+
+  it('folds a build that scored the same into its parent, naming both', () => {
+    // The row would otherwise repeat its parent in every column, which sizes a
+    // project's presence on the board by how many builds it ships.
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: { 'extenddb-sqlite': one(97.7), extenddb: one(97.7) },
+    }
+    const table = renderTable(summary)
+    expect(table).toMatch(/\[ExtendDB\]\([^)]+\) · PostgreSQL and SQLite/)
+    expect(table).not.toContain('↳')
+    // One row for the project, not two.
+    const rows = table.split('\n').filter((l) => l.startsWith('|') && l.includes('ExtendDB'))
+    expect(rows).toHaveLength(1)
+  })
+
+  it('keeps a folded build’s carried date on the row that absorbed it', () => {
+    // The parent now speaks for both runs, so it reports the older of the two.
+    // Without this the board would date the row to the newer run and quietly
+    // claim the other build was measured then too.
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: {
+        'extenddb-sqlite': one(97.7, { runDate: '2026-07-20' }),
+        extenddb: one(97.7),
+        dynoxide: one(96.3),
+      },
+    }
+    const table = renderTable(summary)
+    expect(table).toContain('Measured')
+    const row = table.split('\n').find((l) => l.includes('ExtendDB'))
+    expect(row).toContain('2026-07-20')
   })
 })
 
