@@ -66,6 +66,7 @@ _Measured 2026-08-15, except where a row carries its own date._
 | [Dynoxide](https://github.com/nubo-db/dynoxide) · native SQLite | A | 0.13.0 | 0.9% | 94.7% | 10 | 56 | 2.0% | 0.0% | 0.0% | 4 of 33 |  |
 | ↳ WebAssembly / OPFS | B | 0.13.0 | 0.9% | 83.4% | 10 | 175 | 2.0% | 0.0% | 0.0% | 4 of 33 |  |
 | [ExtendDB](https://github.com/ExtendDB/extenddb) · PostgreSQL | B | v0.1.5 | 1.9% | 87.8% | 20 | 129 | 0.8% | 1.8% | 3.5% | 27 of 33 |  |
+| ↳ SQLite | B | v0.1.5 | 1.8% | 87.8% | 19 | 129 | 0.8% | 1.8% | 3.2% | 27 of 33 |  |
 | [Ministack](https://github.com/ministackorg/ministack) | B | 2b75df610699 | 11.9% | 96.0% | 125 | 42 | 5.7% | 15.1% | 18.5% | 27 of 33 |  |
 | [Dynalite](https://github.com/architect/dynalite) | C | 4.0.0 | 12.8% | 77.0% | 135 | 242 | 10.8% | 12.4% | 15.9% | 23 of 33 |  |
 | [LocalStack](https://github.com/localstack/localstack) | C | 2026.7.4 | 14.8% | 95.3% | 156 | 50 | 6.3% | 16.0% | 26.2% | 25 of 33 |  |
