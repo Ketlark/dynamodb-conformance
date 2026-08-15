@@ -360,6 +360,10 @@ test("a build reading the same figures as its reference build starts closed", ()
   const rows = seeded.latest.standings;
   const parent = rows.find((r) => r.slug === "dynoxide");
   const build = rows.find((r) => r.slug === "dynoxide-wasm");
+  // The parent is seeded too. The rule reads its flag as well, so leaving it
+  // to the committed model made this assertion depend on which run the
+  // snapshot came from rather than on the code it is testing.
+  Object.assign(parent, { carried: false, reTested: true });
   Object.assign(build, {
     divergence: parent.divergence,
     coverage: parent.coverage,

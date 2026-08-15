@@ -36,6 +36,16 @@ export default async function () {
   const extenddb = rows.find((r) => r.slug === "extenddb");
   if (!dynoxide || !wasm || !extenddb) throw new Error("the fixture lost a target it was built around");
 
+  // Both sides measured in this run, seeded on both rows rather than only the
+  // build. The rule reads the parent's flag too, so leaving that one to the
+  // committed model made the closed branch depend on which run the snapshot
+  // was taken from: it renders closed today because Dynoxide happens to have
+  // been re-tested, and a later snapshot catching its row carried forward -
+  // which is what the wasm build is doing in this very model - would flip this
+  // fixture open and fail the check that asserts it closed, for a reason with
+  // nothing to do with disclosures.
+  Object.assign(dynoxide, { carried: false, reTested: true });
+
   // The agreement. Only the three figures the disclosure reads are copied;
   // the version, the tier breakdown and the region cohort stay as measured,
   // because a build agreeing on what is printed and differing underneath is
