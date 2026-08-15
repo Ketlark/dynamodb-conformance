@@ -49,3 +49,55 @@ test("the chartGeometry filter forwards its options, so both plots aren't the sa
   assert.notEqual(divergence.axisLabel, coverage.axisLabel);
   assert.notEqual(divergence.heading, coverage.heading);
 });
+
+test("the build filters return every build, and open only when one differs", () => {
+  // These decide how much shows at once, never which builds exist. A filter
+  // that dropped one would be the old design coming back through the templates.
+  const { buildsOf, buildsStartOpen, buildNames } = registeredFilters();
+  assert.ok(buildsOf && buildsStartOpen && buildNames, "all three are registered");
+
+  const matching = { slug: "extenddb-sqlite", collapsed: true };
+  const differing = { slug: "extenddb-mongodb", collapsed: false };
+
+  assert.deepEqual(buildsOf({ variants: [matching, differing] }).map((v) => v.slug),
+    ["extenddb-sqlite", "extenddb-mongodb"]);
+
+  // Closed only when every build reads the same figures as the row above.
+  assert.equal(buildsStartOpen({ variants: [matching] }), false);
+  assert.equal(buildsStartOpen({ variants: [matching, differing] }), true);
+
+  // A model restored from the committed fallback carries no flag at all, and
+  // the safe reading of unknown is to show everything.
+  assert.equal(buildsStartOpen({ variants: [{ slug: "extenddb-sqlite" }] }), true);
+
+  // A row with no builds has no disclosure.
+  assert.deepEqual(buildsOf({}), []);
+  assert.equal(buildsStartOpen({}), false);
+});
+
+test("buildNames says what is inside the closed disclosure", () => {
+  const { buildNames } = registeredFilters();
+  assert.equal(buildNames({ variants: [{ slug: "extenddb-sqlite" }] }), "SQLite");
+  assert.equal(
+    buildNames({ variants: [{ slug: "extenddb-sqlite" }, { slug: "dynoxide-wasm" }] }),
+    "SQLite and WebAssembly / OPFS",
+  );
+  assert.equal(buildNames({}), "");
+});
+
+test("standsForProject reads the row's flag, falling back to the slug", () => {
+  // Three templates ask this. Two of them were still asking it the old way
+  // after the first was fixed, which is why it is a filter now.
+  const { standsForProject } = registeredFilters();
+  assert.ok(standsForProject, "the filter is registered");
+
+  // A fresh model carries the flag, and it is authoritative - including for a
+  // build promoted to stand for its project because the reference has none.
+  assert.equal(standsForProject({ slug: "dynoxide-wasm", isParent: true }), true);
+  assert.equal(standsForProject({ slug: "extenddb-sqlite", isParent: false }), false);
+
+  // A model restored from the committed fallback carries no flag at all, so the
+  // slug is the reading. Getting this wrong emptied the board once already.
+  assert.equal(standsForProject({ slug: "dynoxide" }), true);
+  assert.equal(standsForProject({ slug: "dynoxide-wasm" }), false);
+});

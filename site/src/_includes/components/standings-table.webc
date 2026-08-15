@@ -143,6 +143,11 @@
          The visible consequence is deliberate - the top card is now the
          highest-graded engine, which today is the board author's own, with
          the disclosure sitting on the card. -->
-    <standings-row webc:for="row of $data.conformance.latest.standings" webc:if="!isVariant(row.slug) && !row.baseline" :row="row"></standings-row>
+    <!-- `isParent` when the model was built this run, the slug otherwise. The
+         committed history fallback is serialised from an earlier build and
+         carries no flag, so keying on it alone emptied the board entirely on
+         every fallback render - which is the path PR CI and any failed fetch
+         take. The fallback keeps the old reading, which is what it had anyway. -->
+    <standings-row webc:for="row of $data.conformance.latest.standings" webc:if="standsForProject(row) && !row.baseline" :row="row"></standings-row>
   </ol>
 </section>

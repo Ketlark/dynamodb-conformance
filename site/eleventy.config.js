@@ -9,7 +9,7 @@ import { controlObservation, controlProvenance, controlSplit, regionCount, regio
 import { renderSplitEvidence, splitCoverageNote } from "./lib/splits.mjs";
 import { regionalSpread, renderCappedExamples, renderCheapestWithdrawal } from "./lib/worked-examples.mjs";
 import { carriedEach, countWord } from "./lib/suite-shape.mjs";
-import { GRADING_CRITERIA_EFFECTIVE, GRADING_VERSION, TARGETS, capClauseOf, configurationOf, coverageShareSentenceOf, distributionOf, fallsShort, gradeForRow, gradeLegendOf, gradeLineOf, gradeOf, gradingCriteriaEffectiveLabel, isSelfMaintained, isVariant, notAttempted, regionClauseOf, scoredOnCorrectness } from "./lib/scoring.mjs";
+import { GRADING_CRITERIA_EFFECTIVE, GRADING_VERSION, TARGETS, capClauseOf, configurationOf, coverageShareSentenceOf, display, distributionOf, fallsShort, gradeForRow, gradeLegendOf, gradeLineOf, gradeOf, gradingCriteriaEffectiveLabel, isSelfMaintained, isVariant, notAttempted, projectOf, regionClauseOf, scoredOnCorrectness } from "./lib/scoring.mjs";
 import { channelIcon } from "./lib/channel-icons.mjs";
 import { targetLinks, targetRunHref } from "./lib/links.mjs";
 import { areaFailures, sourceUrl } from "./lib/findings.mjs";
@@ -145,6 +145,35 @@ export default function (eleventyConfig) {
   }));
   eleventyConfig.addFilter("configurationOf", (slug) => configurationOf(slug));
   eleventyConfig.addFilter("isVariant", (slug) => isVariant(slug));
+  // A build's own page names the project it is a build of and links back to it.
+  // These two give it the way there.
+  eleventyConfig.addFilter("projectOf", (slug) => projectOf(slug));
+  eleventyConfig.addFilter("display", (slug) => display(slug));
+  // Whether this row is the one that stands for its project on a board. Not the
+  // same question as whether its slug is a build: when the reference build has
+  // no result the grouping promotes another to stand in, and reading the slug
+  // dropped the whole project. Three templates ask this, and two of them were
+  // still asking it the old way after the first was fixed - so it is a filter
+  // rather than an expression repeated per template. The slug stays as the
+  // reading for a model restored from the committed fallback, which predates
+  // the flag; drop that half once a regenerated snapshot carries it.
+  eleventyConfig.addFilter("standsForProject", (row) => row?.isParent ?? !isVariant(row?.slug));
+  // A project's other builds. Every one of them, always: the disclosure below
+  // decides how much is shown at once, never which of them exist.
+  eleventyConfig.addFilter("buildsOf", (row) => row?.variants ?? []);
+  // Whether the disclosure starts open. Open when any build reads different
+  // figures from the row above it, and open when the model carries no flag at
+  // all - a snapshot restored from the committed fallback predates it, and the
+  // safe reading of "unknown" is to show everything.
+  eleventyConfig.addFilter("buildsStartOpen", (row) =>
+    (row?.variants ?? []).some((v) => v.collapsed !== true),
+  );
+  // What is inside, for the closed state. Names rather than a count: "SQLite"
+  // tells a reader more than "1 other build" for the same room.
+  eleventyConfig.addFilter("buildNames", (row) => {
+    const names = (row?.variants ?? []).map((v) => configurationOf(v.slug) || v.display);
+    return names.length < 2 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  });
   // Every way a target can be run, as marks. Uncapped: seeing all of them at a
   // glance is the point, and an icon costs a fraction of the room a label does.
   eleventyConfig.addFilter("channels", (slug) =>

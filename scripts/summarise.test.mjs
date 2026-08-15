@@ -766,7 +766,10 @@ describe('renderTable variant nesting', () => {
   // distinct. Markdown has no nested tables, so the indent carries the
   // relationship - and it is derived from declared metadata rather than from a
   // bracket in the display name, which is what used to stand in for it.
-  const one = (rate) => ({
+  // `rate` is the headline pass rate; it does not feed divergence or coverage,
+  // which come from the counts. A build that should read as different from its
+  // parent therefore has to differ in `over`, not in `rate`.
+  const one = (rate, over = {}) => ({
     headline: { region: 'eu-west-2', rate },
     regions: {
       'eu-west-2': {
@@ -781,17 +784,22 @@ describe('renderTable variant nesting', () => {
           tier2: { p: 1, f: 0, s: 0, i: 0 },
           tier3: { p: 1, f: 0, s: 0, i: 0 },
         },
+        ...over,
       },
     },
     version: '-',
-    runDate: '2026-07-24',
+    runDate: over.runDate ?? '2026-07-24',
   })
+
+  // A build that scores differently from its parent. Same suite size, so it is
+  // the figures rather than the totals guard that earns it the row.
+  const differing = (rate) => one(rate, { passed: 700, failed: 10, skipped: 288 })
 
   it('indents a variant under its project and labels it by configuration', () => {
     const summary = {
       groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
       regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
-      targets: { 'dynoxide-wasm': one(100), dynoxide: one(96.3) },
+      targets: { 'dynoxide-wasm': differing(100), dynoxide: one(96.3) },
     }
     const table = renderTable(summary)
     // Named by what distinguishes it, not by repeating the project name.
@@ -816,6 +824,101 @@ describe('renderTable variant nesting', () => {
     expect(table).not.toContain('†')
     expect(table).not.toContain('preview')
   })
+
+  it('gives a build that scored the same its own row, carrying its own figures', () => {
+    // Markdown has no disclosure to put a matching build behind, so the table
+    // shows it. A redundant row says both were measured and they agree; a row
+    // naming a build whose figures it does not carry says something nobody
+    // checked. Only one of those can be wrong.
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: { 'extenddb-sqlite': one(97.7), extenddb: one(97.7) },
+    }
+    const table = renderTable(summary)
+    const lines = table.split('\n').filter((l) => l.startsWith('|'))
+    const parent = lines.findIndex((l) => l.includes('[ExtendDB]'))
+    // A nested row is labelled by its configuration alone, so it is found by
+    // position rather than by the project name.
+    expect(parent).toBeGreaterThan(-1)
+    expect(lines[parent + 1]).toContain('↳ SQLite')
+    // The parent names its own configuration, never the other build's.
+    expect(table).toMatch(/\[ExtendDB\]\([^)]+\) · PostgreSQL \|/)
+    expect(table).not.toContain('and SQLite')
+  })
+
+  it('renders every build of a project with three of them', () => {
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: { dynoxide: one(96.3), 'dynoxide-wasm': one(96.3), extenddb: one(97.7) },
+    }
+    const table = renderTable(summary)
+    expect(table).toContain('↳ WebAssembly / OPFS')
+    const nested = table.split('\n').filter((l) => l.includes('↳'))
+    expect(nested).toHaveLength(1)
+  })
+
+  it('does not print a promoted build\u2019s configuration twice', () => {
+    // With no result for the reference build, the grouping promotes a build to
+    // stand for the project. Its display name already carries the
+    // configuration, so appending it again read "ExtendDB (SQLite) · SQLite".
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: { 'extenddb-sqlite': one(97.7), dynoxide: one(96.3) },
+    }
+    const row = renderTable(summary).split('\n').find((l) => l.includes('ExtendDB'))
+
+    expect(row).toContain('ExtendDB (SQLite)')
+    expect(row).not.toContain('· SQLite')
+  })
+
+  it('gives a build carried from an earlier run its own row and its own date', () => {
+    // Two builds measured weeks apart were never shown to agree, whatever their
+    // percentages say. This table nests every build outright, so what matters
+    // here is that the carried one states its own date rather than borrowing
+    // the caption's.
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: {
+        'extenddb-sqlite': one(97.7, { runDate: '2026-07-20' }),
+        extenddb: one(97.7),
+        dynoxide: one(96.3),
+      },
+    }
+    const table = renderTable(summary)
+    // The column, not the caption: the caption says "Measured <date>" on every
+    // render, so asserting the bare word passed whether or not the column came
+    // back. This is the header the column adds.
+    expect(table).toContain('| Regions | Measured |')
+    // Rendered as its own nested row, carrying its own date.
+    const nested = table.split('\n').find((l) => l.includes('↳'))
+    expect(nested).toContain('2026-07-20')
+    // And the parent is not relabelled as though it spoke for both.
+    const parent = table.split('\n').find((l) => l.includes('[ExtendDB]'))
+    expect(parent).not.toContain('and SQLite')
+  })
+
+  it('gives a build one extra failure its own row, though both print the same divergence', () => {
+    // 0 and 1 failures over 998 both round to a printed figure the other could
+    // claim. Comparing counts rather than the printed figure is what stops the
+    // row publishing the parent's fail count for a build that failed more.
+    const summary = {
+      groundTruth: { slug: GROUND_TRUTH_SLUG, runDate: '-' },
+      regions: { observed: ['eu-west-2'], unresolved: [], dropped: [] },
+      targets: {
+        'extenddb-sqlite': one(97.7, { passed: 784, failed: 1, skipped: 213 }),
+        extenddb: one(97.7),
+      },
+    }
+    const table = renderTable(summary)
+    expect(table).toContain('↳')
+    const parent = table.split('\n').find((l) => l.includes('[ExtendDB]'))
+    expect(parent).not.toContain('and SQLite')
+  })
+
 })
 
 // ── The committed artefacts: freshness, no-drift, and the shape contract ────

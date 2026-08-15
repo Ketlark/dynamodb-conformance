@@ -101,6 +101,35 @@ try {
   check(docs.some((d) => d.path === "/index.html"), "builds a home page");
   check(docs.some((d) => /^\/targets\/[^/]+\/\d{4}-\d{2}-\d{2}\//.test(d.path)), "builds per-run target pages");
 
+  // The board actually has rows on it, and it has all of them. Every other
+  // check here passes on an empty board: the home page still builds, its links
+  // still resolve, and the per-target pages are paginated from a different list
+  // entirely.
+  //
+  // This is the check that would have caught the standings filter keying on a
+  // field the committed fallback does not carry, which rendered a home page
+  // with no engines on it while all 315 unit tests stayed green. A hermetic run
+  // is exactly the case it broke in, because that is the run that reads the
+  // fallback. Counting distinct target links rather than list items keeps it
+  // honest about what a row is for: getting the reader to an engine.
+  //
+  // The expected set comes from the endpoint this same build wrote, rather than
+  // a floor typed here. "At least five" passed on eight real targets, so losing
+  // one or two projects - which is what a disclosure rendering the wrong branch
+  // could look like - passed silently, and the number needed maintaining every
+  // time a target joined.
+  const homeDoc = docs.find((d) => d.path === "/index.html");
+  const linked = new Set([...(homeDoc?.html ?? "").matchAll(/href="\/targets\/([a-z0-9-]+)"/g)].map((m) => m[1]));
+  const scored = JSON.parse(await readFile(join(out, "data", "latest.json"), "utf8"))
+    .targets.filter((t) => t.slug !== "dynamodb")
+    .map((t) => t.slug);
+  const missing = scored.filter((slug) => !linked.has(slug));
+  check(
+    scored.length > 0 && missing.length === 0,
+    "the board reaches every scored engine, builds included",
+    `${linked.size} of ${scored.length} linked${missing.length ? `; missing ${missing.join(", ")}` : ""}`,
+  );
+
   // Every internal link has to resolve. This is the check that would have caught
   // 55 dead links when the synthesised baseline stopped getting dated pages but
   // two templates carried on linking to them.
@@ -480,6 +509,93 @@ try {
   // lib/premise.test.mjs, which does not depend on the board.
   if (guarded === 0) {
     console.log("  ok    the A+ premise check is vacuous: no zero-divergence row on this board");
+  }
+
+  // ── The disclosure, both ways round ────────────────────────────────────────
+  //
+  // A project's other builds sit behind a disclosure that starts closed when a
+  // build reads the same figures as the one above it. No run the suite has
+  // recorded holds a pair that agrees, so on real data that branch never
+  // renders and a change breaking it would look exactly like a normal board.
+  //
+  // So this builds a second, throwaway page from a seeded model
+  // (fixtures/board) through the same config, components and filters, and
+  // asserts both branches. It is hermetic and it publishes nothing.
+  const fixtureOut = await mkdtemp(join(tmpdir(), "paritysuite-fixture-"));
+  try {
+    execFileSync("npx", ["@11ty/eleventy", "--input", "fixtures/board", "--output", fixtureOut], {
+      stdio: ["ignore", "ignore", "inherit"],
+      env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import ./scripts/no-network.mjs`.trim() },
+    });
+    const board = await readFile(join(fixtureOut, "board.html"), "utf8");
+    // The disclosures in document order: the seeded agreement first, then the
+    // build that differs. The "no <details> in between" clause is what keeps
+    // this reading the right tag - each row opens with a tier breakdown, and a
+    // lazy match happily ran from that one's attributes to this one's summary,
+    // which reported the tier disclosure's state under the builds' name.
+    const disclosures = [...board.matchAll(/<details([^>]*)>((?:(?!<details)[\s\S])*?)<\/summary>/g)]
+      .filter((m) => /Also built for/.test(m[2]))
+      .map((m) => ({
+        open: /\bopen\b/.test(m[1]),
+        names: (m[2].match(/Also built for ([^<]*)/) ?? [, ""])[1].trim(),
+        // The whole summary, so an assertion about what it says can be scoped
+        // to the disclosure that says it.
+        summary: m[2].replace(/<[^>]*>/g, " ").replace(/\s+/g, " "),
+      }));
+
+    check(disclosures.length === 2, "the fixture board renders both disclosures", `got ${disclosures.length}`);
+    // By name, not by position. The rows are sorted by divergence over real
+    // committed figures, so indexing assumed Dynoxide keeps sorting above
+    // ExtendDB - and a weekly refresh that reversed them would have failed this
+    // check for a reason that has nothing to do with disclosures.
+    const byName = (needle) => disclosures.find((d) => d.names.includes(needle));
+    const agreeing = byName("WebAssembly");
+    const differing = byName("SQLite");
+    check(
+      agreeing && agreeing.open === false,
+      "a build reading the same figures starts closed",
+      agreeing ? `${agreeing.names} rendered open` : "no disclosure named the agreeing build",
+    );
+    check(
+      differing && differing.open === true,
+      "a build reading different figures starts open",
+      differing ? `${differing.names} rendered closed` : "no disclosure named the differing build",
+    );
+    // Scoped to the summary of the disclosure that is actually closed. Asserted
+    // page-wide it passed on the words appearing anywhere at all, including
+    // inside the open one.
+    check(
+      /same grade, divergence and coverage/.test(agreeing?.summary ?? ""),
+      "a closed disclosure names the three figures it compared",
+      agreeing ? `summary read "${agreeing.summary.trim()}"` : "nothing to read",
+    );
+
+    // The clause that overrides the figures. A build carried from an earlier
+    // run starts open however it reads, because the date qualifying its
+    // figures renders inside the disclosure - so a closed one would take the
+    // date with it and leave a summary saying the two agree.
+    const carriedPage = await readFile(join(fixtureOut, "carried.html"), "utf8");
+    const carriedDisclosure = [...carriedPage.matchAll(/<details([^>]*)>((?:(?!<details)[\s\S])*?)Also built for/g)]
+      .map((m) => /\bopen\b/.test(m[1]));
+    check(
+      carriedDisclosure.length === 1 && carriedDisclosure[0] === true,
+      "a build carried from an earlier run starts open even when its figures match",
+      `${carriedDisclosure.length} disclosure(s), open: ${carriedDisclosure.join(", ") || "none"}`,
+    );
+    check(
+      /last measured/.test(carriedPage),
+      "and the date qualifying those figures renders with them",
+    );
+    // Closed is not withheld: the figures are in the page either way, which is
+    // the difference between this design and the fold it replaced.
+    for (const slug of ["dynoxide-wasm", "extenddb-sqlite"]) {
+      check(
+        board.includes(`/targets/${slug}"`),
+        `the fixture board carries ${slug}'s own row`,
+      );
+    }
+  } finally {
+    await rm(fixtureOut, { recursive: true, force: true });
   }
 } finally {
   // Only clean up a directory this script made. In --built mode `out` is the

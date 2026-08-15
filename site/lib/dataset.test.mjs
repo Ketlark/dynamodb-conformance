@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-import { CAPABILITIES } from "./scoring.mjs";
+import { CAPABILITIES, sortRows } from "./scoring.mjs";
 import { buildIndex, buildLatest, buildRuns, TIERS, DATA_SCHEMA_VERSION } from "./dataset.mjs";
 
 // The committed history fallback is a real, fully-built model, so it doubles as
@@ -297,4 +297,92 @@ test("the split registry is discoverable from the data index", () => {
   const endpoint = buildIndex(model, site).endpoints.find((e) => /split/i.test(e.name));
   assert.ok(endpoint, "the index does not name the split registry");
   assert.match(endpoint.url, /registry\/splits\.json$/);
+});
+
+test("every target says whether its row starts closed on the board", () => {
+  // A consumer reading the endpoints beside the board would otherwise find a
+  // build here that the board did not appear to show, with nothing to say why.
+  const latest = buildLatest(model, site);
+  for (const t of latest.targets) {
+    assert.equal(
+      typeof t.collapsedIntoProject,
+      "boolean",
+      `target ${t.slug} does not say whether its row starts closed`,
+    );
+  }
+  // A build reading different figures from its project's reference build
+  // starts open.
+  const wasm = latest.targets.find((t) => t.slug === "dynoxide-wasm");
+  assert.equal(wasm.collapsedIntoProject, false);
+});
+
+test("every target says which row stands for its project", () => {
+  // `isVariant` cannot answer it. When a project's reference build records no
+  // result a build is promoted to stand for it, and every row of that project
+  // then reads `isVariant: true` - so a consumer grouping by `project` and
+  // looking for the one that is not a variant would find none. That is the
+  // mistake the board itself made before it read this flag.
+  const latest = buildLatest(model, site);
+  for (const t of latest.targets) {
+    assert.equal(typeof t.standsForProject, "boolean", `target ${t.slug} does not say`);
+  }
+  assert.equal(latest.targets.find((t) => t.slug === "dynoxide").standsForProject, true);
+  assert.equal(latest.targets.find((t) => t.slug === "dynoxide-wasm").standsForProject, false);
+
+  // Every project has exactly one row standing for it.
+  const byProject = new Map();
+  for (const t of latest.targets.filter((t) => t.slug !== "dynamodb")) {
+    byProject.set(t.project, (byProject.get(t.project) ?? 0) + (t.standsForProject ? 1 : 0));
+  }
+  for (const [project, standing] of byProject) {
+    assert.equal(standing, 1, `${project} has ${standing} rows standing for it`);
+  }
+});
+
+test("a promoted build says it stands for its project, though it is a variant", () => {
+  // The case the field exists for: drop the reference build's row and the
+  // grouping promotes the one below it.
+  const seeded = structuredClone(model);
+  seeded.latest.standings = seeded.latest.standings.filter((r) => r.slug !== "dynoxide");
+  sortRows(seeded.latest.standings);
+
+  const wasm = buildLatest(seeded, site).targets.find((t) => t.slug === "dynoxide-wasm");
+  assert.equal(wasm.isVariant, true, "it is still a build by the registry");
+  assert.equal(wasm.standsForProject, true, "but it is the row standing for the project");
+});
+
+test("a build reading the same figures as its reference build starts closed", () => {
+  // No committed run holds a matching pair, so make one: copy the reference
+  // build's figures onto its variant and re-derive. Without this the true
+  // branch of the flag is never taken by anything in the repo, and a change
+  // that stopped it ever being true would look exactly like today's data.
+  const seeded = structuredClone(model);
+  const rows = seeded.latest.standings;
+  const parent = rows.find((r) => r.slug === "dynoxide");
+  const build = rows.find((r) => r.slug === "dynoxide-wasm");
+  // The parent is seeded too. The rule reads its flag as well, so leaving it
+  // to the committed model made this assertion depend on which run the
+  // snapshot came from rather than on the code it is testing.
+  Object.assign(parent, { carried: false, reTested: true });
+  Object.assign(build, {
+    divergence: parent.divergence,
+    coverage: parent.coverage,
+    divergenceValue: parent.divergenceValue,
+    coverageValue: parent.coverageValue,
+    // Measured in the same run as the row above it. The committed model has
+    // this build carried from an earlier one, and a carried build starts open
+    // whatever it reads - so seeding the figures alone leaves it open, which
+    // is the guard working rather than the seed failing.
+    carried: false,
+    reTested: true,
+    runDate: parent.runDate,
+  });
+  sortRows(rows);
+
+  const targets = buildLatest(seeded, site).targets;
+  assert.equal(targets.find((t) => t.slug === "dynoxide-wasm").collapsedIntoProject, true);
+  // The build is still published in full, which is the whole point of the flag
+  // meaning "starts closed" rather than "withheld".
+  assert.ok(targets.find((t) => t.slug === "dynoxide-wasm").counts.total > 0);
+  assert.equal(targets.find((t) => t.slug === "dynoxide").collapsedIntoProject, false);
 });

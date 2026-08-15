@@ -2,20 +2,30 @@
 #
 # Stand up a local ExtendDB and emit the env the conformance suite needs.
 #
-# ExtendDB ships no binaries, so this builds it from source, initialises it
-# against PostgreSQL, mints a dynamodb:* IAM access key, and starts the server.
-# It is used by the ExtendDB CI job and is runnable locally.
+# ExtendDB ships no binaries, so this builds it from source, initialises its
+# storage, mints a dynamodb:* IAM access key, and starts the server. It is used
+# by both ExtendDB CI jobs and is runnable locally.
+#
+# The storage backend is compiled in rather than chosen at runtime, and exactly
+# one is installed per binary, so EXTENDDB_BACKEND drives the cargo features as
+# well as the init flags. `dev-mode` is deliberately never enabled: it serves
+# plain HTTP with open authorisation, which is a different security posture from
+# the PostgreSQL build and so not the same thing to measure.
 #
 # Required:
 #   EXTENDDB_DIR              path to an ExtendDB checkout (built or buildable)
 #
 # Optional (defaults shown):
+#   EXTENDDB_BACKEND=postgres storage backend: postgres or sqlite
 #   PGHOST=127.0.0.1 PGPORT=5432 PGUSER=postgres PGPASSWORD=postgres
+#                             postgres backend only
 #   EXTENDDB_PORT=8000
 #   EXTENDDB_ADMIN_PASSWORD   admin password (generated if unset; init reads it)
 #   ACCOUNT_ID=123456789012   12-digit account the conformance user lives in
 #   IAM_USER=conformance
-#   BUILD=1                   set 0 to skip the cargo build when already built
+#   BUILD=1                   set 0 to skip the cargo build. The run then
+#                             refuses a binary that is missing, or stamped for
+#                             a different backend, rather than measuring it.
 #
 # On success it emits the suite env (DYNAMODB_ENDPOINT, NODE_EXTRA_CA_CERTS,
 # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION). In CI ($GITHUB_ENV set)
@@ -24,6 +34,14 @@
 set -euo pipefail
 
 : "${EXTENDDB_DIR:?set EXTENDDB_DIR to an ExtendDB checkout}"
+BACKEND=${EXTENDDB_BACKEND:-postgres}
+case "$BACKEND" in
+  postgres | sqlite) ;;
+  *)
+    echo "ERROR: EXTENDDB_BACKEND must be postgres or sqlite (got '$BACKEND')" >&2
+    exit 1
+    ;;
+esac
 PGHOST=${PGHOST:-127.0.0.1}
 PGPORT=${PGPORT:-5432}
 PGUSER=${PGUSER:-postgres}
@@ -55,15 +73,62 @@ cd "$EXTENDDB_DIR"
 BIN=target/release/extenddb
 CERT="${HOME}/.extenddb/tls/cert.pem"
 
-if [ "${BUILD:-1}" = "1" ] && [ ! -x "$BIN" ]; then
-  echo "==> building ExtendDB (release)" >&2
-  cargo build --release
+# Which backend the binary on disk was built with. The backend is compiled in,
+# so a cached target/ from the other job's build looks identical from the
+# outside: without this the `-x "$BIN"` check below would skip the rebuild and
+# silently measure PostgreSQL while reporting SQLite. Cargo can't be asked
+# (the feature set is not recorded in the artefact), so the build records it.
+STAMP=target/release/.conformance-backend
+built=$([ -f "$STAMP" ] && cat "$STAMP" || echo '')
+
+if [ "${BUILD:-1}" = "1" ] && { [ ! -x "$BIN" ] || [ "$built" != "$BACKEND" ]; }; then
+  echo "==> building ExtendDB (release, $BACKEND backend)" >&2
+  case "$BACKEND" in
+    # Left exactly as it was: the default feature set is postgres, and building
+    # the workspace is what this job has always done.
+    postgres) cargo build --release ;;
+    # No default features, so postgres is not compiled in alongside it. One
+    # backend per binary is ExtendDB's own rule, enforced in its init.
+    sqlite) cargo build --release -p extenddb --no-default-features --features sqlite ;;
+  esac
+  printf '%s\n' "$BACKEND" >"$STAMP"
+elif [ "$built" != "$BACKEND" ]; then
+  # Fails closed, including when there is no stamp at all. An unstamped binary
+  # is the state this guard exists for - a hand-built or pre-stamp one - and
+  # treating "unknown" as "agrees" made the check pass in exactly the case it
+  # was added to catch.
+  if [ -z "$built" ]; then
+    echo "ERROR: cannot confirm which backend $BIN was built with (no stamp)." >&2
+  else
+    echo "ERROR: $BIN was built with the '$built' backend, not '$BACKEND'." >&2
+  fi
+  echo "       Rebuild it: unset BUILD (or set BUILD=1) and run again." >&2
+  exit 1
 fi
 
-echo "==> extenddb init" >&2
+echo "==> extenddb init ($BACKEND)" >&2
 # init and serve print banners to stdout; route to stderr so this script's only
 # stdout is the `export` block below (so `eval "$(run-extenddb.sh)"` works).
-"$BIN" init --pg-host "$PGHOST" --pg-port "$PGPORT" --pg-user "$PGUSER" --pg-pass "$PGPASSWORD" >&2
+#
+# The compiled-in backend is authoritative; --backend is validated against it
+# rather than selecting anything. Passing it is what ExtendDB's getting-started
+# documents, and it turns a binary built with the wrong features into a clear
+# error here rather than a silent run against the wrong storage.
+#
+# SQLite takes no path argument. ExtendDB documents `serve --sqlite-path <p>`
+# for that, but v0.1.3 declares it on no subcommand and rejects it, so the
+# config file is the only way to set the path and the database lands at the
+# compiled-in default, $EXTENDDB_DIR/extenddb.sqlite. init records that
+# relative path in the generated config and serve resolves it against the same
+# working directory, so the two agree.
+case "$BACKEND" in
+  postgres)
+    "$BIN" init --backend postgres --pg-host "$PGHOST" --pg-port "$PGPORT" --pg-user "$PGUSER" --pg-pass "$PGPASSWORD" >&2
+    ;;
+  sqlite)
+    "$BIN" init --backend sqlite >&2
+    ;;
+esac
 
 # Pure-timing knob: make table create/delete transitions instant. This has no
 # effect on the conformance signal (the suite polls for ACTIVE either way); it

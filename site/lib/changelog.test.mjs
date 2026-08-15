@@ -54,13 +54,36 @@ test("an entry body stops at the next heading", () => {
 // silence is what let the site render a stale page on a green build.
 test("reports unparseable headings instead of dropping them quietly", () => {
   const { entries, skipped } = parseChangelog(
-    ["## Unreleased", "", "Pending.", "", "## 2026-07-01", "", "Added a tier."].join("\n"),
+    ["## Coming soon", "", "Pending.", "", "## 2026-07-01", "", "Added a tier."].join("\n"),
   );
   assert.deepEqual(
     entries.map((e) => e.date),
     ["2026-07-01"],
   );
-  assert.deepEqual(skipped, ["Unreleased"]);
+  assert.deepEqual(skipped, ["Coming soon"]);
+});
+
+// Branches write their changelog with the work, so an Unreleased section is
+// expected rather than a heading nobody anticipated. It must not reach
+// `skipped`, which fails the scheduled build by design.
+test("holds an Unreleased section back without reporting it as unreadable", () => {
+  const { entries, skipped, unreleased } = parseChangelog(
+    ["## Unreleased", "", "Pending note.", "", "## 2026-07-01", "", "Added a tier."].join("\n"),
+  );
+  assert.deepEqual(
+    entries.map((e) => e.date),
+    ["2026-07-01"],
+  );
+  assert.deepEqual(skipped, []);
+  assert.match(unreleased.bodyHtml, /Pending note\./);
+});
+
+test("an Unreleased section stops at the next heading, and is null when absent", () => {
+  const { unreleased } = parseChangelog(
+    ["## Unreleased", "", "Pending note.", "", "## 2026-07-01", "", "Older note."].join("\n"),
+  );
+  assert.doesNotMatch(unreleased.bodyHtml, /Older note\./);
+  assert.equal(parseChangelog("## 2026-07-01\n\nAdded a tier.").unreleased, null);
 });
 
 test("the committed fallback parses cleanly", async () => {
@@ -159,3 +182,41 @@ test("an entry newer than every run gets no badge", () => {
 test("no runs yields no badges", () => {
   assert.deepEqual(entryRunBadges(["2026-07-13"], []), {});
 });
+
+// The gate that was missing. PR CI stubs fetch, so every build check parses the
+// committed fallback and never the repository's own CHANGELOG.md - which is
+// what deploy.yml fetches on a push to main with FAIL_ON_FALLBACK set. A
+// heading this parser cannot read therefore passed every check and took the
+// deploy down on the commit that merged it. This puts that failure on the PR.
+test("the repository's own CHANGELOG.md parses cleanly", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, join } = await import("node:path");
+  const path = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "CHANGELOG.md");
+  const { entries, skipped } = parseChangelog(await readFile(path, "utf8"));
+
+  assert.ok(entries.length > 0, "CHANGELOG.md should yield dated entries");
+  assert.deepEqual(skipped, [], "a heading here fails the deploy; fix it before merging");
+});
+
+test("the Unreleased heading is accepted in the spellings people actually write", () => {
+  for (const heading of ["## Unreleased", "## [Unreleased]", "## Unreleased (next)", "## [Unreleased] - 2026-08-20"]) {
+    const { skipped, unreleased } = parseChangelog([heading, "", "Pending.", "", "## 2026-07-01", "", "Dated."].join("\n"));
+    assert.deepEqual(skipped, [], `${heading} should not be reported as unreadable`);
+    assert.ok(unreleased, `${heading} should be kept as the pending section`);
+  }
+});
+
+test("an Unreleased heading with nothing under it is not a pending note", () => {
+  // A release dates the section and leaves the heading behind, so a bodyless
+  // one is the standing state between releases. Read as pending, every build
+  // between releases would warn that notes were being held back.
+  const { unreleased, entries, skipped } = parseChangelog(
+    "# Changelog\n\n## Unreleased\n\n## 2026-08-12 (3.0.0)\n\nReal notes.\n",
+  );
+
+  assert.equal(unreleased, null);
+  assert.equal(entries.length, 1, "the dated entry still parses");
+  assert.deepEqual(skipped, [], "and the empty heading is not reported as unreadable");
+});
+

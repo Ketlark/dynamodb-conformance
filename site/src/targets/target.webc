@@ -89,6 +89,20 @@
     <tier-bar :detail="true" :name="'Tier 3'" :display="$data.target.display" :tier="$data.target.current.tiers.tier3"></tier-bar>
   </div>
 
+  <!-- This build reads the same figures as the one it is a build of, so the
+       board shows it closed rather than open. Said here because a reader who
+       arrived from a closed disclosure should find out why it was closed, and
+       because "the same as" is a claim worth being able to check against the
+       figures below it. -->
+  <p webc:if="$data.target.current.collapsed" class="mb-8 rounded-lg border border-zinc-200 dark:border-white/10 bg-zinc-50/70 dark:bg-white/[0.03] px-4 py-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 max-w-2xl">
+    This build reads the same grade, divergence and coverage as
+    <a :href="'/targets/' + projectOf($data.target.slug)"
+      class="font-medium underline decoration-dotted underline-offset-2 hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
+      @text="display(projectOf($data.target.slug)) + (configurationOf(projectOf($data.target.slug)) ? ' · ' + configurationOf(projectOf($data.target.slug)) : '')"></a>,
+    so the board starts it closed. It was measured in full, the figures below
+    are its own, and a build that later differs starts open again.
+  </p>
+
   <!-- Other builds of this project. Nesting them in the standings keeps a
        project to one row, but it also takes away the row a reader would have
        clicked, so the parent page has to carry the way through. -->

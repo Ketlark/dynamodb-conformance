@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { capClauseOf, gradeForRow } from "../lib/scoring.mjs";
+import { capClauseOf, display, gradeForRow, isVariant, projectOf } from "../lib/scoring.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -43,7 +43,23 @@ function latestResults(conformance) {
     // agent reads cannot phrase a cap differently from the board a human reads.
     const clause = capClauseOf(r);
     const cap = clause ? ` (${clause})` : "";
-    return `- ${r.display}${baseline} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
+    // This list is flat, so a build of a project reads as a rival to it unless
+    // it says otherwise. The board has the indent to carry that; here it has to
+    // be words, or two builds of one engine print as two unrelated entries with
+    // near-identical figures.
+    //
+    // Relatedness comes from the registry, which is always available, and only
+    // the closed-state clause depends on the run. A model restored from the committed
+    // fallback predates the flag, so keying the whole sentence on it would have
+    // dropped the relationship entirely on exactly the builds most likely to
+    // look like duplicates.
+    const build = isVariant(r.slug) ? `, a build of ${display(projectOf(r.slug))}` : "";
+    // No disclosure in plain text, so every build is simply listed with its own
+    // figures. The note says what the board does with it, which is the only
+    // thing a reader of this file cannot see for themselves - named to the three
+    // figures the board compared, because it compares no others.
+    const closed = r.collapsed ? " (shown closed on the board: same grade, divergence and coverage as the build above)" : "";
+    return `- ${r.display}${baseline}${build}${closed} - grade ${grade.letter ?? grade.qualifier}${cap}; diverges ${r.divergence} of the suite; covers ${r.coverage}; diverges per tier ${tiers}; version ${r.version}`;
   });
   return [
     `# Latest results`,

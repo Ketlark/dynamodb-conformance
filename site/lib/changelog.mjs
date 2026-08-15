@@ -18,9 +18,27 @@ export function dateLabel(iso) {
 const HEADING = /^## +(.+?)\s*$/gm;
 const DATED = /^(\d{4}-\d{2}-\d{2})(?:\s+\((.+)\))?$/;
 
+// Notes written before there is a release to date them. Branches land their
+// changelog with the work rather than at release time, so several can be in
+// flight at once and the release gives the section its date and version.
+//
+// Recognised rather than skipped, and that distinction is load-bearing: an
+// unrecognised heading fails the scheduled build on purpose, because a page
+// silently rendering short is how it went stale before. An Unreleased section
+// is expected, so it must not trip that alarm - and it is not published
+// either, because the page is a dated history and this has no date yet.
+// `## Unreleased`, `## [Unreleased]` (the Keep a Changelog spelling), and a
+// parenthetical after either. Accepting the near misses matters more than it
+// looks: deploy.yml runs on every push to main that touches CHANGELOG.md and
+// sets FAIL_ON_FALLBACK unconditionally, so a heading this does not recognise
+// does not degrade quietly - it takes the deploy down on the commit that
+// introduces it.
+const UNRELEASED = /^\[?unreleased\]?\b/i;
+
 // Split a changelog into newest-first dated entries. Returns the parsed
-// entries plus any heading text that didn't look like a dated entry, so the
-// caller can complain rather than quietly render a short page.
+// entries, the pending Unreleased section when there is one, and any heading
+// text that didn't look like either, so the caller can complain rather than
+// quietly render a short page.
 export function parseChangelog(body) {
   const headings = [];
   let m;
@@ -31,15 +49,30 @@ export function parseChangelog(body) {
 
   const entries = [];
   const skipped = [];
+  let unreleased = null;
   headings.forEach((heading, i) => {
+    const blockEnd = i + 1 < headings.length ? headings[i + 1].start : body.length;
+    const block = body.slice(heading.end, blockEnd).trim();
+
+    if (UNRELEASED.test(heading.text)) {
+      // Appended, not overwritten. Branches write their notes ahead of the
+      // release, so a merge landing two of these is the expected case, and
+      // dropping the older one would lose a note nothing else records.
+      // An empty heading is not a pending note. A release dates the section and
+      // leaves the heading behind, so a bodyless one is the standing state
+      // between releases - and reporting it as notes held back would warn on
+      // every build until someone wrote the next line.
+      const rendered = (unreleased?.bodyHtml ?? "") + md.render(block);
+      unreleased = rendered.trim() ? { bodyHtml: rendered } : unreleased;
+      return;
+    }
+
     const parsed = DATED.exec(heading.text);
     if (!parsed) {
       skipped.push(heading.text);
       return;
     }
     const [, date, version] = parsed;
-    const blockEnd = i + 1 < headings.length ? headings[i + 1].start : body.length;
-    const block = body.slice(heading.end, blockEnd).trim();
     entries.push({
       date,
       dateLabel: dateLabel(date),
@@ -48,7 +81,7 @@ export function parseChangelog(body) {
     });
   });
 
-  return { entries, skipped };
+  return { entries, skipped, unreleased };
 }
 
 // Pair each entry with the nearest run on or after it, so entries landing on a

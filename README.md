@@ -63,7 +63,7 @@ _Measured 2026-08-15, except where a row carries its own date._
 | Target | Grade | Version | Divergence | Coverage | Fail | Skip | Tier 1 | Tier 2 | Tier 3 | Regions | Measured |
 |--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|----------|
 | [DynamoDB](https://aws.amazon.com/dynamodb/) | baseline | live (AWS) | 0.0% | 100.0% | 0 | 0 | 0.0% | 0.0% | 0.0% | 33 of 33 | 2026-08-12 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) · native | A | 0.13.0 | 0.9% | 94.7% | 10 | 56 | 2.0% | 0.0% | 0.0% | 4 of 33 |  |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) · native SQLite | A | 0.13.0 | 0.9% | 94.7% | 10 | 56 | 2.0% | 0.0% | 0.0% | 4 of 33 |  |
 | ↳ WebAssembly / OPFS | B | 0.13.0 | 0.9% | 83.4% | 10 | 175 | 2.0% | 0.0% | 0.0% | 4 of 33 |  |
 | [ExtendDB](https://github.com/ExtendDB/extenddb) · PostgreSQL | B | v0.1.5 | 1.9% | 87.8% | 20 | 129 | 0.8% | 1.8% | 3.5% | 27 of 33 |  |
 | [Ministack](https://github.com/ministackorg/ministack) | B | 2b75df610699 | 11.9% | 96.0% | 125 | 42 | 5.7% | 15.1% | 18.5% | 27 of 33 |  |
@@ -99,6 +99,21 @@ Rows are ordered by divergence. That ranks how much a target gets wrong rather
 than telling you which one to pick, because that depends on the operations you
 need: a target with no divergences over a narrow surface sits high, and its
 coverage figure says how narrow.
+
+An indented row (`↳`) is a second build of the project above it: the same
+engine with a storage backend swapped underneath, or compiled for somewhere
+else to run. Every build the suite runs has a row here, with its own figures,
+whether or not they match the build above.
+
+On [paritysuite.org](https://paritysuite.org) a project's other builds sit
+behind a disclosure on its row. It starts closed only when every build under it
+reads the same grade, divergence and coverage as the row above, and only when
+each of them was measured in that run: a row carried from an earlier run, on
+either side, opens the disclosure whatever the percentages say, and so does a
+run the suite declined to score. The comparison is made from each run, so a
+build that converges starts closed next time and one that diverges starts open
+again. Markdown has no disclosure to offer, so this table lists them all
+outright.
 
 A skipped test is deliberate: each test file probes for feature support in
 `beforeAll` and skips itself when the target doesn't implement that operation,
@@ -389,6 +404,37 @@ CONFORMANCE_TARGET=extenddb npm test            # writes results/extenddb.json
 
 Use `127.0.0.1` or `localhost` (both are in the cert's SANs). ExtendDB does
 not implement PartiQL, so those Tier 2 tests skip.
+
+#### The SQLite build
+
+ExtendDB selects its storage backend at build time, and v0.1.3 added SQLite
+beside PostgreSQL. It is the same server over a single file, so it needs no
+database service. `scripts/run-extenddb.sh` handles the bring-up either way:
+
+```bash
+eval "$(EXTENDDB_DIR=/path/to/extenddb EXTENDDB_BACKEND=sqlite ./scripts/run-extenddb.sh)"
+CONFORMANCE_TARGET=extenddb-sqlite npm test   # writes results/extenddb-sqlite.json
+```
+
+By hand it is the PostgreSQL flow with one line changed, the feature at build
+time. SQLite takes no connection details, so `init` only names the backend:
+
+```bash
+cargo build --release -p extenddb --no-default-features --features sqlite
+./target/release/extenddb init --backend sqlite   # database at ./extenddb.sqlite
+```
+
+The database path comes from the config file. ExtendDB documents
+`serve --sqlite-path <path>` for overriding it, but v0.1.3 declares that flag
+on no subcommand and rejects it, so `[storage.sqlite].path` is the only way in.
+Checked against v0.1.3 rather than assumed.
+
+`init` refuses to overwrite an existing database, so a repeat local run wants
+`extenddb destroy` first.
+
+ExtendDB also ships a `dev-mode` build feature that serves plain HTTP with open
+authorisation. The suite deliberately does not use it. It would change the
+security posture, and these two rows are meant to differ only in storage engine.
 
 ### Floci
 

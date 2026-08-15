@@ -884,28 +884,44 @@ export function renderTable(summary) {
   // everything left every cell blank, and the table published an empty column to
   // whoever arrived from an announcement - a header promising something the rows
   // never deliver. The caption already carries the date they share, and the
-  // column returns with the first row carried forward. Variants are counted too:
-  // they are rendered as rows, so a carried variant under a re-measured project
-  // still needs somewhere to say so.
-  const carried = rows
-    .flatMap((r) => [r, ...(r.variants ?? [])])
-    .some((r) => r.runDate !== tableDate)
-  const measured = (r) => (carried ? ` ${r.runDate === tableDate ? '' : r.runDate} |` : '')
-  const fmt = (r, name) =>
-    `| ${name} | ${r.grade} | ${r.version} | ${r.divergence} | ${r.coverage} | ${r.failed} | ${r.skipped} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.cohort ?? '-'} |${measured(r)}`
+  // column returns with the first row carried forward. Every build is counted,
+  // because every build has a row of its own to state a date on.
+
+  // Every build renders, whatever it scored. Markdown has no disclosure to put
+  // a matching build behind, so the choice here is between a redundant row and
+  // a row that speaks for a build it is not - and only one of those can be
+  // wrong. Two rows carrying the same figures says both were measured and they
+  // agree, which is worth reading; a row naming a build whose figures it does
+  // not carry is a claim nobody checked.
+  //
+  // The site can do better than this and does, behind a disclosure. The two
+  // surfaces agree on the data and differ in how much of it they show at once.
+  //
+  // The parent still names its own configuration, so a reader can tell which
+  // build the top row's figures belong to the moment a project ships a second.
+  const rendered = rows.flatMap((r) => [
+    {
+      row: r,
+      // A build promoted to stand for its project already carries its
+      // configuration in the display name the registry gives it, so appending
+      // it again read "ExtendDB (SQLite) · SQLite".
+      name: configurationOf(r.slug) && !isVariant(r.slug) ? `${r.target} · ${configurationOf(r.slug)}` : r.target,
+      date: r.runDate,
+    },
+    ...(r.variants ?? []).map((v) => ({
+      row: v,
+      name: `${VARIANT_PREFIX}${configurationOf(v.slug) ?? display(v.slug)}`,
+      date: v.runDate,
+    })),
+  ])
+  const carried = rendered.some((r) => r.date !== tableDate)
+  const measured = (date) => (carried ? ` ${date === tableDate ? '' : date} |` : '')
+  const fmt = ({ row: r, name, date }) =>
+    `| ${name} | ${r.grade} | ${r.version} | ${r.divergence} | ${r.coverage} | ${r.failed} | ${r.skipped} | ${r.tier1} | ${r.tier2} | ${r.tier3} | ${r.cohort ?? '-'} |${measured(date)}`
   const body = [
     `| Target | Grade | Version | Divergence | Coverage | Fail | Skip | Tier 1 | Tier 2 | Tier 3 | Regions |${carried ? ' Measured |' : ''}`,
     `|--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|${carried ? '----------|' : ''}`,
-    ...rows.flatMap((r) => [
-      // The parent's figures are its reference configuration's, so name that
-      // configuration inline when the project has more than one shape. Without
-      // it a reader cannot tell which storage engine or build was measured, and
-      // the row silently becomes ambiguous the moment a second one ships.
-      fmt(r, configurationOf(r.slug) ? `${r.target} · ${configurationOf(r.slug)}` : r.target),
-      ...(r.variants ?? []).map((v) =>
-        fmt(v, `${VARIANT_PREFIX}${configurationOf(v.slug) ?? display(v.slug)}`),
-      ),
-    ]),
+    ...rendered.map(fmt),
   ].join('\n')
   return `${tableCaption(summary.regions, summary.groundTruth, tableDate, carried)}\n\n${body}`
 }

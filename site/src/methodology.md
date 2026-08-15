@@ -80,6 +80,22 @@ The two figures are not properties of the same thing. Coverage is a property of 
 <!-- literal-figures: historical, suite sizes at two named points in 2026, quoted to show the growth -->
 One consequence worth spelling out: [the suite grows](/changelog). It had 526 tests in March 2026 and over 600 by May. Raw counts from different runs aren't comparable, so every chart and every movement figure on this site is a **percentage**, never a count.
 
+## When a project has more than one build
+
+Some projects ship the same engine in more than one shape: a storage backend swapped underneath it, or the query layer compiled for somewhere else to run. Those builds are nested under the project rather than seated beside it, because a reader chooses between projects first and the build follows from where their code runs. Seating them as rivals would let one engine take several places near the top.
+
+Every build is measured in full, and every build has its own row, its own figures and its own page. The nesting decides only how much of that you see at once: a project's other builds sit behind a disclosure on its row, which starts closed only when every build under it reads the same grade, divergence and coverage as the row above. A build repeating all three is a click away rather than three more lines of the same numbers, and one that differs is already showing - along with its siblings, since the disclosure opens as a whole.
+
+Three things have to hold for a build to start closed, not one. The figures have to match. Both builds have to have been measured in the run being shown, on either side: a row carried from an earlier run has its figures frozen at the run that measured it, so a carried build, or a carried project row above it, opens the disclosure whatever the percentages say. And neither can be a row the suite declined to score, because a run that recorded a failed observation publishes no figures at all and two blanks are not agreement.
+
+The second clause has a visible consequence worth naming: on a run where a project itself was not re-tested, every one of its builds shows open, even builds whose figures are identical to the row above them. That reads like a fault and is the opposite - it is the board declining to say two things agree when it has not measured them together.
+
+What is compared is what the row prints: the grade, the divergence and the coverage. Not the version, the region cohort or the tier breakdown. So a closed disclosure says those three read the same, which is what its summary says, and no more than that.
+
+The comparison is made from each run rather than from a setting anyone maintains, so it goes both ways: a build that converges with the one above starts closed on the next run, and one that later diverges starts open again. It picks a starting state and nothing else, so no figure is withheld by it either way.
+
+The README table in the suite repository has no disclosure to offer, so it lists every build outright.
+
 ## How runs and movement are reconstructed
 
 The suite publishes each run's results as JSON in its repository, and it has done since the first run. That means the full history is sitting in the git log, and this site rebuilds the timeline from it: it reads every version of those result files, scores each one with the suite's own logic, and assembles the runs you browse here.

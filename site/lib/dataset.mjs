@@ -178,6 +178,22 @@ function targetRow(row) {
     project: projectOf(row.slug),
     configuration: configurationOf(row.slug),
     isVariant: isVariant(row.slug),
+    // Which row stands for the project in this run, which `isVariant` cannot
+    // answer: when a project's reference build records no result, a build is
+    // promoted to stand for it, and every row of that project then reads
+    // `isVariant: true`. A consumer grouping by `project` and looking for the
+    // one that is not a variant would find none, which is the same mistake the
+    // board itself made before it read this flag.
+    standsForProject: row.isParent ?? !isVariant(row.slug),
+    // Whether the board starts this build's row closed: it reads the same
+    // grade, divergence and coverage as the row standing for its project, and
+    // both were measured in the same run. The row above, not the reference
+    // build by name - on a run the reference build did not record, a promoted
+    // build is what the comparison is made against.
+    // Published because a consumer reading the endpoints and the board side by
+    // side would otherwise find a build here that the board did not appear to
+    // show, with nothing to explain it.
+    collapsedIntoProject: row.collapsed === true,
     counts: { passed: row.passed, failed: row.failed, skipped: row.skipped, implemented: row.implemented, total: row.count },
     tiers: tierScores(row.tiers),
     region: regionSummary(row),
@@ -248,7 +264,7 @@ const METRICS = {
     formula: "(passed + failed) / total",
     direction: "higher_is_better",
     description:
-      "Null when the run recorded any indeterminate: a failed observation means nobody knows what the target would have answered, so a partial run is not scored and the board carries its last clean measurement instead. The share of the suite's tests the target implements at all. Weighted by test count, not by a count of features.",
+      "Null when the run recorded any indeterminate: a failed observation means nobody knows what the target would have answered, so a partial run is not scored. The row is still in the run, reads `carried: false` because the target did report, and publishes null for both figures - so `carried` is not the field to test for whether a figure is real; the null is. A target that reported nothing at all is the separate, carried case. The share of the suite's tests the target implements at all. Weighted by test count, not by a count of features.",
   },
   correctness: {
     formula: "passed / (passed + failed)",
@@ -336,6 +352,25 @@ export function buildIndex(conformance, site, summary = null) {
     suiteSize: latest?.suiteSize ?? null,
     tiers: TIERS,
     capabilities: CAPABILITIES.map((c) => ({ key: c.key, label: c.label, group: c.group })),
+    // What the version number entitles a consumer to, written from their side
+    // rather than as a list of things this project promises not to do. The
+    // maintainer's rule follows from it; the consumer's rule is the one that
+    // tells them whether they have to re-verify.
+    schema: {
+      version: DATA_SCHEMA_VERSION,
+      description:
+        "A field you already read will not change type or meaning while `schemaVersion` stays put, so a consumer on this version can keep reading what it reads. New fields may appear at any version: treat one you do not recognise as new rather than as an error. It is removals, renames and changes of meaning that bump the version.",
+      gradingVersion:
+        "A separate axis, and the exception that matters. The grading criteria carry their own version (`metrics.grade.version`), and a change to the bands changes what a letter means without `schemaVersion` moving - the shape of the field is unaffected, so a schema bump would say nothing to a consumer parsing it. Anything storing or comparing letters over time should watch both numbers; anything reading only divergence and coverage can ignore the second.",
+    },
+    // A consumer reading the endpoints beside the board would otherwise find
+    // builds here that the board does not appear to show, and nothing to say why.
+    projects: {
+      description:
+        "A project can ship more than one build of the same engine: a storage backend swapped underneath it, or the query layer compiled for somewhere else to run. Every build is its own target here, with its own figures, and `project` groups them while `configuration` names what distinguishes each one. `isVariant` says a target is a build of the project rather than its reference build, and `standsForProject` says which row the board treats as the project's own - normally the reference build, but a build is promoted to stand for the project on any run the reference build did not record.",
+      collapsedIntoProject:
+        "True when the board starts this build's row closed. That takes three things: the build reads the same grade, divergence and coverage as the row standing for its project - the one `standsForProject` names, normally the reference build but a promoted build on a run the reference build did not record; both were measured in this run, on either side, since a carried row's figures are frozen at the run that measured it; and neither is a row the suite declined to score, because two rows publishing null figures are not agreement. It is one answer per project rather than per build - the disclosure holds every build of a project and opens as a whole - so a project whose builds disagree reads false on all of them. Every build has a row and its own figures either way; this says only whether a reader sees it without opening the disclosure. Re-derived every run.",
+    },
     regions: {
       pinned: "eu-west-2",
       description:

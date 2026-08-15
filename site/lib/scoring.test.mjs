@@ -24,7 +24,10 @@ import {
   gradeForRow,
   gradeLineOf,
   regionClauseOf,
+  sortRows,
+  buildsAgree,
 } from "./scoring.mjs";
+import { figuresDiffer } from "dynamodb-conformance/scripts/lib/standings.mjs";
 import * as suite from "dynamodb-conformance/scripts/summarise.mjs";
 import * as suiteScore from "dynamodb-conformance/scripts/lib/score.mjs";
 
@@ -415,3 +418,188 @@ test("the baseline is never given a letter by any of them", () => {
   assert.equal(gradeForRow(baseline, GROUND_TRUTH_SLUG).letter, null);
   assert.equal(capClauseOf(baseline, GROUND_TRUTH_SLUG), "");
 });
+
+// ── Which builds of a project start visible ─────────────────────────────────
+//
+// The standings nest a project's builds under it, behind a disclosure. Every
+// build draws its own row whatever it scored; the annotation these tests cover
+// is what the template reads to decide whether that disclosure starts open.
+
+// The shape a real site row has. It deliberately carries no `grade`: the site
+// computes the letter at render time, so a fixture that invented one would
+// exercise a shape this surface never produces.
+const buildRow = (over = {}) => ({
+  slug: "extenddb-sqlite",
+  version: "v0.1.3",
+  runDate: "2026-08-14",
+  passed: 904,
+  failed: 21,
+  skipped: 129,
+  count: 1054,
+  divergenceValue: 2.0,
+  coverageValue: 87.8,
+  tiers: { tier1: { divergence: "0.8%" }, tier2: { divergence: "2.7%" }, tier3: { divergence: "3.2%" } },
+  ...over,
+});
+
+test("sortRows returns every build, annotating which of them start closed", () => {
+  // The full list stays: the target index, the per-target pages and the JSON
+  // endpoints all want every build whatever the disclosure does with it.
+  const parent = buildRow({ slug: "extenddb" });
+  const matching = buildRow({ slug: "extenddb-sqlite" });
+  const rows = sortRows([parent, matching]);
+
+  assert.deepEqual(rows.map((r) => r.slug), ["extenddb", "extenddb-sqlite"]);
+  assert.equal(matching.collapsed, true);
+  assert.deepEqual(parent.variants.map((r) => r.slug), ["extenddb-sqlite"]);
+});
+
+test("a build that scores differently keeps its own row", () => {
+  // Dynoxide's wasm build today: the same failures as the native one, but a lot
+  // more of the suite it cannot run, which is what drops it a grade.
+  const parent = buildRow({ slug: "dynoxide", passed: 988, failed: 10, skipped: 56, coverageValue: 94.7 });
+  const wasm = buildRow({ slug: "dynoxide-wasm", passed: 869, failed: 10, skipped: 175, coverageValue: 83.4 });
+  sortRows([parent, wasm]);
+
+  assert.equal(wasm.collapsed, false);
+  assert.deepEqual(parent.variants.map((r) => r.slug), ["dynoxide-wasm"]);
+});
+
+test("sortRows annotates the caller's own rows rather than copies", () => {
+  // history.mjs relies on a standings row and the matching perTarget[].current
+  // being the same object when it back-fills a version. Copies would break that
+  // quietly, which is why the assignment is deliberate rather than tidyable.
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite" });
+  const rows = sortRows([parent, variant]);
+
+  assert.equal(rows[0], parent);
+  assert.equal(rows[1], variant);
+});
+
+test("sorting the same rows twice gives the same answer", () => {
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite" });
+  const first = sortRows([parent, variant]).map((r) => r.slug);
+  const second = sortRows([parent, variant]).map((r) => r.slug);
+
+  assert.deepEqual(second, first);
+  assert.equal(variant.collapsed, true);
+});
+
+test("the collapse annotation adds no second reference to a build's row", () => {
+  // leanForFallback strips findings by walking `variants`. A parallel array
+  // holding the same row objects would carry every finding it had just removed
+  // back into the committed fallback through the second reference, so the split
+  // is derived from a flag rather than stored beside them.
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite" });
+  sortRows([parent, variant]);
+
+  const extra = Object.keys(parent).filter((k) => Array.isArray(parent[k]) && k !== "variants");
+  assert.deepEqual(extra, [], `sortRows added row-bearing arrays beside variants: ${extra}`);
+});
+
+test("a build starting closed is still in the standings, so its history is unbroken", () => {
+  // history.mjs builds each target's series by looking its slug up in every
+  // run's standings. Dropping a matching build from that list rather than
+  // flagging it would end its trend on the run it converged, which reads as the
+  // target disappearing rather than as it agreeing with the build above it.
+  const parent = buildRow({ slug: "extenddb" });
+  const build = buildRow({ slug: "extenddb-sqlite" });
+  const standings = sortRows([parent, build]);
+
+  assert.equal(build.collapsed, true);
+  assert.ok(standings.find((r) => r.slug === "extenddb-sqlite"));
+});
+
+test("a build not re-tested this run starts open, however its figures read", () => {
+  // A carried build's figures are frozen at the run that measured it, and the
+  // date saying so renders inside the disclosure - so closing it would take
+  // the date with it and leave a summary saying the two agree, when they were
+  // measured weeks apart. Dynoxide's wasm build was in exactly this state on
+  // 2026-08-12: carried from 24 July under a parent measured that day.
+  const parent = buildRow({ slug: "extenddb" });
+  const build = buildRow({ slug: "extenddb-sqlite", carried: true });
+  sortRows([parent, build]);
+
+  assert.equal(build.collapsed, false, "a carried build was closed over");
+});
+
+test("a build re-tested this run still starts closed when its figures match", () => {
+  // The complement of the test above, and the reason it is here: a guard that
+  // returned false for every build would satisfy that one on its own. This is
+  // the case the disclosure exists for, and it has to keep working.
+  const parent = buildRow({ slug: "extenddb" });
+  const build = buildRow({ slug: "extenddb-sqlite", carried: false });
+  sortRows([parent, build]);
+
+  assert.equal(build.collapsed, true, "a build measured this run and reading the same figures was left open");
+});
+
+test("a parent not re-tested this run opens its builds, however they read", () => {
+  // The other half of the same rule. A carried parent's figures are frozen at
+  // the run that measured it, so a build matching them was not measured beside
+  // it either - and the guard used to ask only about the build.
+  const parent = buildRow({ slug: "extenddb", carried: true });
+  const build = buildRow({ slug: "extenddb-sqlite", carried: false });
+  sortRows([parent, build]);
+
+  assert.equal(build.collapsed, false, "a build under a carried parent was closed over");
+});
+
+test("one build disagreeing opens the disclosure for all of them", () => {
+  // The disclosure holds every build of a project and opens as a whole, so the
+  // answer has to be the project's, not each build's - otherwise a build that
+  // agrees publishes "starts closed" while a disagreeing sibling has already
+  // forced it open.
+  //
+  // Exercised through buildsAgree rather than sortRows, and that is a real
+  // limit rather than a preference: no project in the registry ships two
+  // builds, and an unregistered slug forms a project of its own, so a mixed
+  // group cannot be built through sortRows at all. sortRows takes this one
+  // answer and assigns it to every build, so the property holds structurally
+  // there; here is where the rule itself is pinned.
+  const parent = buildRow({ slug: "extenddb" });
+  const agrees = buildRow({ slug: "extenddb-sqlite" });
+  const differs = buildRow({ slug: "extenddb-mongo", divergenceValue: 19.9, coverageValue: 50 });
+
+  assert.equal(buildsAgree({ ...parent, variants: [agrees] }), true, "an agreeing build alone should close");
+  assert.equal(buildsAgree({ ...parent, variants: [agrees, differs] }), false, "one disagreeing build must open all of them");
+  assert.equal(buildsAgree({ ...parent, variants: [] }), false, "a project with no builds has no disclosure to close");
+  assert.equal(buildsAgree({ ...parent, carried: true, variants: [agrees] }), false, "a carried parent must open its builds");
+});
+
+test("a build promoted to parent carries no closed flag", () => {
+  // It stands for its project and nothing holds it behind a disclosure. Its
+  // safety rests on the flag never reading true, rather than on the template
+  // filter treating an absent flag as open, so it is asserted here.
+  const wasm = buildRow({ slug: "dynoxide-wasm", collapsed: true });
+  sortRows([wasm]);
+
+  assert.equal(wasm.isParent, true);
+  assert.equal(wasm.collapsed, false, "a promoted build kept a closed flag from an earlier grouping");
+});
+
+test("a build promoted to parent is marked so the board still shows its project", () => {
+  // When the reference build has no result, the grouping promotes a build to
+  // stand for the project. The standings used to skip anything isVariant(slug),
+  // which dropped the row it had just promoted and lost the whole project -
+  // while the README, grouping the same way, still printed it.
+  const wasm = buildRow({ slug: "dynoxide-wasm" });
+  const rows = sortRows([wasm]);
+
+  assert.equal(rows.length, 1);
+  assert.equal(wasm.isParent, true, "the promoted build stands for its project");
+});
+
+test("a build travelling under its parent is not marked as standing for the project", () => {
+  const parent = buildRow({ slug: "extenddb" });
+  const variant = buildRow({ slug: "extenddb-sqlite", failed: 40, passed: 885 });
+  sortRows([parent, variant]);
+
+  assert.equal(parent.isParent, true);
+  assert.equal(variant.isParent, false);
+});
+
+

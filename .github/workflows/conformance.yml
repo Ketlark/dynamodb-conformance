@@ -962,3 +962,92 @@ jobs:
         with:
           name: results-extenddb
           path: results/
+
+  test-extenddb-sqlite:
+    name: ExtendDB (SQLite)
+    # The same ExtendDB release as the job above, built with the SQLite storage
+    # feature instead of the default PostgreSQL one. The backend is compiled in,
+    # so this is a second build rather than a second configuration of one - but
+    # it needs no database service, which makes it the cheaper of the two.
+    #
+    # Held to the same security posture as the PostgreSQL row: TLS, SigV4 and
+    # the IAM store all stay on. ExtendDB's `dev-mode` feature would serve plain
+    # HTTP with open authorisation, and a row measured that way would not be
+    # comparable with the one above it on the board.
+    if: github.event_name != 'pull_request'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+
+    steps:
+      # No git credential left in the workspace: this job compiles a third-party
+      # project from source in the same tree, so build scripts and proc macros
+      # run as arbitrary code beside it. Nothing here needs one - npm ci, the
+      # bring-up script, the suite and record-version.sh use none, and the `gh`
+      # call below reads its token from the environment.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Resolve ExtendDB ref (latest release unless overridden)
+        id: ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_REF: ${{ github.event.inputs.extenddb_ref }}
+        run: |
+          REF="$REQUESTED_REF"
+          if [ -z "$REF" ]; then
+            REF=$(gh release view -R ExtendDB/extenddb --json tagName --jq .tagName)
+          fi
+          SHA=$(gh api "repos/ExtendDB/extenddb/commits/$REF" --jq .sha)
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Building ExtendDB at $REF ($SHA)"
+
+      - name: Checkout ExtendDB
+        uses: actions/checkout@v7
+        with:
+          repository: ExtendDB/extenddb
+          ref: ${{ steps.ref.outputs.sha }}
+          path: extenddb
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: extenddb
+          # Distinct from the PostgreSQL job's cache. The two build different
+          # feature sets from the same checkout, so sharing a key would have
+          # them evicting each other's artefacts every run.
+          key: sqlite
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build and start ExtendDB (SQLite), mint conformance credentials
+        env:
+          EXTENDDB_DIR: ${{ github.workspace }}/extenddb
+          EXTENDDB_BACKEND: sqlite
+        run: ./scripts/run-extenddb.sh
+
+      - name: Run conformance suite
+        continue-on-error: true # ExtendDB has known gaps (e.g. PartiQL)
+        env:
+          CONFORMANCE_TARGET: extenddb-sqlite
+        run: npm test
+
+      - name: Record target version
+        continue-on-error: true
+        env:
+          EXTENDDB_REF: ${{ steps.ref.outputs.ref }}
+        run: scripts/record-version.sh extenddb-sqlite
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: results-extenddb-sqlite
+          path: results/
