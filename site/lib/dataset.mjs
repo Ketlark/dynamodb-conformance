@@ -186,8 +186,10 @@ function targetRow(row) {
     // board itself made before it read this flag.
     standsForProject: row.isParent ?? !isVariant(row.slug),
     // Whether the board starts this build's row closed: it reads the same
-    // grade, divergence and coverage as its project's reference build, and
-    // both were measured in the same run.
+    // grade, divergence and coverage as the row standing for its project, and
+    // both were measured in the same run. The row above, not the reference
+    // build by name - on a run the reference build did not record, a promoted
+    // build is what the comparison is made against.
     // Published because a consumer reading the endpoints and the board side by
     // side would otherwise find a build here that the board did not appear to
     // show, with nothing to explain it.
@@ -367,7 +369,7 @@ export function buildIndex(conformance, site, summary = null) {
       description:
         "A project can ship more than one build of the same engine: a storage backend swapped underneath it, or the query layer compiled for somewhere else to run. Every build is its own target here, with its own figures, and `project` groups them while `configuration` names what distinguishes each one. `isVariant` says a target is a build of the project rather than its reference build, and `standsForProject` says which row the board treats as the project's own - normally the reference build, but a build is promoted to stand for the project on any run the reference build did not record.",
       collapsedIntoProject:
-        "True when the board starts this build's row closed. That takes three things: the build reads the same grade, divergence and coverage as its project's reference build; both were measured in this run, on either side, since a carried row's figures are frozen at the run that measured it; and neither is a row the suite declined to score, because two rows publishing null figures are not agreement. It is one answer per project rather than per build - the disclosure holds every build of a project and opens as a whole - so a project whose builds disagree reads false on all of them. Every build has a row and its own figures either way; this says only whether a reader sees it without opening the disclosure. Re-derived every run.",
+        "True when the board starts this build's row closed. That takes three things: the build reads the same grade, divergence and coverage as the row standing for its project - the one `standsForProject` names, normally the reference build but a promoted build on a run the reference build did not record; both were measured in this run, on either side, since a carried row's figures are frozen at the run that measured it; and neither is a row the suite declined to score, because two rows publishing null figures are not agreement. It is one answer per project rather than per build - the disclosure holds every build of a project and opens as a whole - so a project whose builds disagree reads false on all of them. Every build has a row and its own figures either way; this says only whether a reader sees it without opening the disclosure. Re-derived every run.",
     },
     regions: {
       pinned: "eu-west-2",
