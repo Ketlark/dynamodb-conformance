@@ -8,6 +8,8 @@ section its date and version, so several branches can write ahead of one.
 
 ## Unreleased
 
+## 2026-08-15 (3.1.0)
+
 ExtendDB's SQLite backend joins the run, built from the same release as the
 PostgreSQL one and held to the same TLS, SigV4 and IAM posture, so the storage
 engine is the only thing that differs between them.
