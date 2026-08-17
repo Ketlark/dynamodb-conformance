@@ -189,6 +189,21 @@ jobs:
             --baseline captures/2026-07-13-empty-set-member.json \
             --region eu-west-2 --out "$RUNNER_TEMP/drift.json"
 
+      # Keep what the verdict was read from. The issue asserts drift and names
+      # probes, and the capture behind that claim otherwise dies with the
+      # runner, leaving a maintainer no way to check the reading or reuse it as
+      # the next baseline.
+      - name: Upload the drift evidence
+        if: failure() && github.event_name == 'schedule'
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: drift-evidence
+          path: |
+            ${{ runner.temp }}/euw2.json
+            ${{ runner.temp }}/drift.json
+          if-no-files-found: ignore
+
       # File or update a single deduped issue so a red scheduled run is actionable,
       # not a silent X. The drift verdict (if computed above) labels it aws-drift-confirmed
       # or likely-flake and fills the body's triage slot.
@@ -444,16 +459,33 @@ jobs:
 
   capture-cross-region:
     name: Cross-region drift capture (non-gating)
-    # Capture real AWS's negative-input wording in the candidate regions each
-    # week and commit it, so the paritysuite drift lens has fresh, versioned data
-    # (the site builds from committed files, not CI artefacts). Non-gating: a
-    # capture hiccup never touches the build. Only candidate regions are
-    # captured, never eu-west-2: the IAM role forces a _conformance_ table prefix
-    # that the gating job's cleanup deletes, so an eu-west-2 capture here would
-    # race that cleanup. The lens diffs these against the committed eu-west-2
-    # baseline; the scheduled-run drift verdict flags when the baseline itself
-    # needs refreshing.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # Capture real AWS's negative-input wording each week and commit it, so the
+    # paritysuite drift lens has fresh, versioned data (the site builds from
+    # committed files, not CI artefacts). Non-gating: a capture hiccup never
+    # touches the build.
+    #
+    # eu-west-2 is captured here with the candidates, and `needs` is what makes
+    # that safe: the IAM role forces a _conformance_ table prefix that the
+    # gating job's cleanup deletes by prefix, so the two must not run side by
+    # side. Excluding the region was the older way of avoiding that collision,
+    # and it cost the lens the capture feeds - drift-diff.mjs exits 2 in
+    # cross-region mode without the baseline region in the document, rather than
+    # read every other region's probes as added, so the comparison fell back to
+    # a separate and older file. `always()` keeps the capture running when the
+    # gating job goes red, when the wording is most worth having.
+    needs: test-dynamodb
+    if: >-
+      always() &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    # Now that the capture creates tables in eu-west-2, it has to hold the same
+    # lock the gating run does: `needs` only orders it behind its own run, and a
+    # second run's cleanup deletes every _conformance_ table by prefix, which
+    # would take this job's tables out from under it. The gating job has already
+    # released the group by the time this one is eligible, so it queues rather
+    # than deadlocks.
+    concurrency:
+      group: conformance-aws
+      cancel-in-progress: false
     continue-on-error: true
     runs-on: ubuntu-latest
     permissions:
@@ -489,9 +521,9 @@ jobs:
           aws-region: eu-west-2
           role-duration-seconds: 7200
 
-      - name: Capture candidate regions
+      - name: Capture the baseline and candidate regions
         run: |
-          node scripts/capture-validation-messages.mjs us-east-1 ap-southeast-2 eu-central-1 \
+          node scripts/capture-validation-messages.mjs eu-west-2 us-east-1 ap-southeast-2 eu-central-1 \
             > captures/cross-region-latest.json
 
       - name: Commit the capture
