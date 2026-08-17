@@ -465,9 +465,9 @@
           }
         },
         "ap-southeast-1": {
-          "rate": 83,
-          "passed": 674,
-          "failed": 138,
+          "rate": 83.1,
+          "passed": 675,
+          "failed": 137,
           "skipped": 242,
           "indeterminate": 0,
           "count": 1054,
@@ -485,8 +485,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 226,
-              "f": 57,
+              "p": 227,
+              "f": 56,
               "s": 57,
               "i": 0
             }
@@ -521,9 +521,9 @@
           }
         },
         "ap-southeast-3": {
-          "rate": 83.3,
-          "passed": 676,
-          "failed": 136,
+          "rate": 83.4,
+          "passed": 677,
+          "failed": 135,
           "skipped": 242,
           "indeterminate": 0,
           "count": 1054,
@@ -541,8 +541,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 228,
-              "f": 55,
+              "p": 229,
+              "f": 54,
               "s": 57,
               "i": 0
             }
@@ -717,9 +717,9 @@
           }
         },
         "eu-central-1": {
-          "rate": 83,
-          "passed": 674,
-          "failed": 138,
+          "rate": 83.1,
+          "passed": 675,
+          "failed": 137,
           "skipped": 242,
           "indeterminate": 0,
           "count": 1054,
@@ -737,8 +737,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 226,
-              "f": 57,
+              "p": 227,
+              "f": 56,
               "s": 57,
               "i": 0
             }
@@ -773,9 +773,9 @@
           }
         },
         "eu-north-1": {
-          "rate": 83,
-          "passed": 674,
-          "failed": 138,
+          "rate": 83.1,
+          "passed": 675,
+          "failed": 137,
           "skipped": 242,
           "indeterminate": 0,
           "count": 1054,
@@ -793,8 +793,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 226,
-              "f": 57,
+              "p": 227,
+              "f": 56,
               "s": 57,
               "i": 0
             }
@@ -941,9 +941,9 @@
           }
         },
         "il-central-1": {
-          "rate": 83.3,
-          "passed": 676,
-          "failed": 136,
+          "rate": 83.4,
+          "passed": 677,
+          "failed": 135,
           "skipped": 242,
           "indeterminate": 0,
           "count": 1054,
@@ -961,8 +961,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 228,
-              "f": 55,
+              "p": 229,
+              "f": 54,
               "s": 57,
               "i": 0
             }
@@ -2104,7 +2104,7 @@
     },
     "dynoxide": {
       "headline": {
-        "region": "ap-east-2",
+        "region": "ap-northeast-2",
         "rate": 99
       },
       "regions": {
@@ -2137,9 +2137,9 @@
           }
         },
         "ap-east-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2157,17 +2157,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-east-2": {
-          "rate": 99,
-          "passed": 988,
-          "failed": 10,
+          "rate": 98.9,
+          "passed": 987,
+          "failed": 11,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2185,17 +2185,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 324,
-              "f": 0,
+              "p": 323,
+              "f": 1,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-northeast-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2213,8 +2213,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
@@ -2249,9 +2249,9 @@
           }
         },
         "ap-northeast-3": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2269,17 +2269,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-south-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2297,17 +2297,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-south-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2325,17 +2325,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-southeast-1": {
-          "rate": 98.8,
-          "passed": 986,
-          "failed": 12,
+          "rate": 99,
+          "passed": 988,
+          "failed": 10,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2353,14 +2353,42 @@
               "i": 0
             },
             "tier3": {
-              "p": 322,
-              "f": 2,
+              "p": 324,
+              "f": 0,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-southeast-2": {
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
+          "skipped": 56,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 479,
+              "f": 10,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 185,
+              "f": 0,
+              "s": 40,
+              "i": 0
+            },
+            "tier3": {
+              "p": 320,
+              "f": 4,
+              "s": 16,
+              "i": 0
+            }
+          }
+        },
+        "ap-southeast-3": {
           "rate": 98.7,
           "passed": 985,
           "failed": 13,
@@ -2383,34 +2411,6 @@
             "tier3": {
               "p": 321,
               "f": 3,
-              "s": 16,
-              "i": 0
-            }
-          }
-        },
-        "ap-southeast-3": {
-          "rate": 98.5,
-          "passed": 983,
-          "failed": 15,
-          "skipped": 56,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 479,
-              "f": 10,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 185,
-              "f": 0,
-              "s": 40,
-              "i": 0
-            },
-            "tier3": {
-              "p": 319,
-              "f": 5,
               "s": 16,
               "i": 0
             }
@@ -2473,9 +2473,9 @@
           }
         },
         "ap-southeast-6": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2493,17 +2493,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-southeast-7": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2521,17 +2521,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "ca-central-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2549,17 +2549,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "ca-west-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2577,17 +2577,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-central-1": {
-          "rate": 98.8,
-          "passed": 986,
-          "failed": 12,
+          "rate": 99,
+          "passed": 988,
+          "failed": 10,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2605,17 +2605,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 322,
-              "f": 2,
+              "p": 324,
+              "f": 0,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-central-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2633,17 +2633,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-north-1": {
-          "rate": 98.8,
-          "passed": 986,
-          "failed": 12,
+          "rate": 99,
+          "passed": 988,
+          "failed": 10,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2661,17 +2661,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 322,
-              "f": 2,
+              "p": 324,
+              "f": 0,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-south-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2689,17 +2689,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-south-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2717,17 +2717,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-west-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2745,8 +2745,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
@@ -2781,9 +2781,9 @@
           }
         },
         "eu-west-3": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2801,17 +2801,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "il-central-1": {
-          "rate": 98.5,
-          "passed": 983,
-          "failed": 15,
+          "rate": 98.7,
+          "passed": 985,
+          "failed": 13,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2829,17 +2829,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 319,
-              "f": 5,
+              "p": 321,
+              "f": 3,
               "s": 16,
               "i": 0
             }
           }
         },
         "me-central-1": {
-          "rate": 98.8,
-          "passed": 986,
-          "failed": 12,
+          "rate": 98.7,
+          "passed": 985,
+          "failed": 13,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2857,17 +2857,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 322,
-              "f": 2,
+              "p": 321,
+              "f": 3,
               "s": 16,
               "i": 0
             }
           }
         },
         "mx-central-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2885,17 +2885,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "sa-east-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2913,17 +2913,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
           }
         },
         "us-east-1": {
-          "rate": 99,
-          "passed": 988,
-          "failed": 10,
+          "rate": 98.9,
+          "passed": 987,
+          "failed": 11,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2941,17 +2941,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 324,
-              "f": 0,
+              "p": 323,
+              "f": 1,
               "s": 16,
               "i": 0
             }
           }
         },
         "us-east-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -2969,8 +2969,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
@@ -3005,9 +3005,9 @@
           }
         },
         "us-west-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
+          "rate": 98.6,
+          "passed": 984,
+          "failed": 14,
           "skipped": 56,
           "indeterminate": 0,
           "count": 1054,
@@ -3025,8 +3025,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 321,
-              "f": 3,
+              "p": 320,
+              "f": 4,
               "s": 16,
               "i": 0
             }
@@ -3038,7 +3038,7 @@
     },
     "dynoxide-wasm": {
       "headline": {
-        "region": "ap-east-2",
+        "region": "ap-northeast-2",
         "rate": 98.9
       },
       "regions": {
@@ -3071,9 +3071,9 @@
           }
         },
         "ap-east-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3091,17 +3091,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "ap-east-2": {
-          "rate": 98.9,
-          "passed": 869,
-          "failed": 10,
+          "rate": 98.7,
+          "passed": 868,
+          "failed": 11,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3119,17 +3119,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 289,
-              "f": 0,
+              "p": 288,
+              "f": 1,
               "s": 51,
               "i": 0
             }
           }
         },
         "ap-northeast-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3147,8 +3147,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
@@ -3183,9 +3183,9 @@
           }
         },
         "ap-northeast-3": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3203,17 +3203,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "ap-south-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3231,17 +3231,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "ap-south-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3259,17 +3259,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "ap-southeast-1": {
-          "rate": 98.6,
-          "passed": 867,
-          "failed": 12,
+          "rate": 98.9,
+          "passed": 869,
+          "failed": 10,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3287,14 +3287,42 @@
               "i": 0
             },
             "tier3": {
-              "p": 287,
-              "f": 2,
+              "p": 289,
+              "f": 0,
               "s": 51,
               "i": 0
             }
           }
         },
         "ap-southeast-2": {
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
+          "skipped": 175,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 479,
+              "f": 10,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 101,
+              "f": 0,
+              "s": 124,
+              "i": 0
+            },
+            "tier3": {
+              "p": 285,
+              "f": 4,
+              "s": 51,
+              "i": 0
+            }
+          }
+        },
+        "ap-southeast-3": {
           "rate": 98.5,
           "passed": 866,
           "failed": 13,
@@ -3317,34 +3345,6 @@
             "tier3": {
               "p": 286,
               "f": 3,
-              "s": 51,
-              "i": 0
-            }
-          }
-        },
-        "ap-southeast-3": {
-          "rate": 98.3,
-          "passed": 864,
-          "failed": 15,
-          "skipped": 175,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 479,
-              "f": 10,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 101,
-              "f": 0,
-              "s": 124,
-              "i": 0
-            },
-            "tier3": {
-              "p": 284,
-              "f": 5,
               "s": 51,
               "i": 0
             }
@@ -3407,9 +3407,9 @@
           }
         },
         "ap-southeast-6": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3427,17 +3427,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "ap-southeast-7": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3455,17 +3455,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "ca-central-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3483,17 +3483,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "ca-west-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3511,17 +3511,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "eu-central-1": {
-          "rate": 98.6,
-          "passed": 867,
-          "failed": 12,
+          "rate": 98.9,
+          "passed": 869,
+          "failed": 10,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3539,17 +3539,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 287,
-              "f": 2,
+              "p": 289,
+              "f": 0,
               "s": 51,
               "i": 0
             }
           }
         },
         "eu-central-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3567,17 +3567,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "eu-north-1": {
-          "rate": 98.6,
-          "passed": 867,
-          "failed": 12,
+          "rate": 98.9,
+          "passed": 869,
+          "failed": 10,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3595,17 +3595,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 287,
-              "f": 2,
+              "p": 289,
+              "f": 0,
               "s": 51,
               "i": 0
             }
           }
         },
         "eu-south-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3623,17 +3623,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "eu-south-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3651,17 +3651,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "eu-west-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3679,8 +3679,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
@@ -3715,9 +3715,9 @@
           }
         },
         "eu-west-3": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3735,17 +3735,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "il-central-1": {
-          "rate": 98.3,
-          "passed": 864,
-          "failed": 15,
+          "rate": 98.5,
+          "passed": 866,
+          "failed": 13,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3763,17 +3763,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 284,
-              "f": 5,
+              "p": 286,
+              "f": 3,
               "s": 51,
               "i": 0
             }
           }
         },
         "me-central-1": {
-          "rate": 98.6,
-          "passed": 867,
-          "failed": 12,
+          "rate": 98.5,
+          "passed": 866,
+          "failed": 13,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3791,17 +3791,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 287,
-              "f": 2,
+              "p": 286,
+              "f": 3,
               "s": 51,
               "i": 0
             }
           }
         },
         "mx-central-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3819,17 +3819,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "sa-east-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3847,17 +3847,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
           }
         },
         "us-east-1": {
-          "rate": 98.9,
-          "passed": 869,
-          "failed": 10,
+          "rate": 98.7,
+          "passed": 868,
+          "failed": 11,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3875,17 +3875,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 289,
-              "f": 0,
+              "p": 288,
+              "f": 1,
               "s": 51,
               "i": 0
             }
           }
         },
         "us-east-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3903,8 +3903,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
@@ -3939,9 +3939,9 @@
           }
         },
         "us-west-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
+          "rate": 98.4,
+          "passed": 865,
+          "failed": 14,
           "skipped": 175,
           "indeterminate": 0,
           "count": 1054,
@@ -3959,8 +3959,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 286,
-              "f": 3,
+              "p": 285,
+              "f": 4,
               "s": 51,
               "i": 0
             }
@@ -4005,9 +4005,9 @@
           }
         },
         "ap-east-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4025,17 +4025,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-east-2": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4053,17 +4053,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-northeast-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4081,8 +4081,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
@@ -4117,9 +4117,9 @@
           }
         },
         "ap-northeast-3": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4137,17 +4137,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-south-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4165,17 +4165,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-south-2": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4193,42 +4193,14 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-southeast-1": {
-          "rate": 97.6,
-          "passed": 903,
-          "failed": 22,
-          "skipped": 129,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 485,
-              "f": 4,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 112,
-              "f": 4,
-              "s": 109,
-              "i": 0
-            },
-            "tier3": {
-              "p": 306,
-              "f": 14,
-              "s": 20,
-              "i": 0
-            }
-          }
-        },
-        "ap-southeast-2": {
           "rate": 97.8,
           "passed": 905,
           "failed": 20,
@@ -4256,10 +4228,10 @@
             }
           }
         },
-        "ap-southeast-3": {
-          "rate": 97.6,
-          "passed": 903,
-          "failed": 22,
+        "ap-southeast-2": {
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4277,8 +4249,36 @@
               "i": 0
             },
             "tier3": {
-              "p": 306,
-              "f": 14,
+              "p": 307,
+              "f": 13,
+              "s": 20,
+              "i": 0
+            }
+          }
+        },
+        "ap-southeast-3": {
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
+          "skipped": 129,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 485,
+              "f": 4,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 112,
+              "f": 4,
+              "s": 109,
+              "i": 0
+            },
+            "tier3": {
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
@@ -4341,9 +4341,9 @@
           }
         },
         "ap-southeast-6": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4361,17 +4361,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-southeast-7": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4389,17 +4389,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "ca-central-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4417,17 +4417,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "ca-west-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4445,17 +4445,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-central-1": {
-          "rate": 97.6,
-          "passed": 903,
-          "failed": 22,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4473,17 +4473,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 306,
-              "f": 14,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-central-2": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4501,17 +4501,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-north-1": {
-          "rate": 97.6,
-          "passed": 903,
-          "failed": 22,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4529,17 +4529,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 306,
-              "f": 14,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-south-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4557,17 +4557,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-south-2": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4585,17 +4585,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-west-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4613,8 +4613,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
@@ -4649,62 +4649,6 @@
           }
         },
         "eu-west-3": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
-          "skipped": 129,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 485,
-              "f": 4,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 112,
-              "f": 4,
-              "s": 109,
-              "i": 0
-            },
-            "tier3": {
-              "p": 308,
-              "f": 12,
-              "s": 20,
-              "i": 0
-            }
-          }
-        },
-        "il-central-1": {
-          "rate": 97.6,
-          "passed": 903,
-          "failed": 22,
-          "skipped": 129,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 485,
-              "f": 4,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 112,
-              "f": 4,
-              "s": 109,
-              "i": 0
-            },
-            "tier3": {
-              "p": 306,
-              "f": 14,
-              "s": 20,
-              "i": 0
-            }
-          }
-        },
-        "me-central-1": {
           "rate": 97.7,
           "passed": 904,
           "failed": 21,
@@ -4732,7 +4676,7 @@
             }
           }
         },
-        "mx-central-1": {
+        "il-central-1": {
           "rate": 97.8,
           "passed": 905,
           "failed": 20,
@@ -4755,15 +4699,71 @@
             "tier3": {
               "p": 308,
               "f": 12,
+              "s": 20,
+              "i": 0
+            }
+          }
+        },
+        "me-central-1": {
+          "rate": 97.6,
+          "passed": 903,
+          "failed": 22,
+          "skipped": 129,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 485,
+              "f": 4,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 112,
+              "f": 4,
+              "s": 109,
+              "i": 0
+            },
+            "tier3": {
+              "p": 306,
+              "f": 14,
+              "s": 20,
+              "i": 0
+            }
+          }
+        },
+        "mx-central-1": {
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
+          "skipped": 129,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 485,
+              "f": 4,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 112,
+              "f": 4,
+              "s": 109,
+              "i": 0
+            },
+            "tier3": {
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "sa-east-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4781,17 +4781,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "us-east-1": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4809,17 +4809,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
           }
         },
         "us-east-2": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4837,8 +4837,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
@@ -4873,9 +4873,9 @@
           }
         },
         "us-west-2": {
-          "rate": 97.8,
-          "passed": 905,
-          "failed": 20,
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4893,8 +4893,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 308,
-              "f": 12,
+              "p": 307,
+              "f": 13,
               "s": 20,
               "i": 0
             }
@@ -4939,9 +4939,9 @@
           }
         },
         "ap-east-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4959,17 +4959,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-east-2": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -4987,17 +4987,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-northeast-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5015,8 +5015,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
@@ -5051,9 +5051,9 @@
           }
         },
         "ap-northeast-3": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5071,17 +5071,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-south-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5099,17 +5099,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-south-2": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5127,42 +5127,14 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-southeast-1": {
-          "rate": 97.7,
-          "passed": 904,
-          "failed": 21,
-          "skipped": 129,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 485,
-              "f": 4,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 112,
-              "f": 4,
-              "s": 109,
-              "i": 0
-            },
-            "tier3": {
-              "p": 307,
-              "f": 13,
-              "s": 20,
-              "i": 0
-            }
-          }
-        },
-        "ap-southeast-2": {
           "rate": 97.9,
           "passed": 906,
           "failed": 19,
@@ -5190,10 +5162,10 @@
             }
           }
         },
-        "ap-southeast-3": {
-          "rate": 97.7,
-          "passed": 904,
-          "failed": 21,
+        "ap-southeast-2": {
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5211,8 +5183,36 @@
               "i": 0
             },
             "tier3": {
-              "p": 307,
-              "f": 13,
+              "p": 308,
+              "f": 12,
+              "s": 20,
+              "i": 0
+            }
+          }
+        },
+        "ap-southeast-3": {
+          "rate": 97.9,
+          "passed": 906,
+          "failed": 19,
+          "skipped": 129,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 485,
+              "f": 4,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 112,
+              "f": 4,
+              "s": 109,
+              "i": 0
+            },
+            "tier3": {
+              "p": 309,
+              "f": 11,
               "s": 20,
               "i": 0
             }
@@ -5275,9 +5275,9 @@
           }
         },
         "ap-southeast-6": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5295,17 +5295,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "ap-southeast-7": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5323,17 +5323,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "ca-central-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5351,17 +5351,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "ca-west-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5379,17 +5379,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-central-1": {
-          "rate": 97.7,
-          "passed": 904,
-          "failed": 21,
+          "rate": 97.9,
+          "passed": 906,
+          "failed": 19,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5407,17 +5407,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 307,
-              "f": 13,
+              "p": 309,
+              "f": 11,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-central-2": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5435,17 +5435,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-north-1": {
-          "rate": 97.7,
-          "passed": 904,
-          "failed": 21,
+          "rate": 97.9,
+          "passed": 906,
+          "failed": 19,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5463,17 +5463,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 307,
-              "f": 13,
+              "p": 309,
+              "f": 11,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-south-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5491,17 +5491,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-south-2": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5519,17 +5519,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "eu-west-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5547,8 +5547,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
@@ -5583,62 +5583,6 @@
           }
         },
         "eu-west-3": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
-          "skipped": 129,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 485,
-              "f": 4,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 112,
-              "f": 4,
-              "s": 109,
-              "i": 0
-            },
-            "tier3": {
-              "p": 309,
-              "f": 11,
-              "s": 20,
-              "i": 0
-            }
-          }
-        },
-        "il-central-1": {
-          "rate": 97.7,
-          "passed": 904,
-          "failed": 21,
-          "skipped": 129,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 485,
-              "f": 4,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 112,
-              "f": 4,
-              "s": 109,
-              "i": 0
-            },
-            "tier3": {
-              "p": 307,
-              "f": 13,
-              "s": 20,
-              "i": 0
-            }
-          }
-        },
-        "me-central-1": {
           "rate": 97.8,
           "passed": 905,
           "failed": 20,
@@ -5666,7 +5610,7 @@
             }
           }
         },
-        "mx-central-1": {
+        "il-central-1": {
           "rate": 97.9,
           "passed": 906,
           "failed": 19,
@@ -5689,15 +5633,71 @@
             "tier3": {
               "p": 309,
               "f": 11,
+              "s": 20,
+              "i": 0
+            }
+          }
+        },
+        "me-central-1": {
+          "rate": 97.7,
+          "passed": 904,
+          "failed": 21,
+          "skipped": 129,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 485,
+              "f": 4,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 112,
+              "f": 4,
+              "s": 109,
+              "i": 0
+            },
+            "tier3": {
+              "p": 307,
+              "f": 13,
+              "s": 20,
+              "i": 0
+            }
+          }
+        },
+        "mx-central-1": {
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
+          "skipped": 129,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 485,
+              "f": 4,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 112,
+              "f": 4,
+              "s": 109,
+              "i": 0
+            },
+            "tier3": {
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "sa-east-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5715,17 +5715,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "us-east-1": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5743,17 +5743,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
           }
         },
         "us-east-2": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5771,8 +5771,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
@@ -5807,9 +5807,9 @@
           }
         },
         "us-west-2": {
-          "rate": 97.9,
-          "passed": 906,
-          "failed": 19,
+          "rate": 97.8,
+          "passed": 905,
+          "failed": 20,
           "skipped": 129,
           "indeterminate": 0,
           "count": 1054,
@@ -5827,8 +5827,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 309,
-              "f": 11,
+              "p": 308,
+              "f": 12,
               "s": 20,
               "i": 0
             }
@@ -5873,9 +5873,9 @@
           }
         },
         "ap-east-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -5893,17 +5893,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-east-2": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -5921,17 +5921,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-northeast-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -5949,8 +5949,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
@@ -5985,9 +5985,9 @@
           }
         },
         "ap-northeast-3": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6005,17 +6005,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-south-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6033,17 +6033,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-south-2": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6061,42 +6061,14 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-southeast-1": {
-          "rate": 77.8,
-          "passed": 780,
-          "failed": 223,
-          "skipped": 51,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 436,
-              "f": 53,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 117,
-              "f": 73,
-              "s": 35,
-              "i": 0
-            },
-            "tier3": {
-              "p": 227,
-              "f": 97,
-              "s": 16,
-              "i": 0
-            }
-          }
-        },
-        "ap-southeast-2": {
           "rate": 78,
           "passed": 782,
           "failed": 221,
@@ -6124,10 +6096,10 @@
             }
           }
         },
-        "ap-southeast-3": {
-          "rate": 77.8,
-          "passed": 780,
-          "failed": 223,
+        "ap-southeast-2": {
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6145,8 +6117,36 @@
               "i": 0
             },
             "tier3": {
-              "p": 227,
-              "f": 97,
+              "p": 228,
+              "f": 96,
+              "s": 16,
+              "i": 0
+            }
+          }
+        },
+        "ap-southeast-3": {
+          "rate": 78,
+          "passed": 782,
+          "failed": 221,
+          "skipped": 51,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 436,
+              "f": 53,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 117,
+              "f": 73,
+              "s": 35,
+              "i": 0
+            },
+            "tier3": {
+              "p": 229,
+              "f": 95,
               "s": 16,
               "i": 0
             }
@@ -6209,9 +6209,9 @@
           }
         },
         "ap-southeast-6": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6229,17 +6229,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-southeast-7": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6257,17 +6257,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "ca-central-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6285,17 +6285,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "ca-west-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6313,17 +6313,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-central-1": {
-          "rate": 77.8,
-          "passed": 780,
-          "failed": 223,
+          "rate": 78,
+          "passed": 782,
+          "failed": 221,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6341,17 +6341,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 227,
-              "f": 97,
+              "p": 229,
+              "f": 95,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-central-2": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6369,17 +6369,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-north-1": {
-          "rate": 77.8,
-          "passed": 780,
-          "failed": 223,
+          "rate": 78,
+          "passed": 782,
+          "failed": 221,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6397,17 +6397,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 227,
-              "f": 97,
+              "p": 229,
+              "f": 95,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-south-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6425,17 +6425,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-south-2": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6453,17 +6453,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-west-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6481,8 +6481,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
@@ -6517,62 +6517,6 @@
           }
         },
         "eu-west-3": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
-          "skipped": 51,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 436,
-              "f": 53,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 117,
-              "f": 73,
-              "s": 35,
-              "i": 0
-            },
-            "tier3": {
-              "p": 229,
-              "f": 95,
-              "s": 16,
-              "i": 0
-            }
-          }
-        },
-        "il-central-1": {
-          "rate": 77.8,
-          "passed": 780,
-          "failed": 223,
-          "skipped": 51,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 436,
-              "f": 53,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 117,
-              "f": 73,
-              "s": 35,
-              "i": 0
-            },
-            "tier3": {
-              "p": 227,
-              "f": 97,
-              "s": 16,
-              "i": 0
-            }
-          }
-        },
-        "me-central-1": {
           "rate": 77.9,
           "passed": 781,
           "failed": 222,
@@ -6600,7 +6544,7 @@
             }
           }
         },
-        "mx-central-1": {
+        "il-central-1": {
           "rate": 78,
           "passed": 782,
           "failed": 221,
@@ -6623,15 +6567,71 @@
             "tier3": {
               "p": 229,
               "f": 95,
+              "s": 16,
+              "i": 0
+            }
+          }
+        },
+        "me-central-1": {
+          "rate": 77.8,
+          "passed": 780,
+          "failed": 223,
+          "skipped": 51,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 436,
+              "f": 53,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 117,
+              "f": 73,
+              "s": 35,
+              "i": 0
+            },
+            "tier3": {
+              "p": 227,
+              "f": 97,
+              "s": 16,
+              "i": 0
+            }
+          }
+        },
+        "mx-central-1": {
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
+          "skipped": 51,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 436,
+              "f": 53,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 117,
+              "f": 73,
+              "s": 35,
+              "i": 0
+            },
+            "tier3": {
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "sa-east-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6649,17 +6649,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "us-east-1": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6677,17 +6677,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
           }
         },
         "us-east-2": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6705,8 +6705,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
@@ -6741,9 +6741,9 @@
           }
         },
         "us-west-2": {
-          "rate": 78,
-          "passed": 782,
-          "failed": 221,
+          "rate": 77.9,
+          "passed": 781,
+          "failed": 222,
           "skipped": 51,
           "indeterminate": 0,
           "count": 1054,
@@ -6761,8 +6761,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 229,
-              "f": 95,
+              "p": 228,
+              "f": 96,
               "s": 16,
               "i": 0
             }
@@ -7741,9 +7741,9 @@
           }
         },
         "ap-east-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -7761,17 +7761,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-east-2": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -7789,17 +7789,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-northeast-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -7817,8 +7817,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
@@ -7853,9 +7853,9 @@
           }
         },
         "ap-northeast-3": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -7873,17 +7873,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-south-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -7901,17 +7901,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-south-2": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -7929,42 +7929,14 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-southeast-1": {
-          "rate": 87.5,
-          "passed": 885,
-          "failed": 127,
-          "skipped": 42,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 461,
-              "f": 28,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 165,
-              "f": 34,
-              "s": 26,
-              "i": 0
-            },
-            "tier3": {
-              "p": 259,
-              "f": 65,
-              "s": 16,
-              "i": 0
-            }
-          }
-        },
-        "ap-southeast-2": {
           "rate": 87.6,
           "passed": 887,
           "failed": 125,
@@ -7992,10 +7964,10 @@
             }
           }
         },
-        "ap-southeast-3": {
+        "ap-southeast-2": {
           "rate": 87.5,
-          "passed": 885,
-          "failed": 127,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8013,8 +7985,36 @@
               "i": 0
             },
             "tier3": {
-              "p": 259,
-              "f": 65,
+              "p": 260,
+              "f": 64,
+              "s": 16,
+              "i": 0
+            }
+          }
+        },
+        "ap-southeast-3": {
+          "rate": 87.6,
+          "passed": 887,
+          "failed": 125,
+          "skipped": 42,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 461,
+              "f": 28,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 165,
+              "f": 34,
+              "s": 26,
+              "i": 0
+            },
+            "tier3": {
+              "p": 261,
+              "f": 63,
               "s": 16,
               "i": 0
             }
@@ -8077,9 +8077,9 @@
           }
         },
         "ap-southeast-6": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8097,17 +8097,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "ap-southeast-7": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8125,17 +8125,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "ca-central-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8153,17 +8153,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "ca-west-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8181,17 +8181,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-central-1": {
-          "rate": 87.5,
-          "passed": 885,
-          "failed": 127,
+          "rate": 87.6,
+          "passed": 887,
+          "failed": 125,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8209,17 +8209,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 259,
-              "f": 65,
+              "p": 261,
+              "f": 63,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-central-2": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8237,17 +8237,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-north-1": {
-          "rate": 87.5,
-          "passed": 885,
-          "failed": 127,
+          "rate": 87.6,
+          "passed": 887,
+          "failed": 125,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8265,17 +8265,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 259,
-              "f": 65,
+              "p": 261,
+              "f": 63,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-south-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8293,17 +8293,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-south-2": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8321,17 +8321,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "eu-west-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8349,8 +8349,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
@@ -8385,62 +8385,6 @@
           }
         },
         "eu-west-3": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
-          "skipped": 42,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 461,
-              "f": 28,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 165,
-              "f": 34,
-              "s": 26,
-              "i": 0
-            },
-            "tier3": {
-              "p": 261,
-              "f": 63,
-              "s": 16,
-              "i": 0
-            }
-          }
-        },
-        "il-central-1": {
-          "rate": 87.5,
-          "passed": 885,
-          "failed": 127,
-          "skipped": 42,
-          "indeterminate": 0,
-          "count": 1054,
-          "tiers": {
-            "tier1": {
-              "p": 461,
-              "f": 28,
-              "s": 0,
-              "i": 0
-            },
-            "tier2": {
-              "p": 165,
-              "f": 34,
-              "s": 26,
-              "i": 0
-            },
-            "tier3": {
-              "p": 259,
-              "f": 65,
-              "s": 16,
-              "i": 0
-            }
-          }
-        },
-        "me-central-1": {
           "rate": 87.5,
           "passed": 886,
           "failed": 126,
@@ -8468,7 +8412,7 @@
             }
           }
         },
-        "mx-central-1": {
+        "il-central-1": {
           "rate": 87.6,
           "passed": 887,
           "failed": 125,
@@ -8491,15 +8435,71 @@
             "tier3": {
               "p": 261,
               "f": 63,
+              "s": 16,
+              "i": 0
+            }
+          }
+        },
+        "me-central-1": {
+          "rate": 87.5,
+          "passed": 885,
+          "failed": 127,
+          "skipped": 42,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 461,
+              "f": 28,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 165,
+              "f": 34,
+              "s": 26,
+              "i": 0
+            },
+            "tier3": {
+              "p": 259,
+              "f": 65,
+              "s": 16,
+              "i": 0
+            }
+          }
+        },
+        "mx-central-1": {
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
+          "skipped": 42,
+          "indeterminate": 0,
+          "count": 1054,
+          "tiers": {
+            "tier1": {
+              "p": 461,
+              "f": 28,
+              "s": 0,
+              "i": 0
+            },
+            "tier2": {
+              "p": 165,
+              "f": 34,
+              "s": 26,
+              "i": 0
+            },
+            "tier3": {
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "sa-east-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8517,17 +8517,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "us-east-1": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8545,17 +8545,17 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
           }
         },
         "us-east-2": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8573,8 +8573,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
@@ -8609,9 +8609,9 @@
           }
         },
         "us-west-2": {
-          "rate": 87.6,
-          "passed": 887,
-          "failed": 125,
+          "rate": 87.5,
+          "passed": 886,
+          "failed": 126,
           "skipped": 42,
           "indeterminate": 0,
           "count": 1054,
@@ -8629,8 +8629,8 @@
               "i": 0
             },
             "tier3": {
-              "p": 261,
-              "f": 63,
+              "p": 260,
+              "f": 64,
               "s": 16,
               "i": 0
             }
