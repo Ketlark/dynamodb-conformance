@@ -8,6 +8,29 @@ section its date and version, so several branches can write ahead of one.
 
 ## Unreleased
 
+eu-west-2 has crossed to the validation framework's generic constraint message
+for `BatchGetItem` with an empty `RequestItems` map, so the split row recording
+that behaviour is re-characterised against a 34-region capture taken on
+2026-08-17. Eleven of the thirty-three regions that answer now return the
+generic message; twenty-two still return the bespoke required-parameter
+sentence, and me-central-1 joins the row.
+
+The matching validation-ordering row is retired. Both wordings refuse an empty
+`RequestItems` before the map is read, which is all that tier asserts, so the
+assertion now matches the parameter name case-insensitively and spans both. The
+`BatchWriteItem` case beside it, which no region has moved yet, is written the
+same way.
+
+A probe absent from the baseline is no longer reported as drift. Adding a probe
+to the capture script leaves every older baseline without it, and a scheduled
+red then named the new probe as the thing that had moved.
+
+The weekly cross-region capture now includes eu-west-2, so the drift lens reads
+its baseline and the candidate regions from one capture taken at one moment
+rather than comparing today's candidates against an older baseline file. A
+scheduled red also keeps the eu-west-2 capture its drift verdict was read from,
+which was previously discarded with the runner.
+
 ## 2026-08-15 (3.1.0)
 
 ExtendDB's SQLite backend joins the run, built from the same release as the
