@@ -58,20 +58,20 @@ Rows are sorted by divergence. The tier columns are divergence within that tier,
 
 `me-south-1` has been dropped from the observed set and is not scored against.
 
-_Measured 2026-08-15, except where a row carries its own date._
+_Measured 2026-08-17._
 
-| Target | Grade | Version | Divergence | Coverage | Fail | Skip | Tier 1 | Tier 2 | Tier 3 | Regions | Measured |
-|--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|----------|
-| [DynamoDB](https://aws.amazon.com/dynamodb/) | baseline | live (AWS) | 0.0% | 100.0% | 0 | 0 | 0.0% | 0.0% | 0.0% | 33 of 33 | 2026-08-12 |
-| [Dynoxide](https://github.com/nubo-db/dynoxide) · native SQLite | A | 0.13.0 | 0.9% | 94.7% | 10 | 56 | 2.0% | 0.0% | 0.0% | 5 of 33 |  |
-| ↳ WebAssembly / OPFS | B | 0.13.0 | 0.9% | 83.4% | 10 | 175 | 2.0% | 0.0% | 0.0% | 5 of 33 |  |
-| [ExtendDB](https://github.com/ExtendDB/extenddb) · PostgreSQL | B | v0.1.5 | 1.9% | 87.8% | 20 | 129 | 0.8% | 1.8% | 3.5% | 11 of 33 |  |
-| ↳ SQLite | B | v0.1.5 | 1.8% | 87.8% | 19 | 129 | 0.8% | 1.8% | 3.2% | 11 of 33 |  |
-| [Ministack](https://github.com/ministackorg/ministack) | B | 2b75df610699 | 11.9% | 96.0% | 125 | 42 | 5.7% | 15.1% | 18.5% | 11 of 33 |  |
-| [Dynalite](https://github.com/architect/dynalite) | C | 4.0.0 | 12.8% | 77.0% | 135 | 242 | 10.8% | 12.4% | 15.9% | 25 of 33 |  |
-| [LocalStack](https://github.com/localstack/localstack) | C | 2026.7.4 | 14.8% | 95.3% | 156 | 50 | 6.3% | 16.0% | 26.2% | 25 of 33 |  |
-| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | C | ff89bd48ff32 | 15.1% | 94.0% | 159 | 63 | 7.6% | 14.2% | 26.5% | 25 of 33 |  |
-| [Floci](https://github.com/floci-io/floci) | C | eab36252ea43 | 21.0% | 95.2% | 221 | 51 | 10.8% | 32.4% | 27.9% | 11 of 33 |  |
+| Target | Grade | Version | Divergence | Coverage | Fail | Skip | Tier 1 | Tier 2 | Tier 3 | Regions |
+|--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|
+| [DynamoDB](https://aws.amazon.com/dynamodb/) | baseline | live (AWS) | 0.0% | 100.0% | 0 | 0 | 0.0% | 0.0% | 0.0% | 33 of 33 |
+| [Dynoxide](https://github.com/nubo-db/dynoxide) · native SQLite | A | 0.13.0 | 0.9% | 94.7% | 10 | 56 | 2.0% | 0.0% | 0.0% | 2 of 33 |
+| ↳ WebAssembly / OPFS | B | 0.13.0 | 0.9% | 83.4% | 10 | 175 | 2.0% | 0.0% | 0.0% | 2 of 33 |
+| [ExtendDB](https://github.com/ExtendDB/extenddb) · PostgreSQL | B | v0.1.5 | 1.9% | 87.8% | 20 | 129 | 0.8% | 1.8% | 3.5% | 21 of 33 |
+| ↳ SQLite | B | v0.1.5 | 1.8% | 87.8% | 19 | 129 | 0.8% | 1.8% | 3.2% | 21 of 33 |
+| [Ministack](https://github.com/ministackorg/ministack) | B | 5de3f08cd9c7 | 11.9% | 96.0% | 125 | 42 | 5.7% | 15.1% | 18.5% | 21 of 33 |
+| [Dynalite](https://github.com/architect/dynalite) | C | 4.0.0 | 12.8% | 77.0% | 135 | 242 | 10.8% | 12.4% | 15.9% | 25 of 33 |
+| [LocalStack](https://github.com/localstack/localstack) | C | 2026.7.4 | 14.8% | 95.3% | 156 | 50 | 6.3% | 16.0% | 26.2% | 25 of 33 |
+| [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | C | ff89bd48ff32 | 15.1% | 94.0% | 159 | 63 | 7.6% | 14.2% | 26.5% | 25 of 33 |
+| [Floci](https://github.com/floci-io/floci) | C | eab36252ea43 | 21.0% | 95.2% | 221 | 51 | 10.8% | 32.4% | 27.9% | 21 of 33 |
 <!-- results:end -->
 
 **Divergence** is `Fail / Total` and **Coverage** is `(Pass + Fail) / Total`,
