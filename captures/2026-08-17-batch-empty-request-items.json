@@ -1,0 +1,946 @@
+{
+  "capturedAt": "2026-08-17T11:03:04.985Z",
+  "note": "Evidence for registry row batch-get-item-empty-request-items-message and for retiring batch-get-item-empty-request-items-ordering (issues #152, #153, #156). Scoped to the empty-RequestItems probe on both batch operations; BatchWriteItem is captured alongside BatchGetItem because the two share an assertion shape and only one of them has moved. me-south-1 did not answer, so it carries no definite result here.",
+  "regions": {
+    "eu-west-2": {
+      "region": "eu-west-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "us-east-1": {
+      "region": "us-east-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "eu-central-1": {
+      "region": "eu-central-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-southeast-2": {
+      "region": "ap-southeast-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "af-south-1": {
+      "region": "af-south-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-east-1": {
+      "region": "ap-east-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-east-2": {
+      "region": "ap-east-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-northeast-1": {
+      "region": "ap-northeast-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-northeast-2": {
+      "region": "ap-northeast-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-northeast-3": {
+      "region": "ap-northeast-3",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-south-1": {
+      "region": "ap-south-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-south-2": {
+      "region": "ap-south-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-southeast-1": {
+      "region": "ap-southeast-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-southeast-3": {
+      "region": "ap-southeast-3",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-southeast-4": {
+      "region": "ap-southeast-4",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-southeast-5": {
+      "region": "ap-southeast-5",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-southeast-6": {
+      "region": "ap-southeast-6",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ap-southeast-7": {
+      "region": "ap-southeast-7",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ca-central-1": {
+      "region": "ca-central-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "ca-west-1": {
+      "region": "ca-west-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "eu-central-2": {
+      "region": "eu-central-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "eu-north-1": {
+      "region": "eu-north-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "eu-south-1": {
+      "region": "eu-south-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "eu-south-2": {
+      "region": "eu-south-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "eu-west-1": {
+      "region": "eu-west-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "eu-west-3": {
+      "region": "eu-west-3",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "il-central-1": {
+      "region": "il-central-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "me-central-1": {
+      "region": "me-central-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "me-south-1": {
+      "region": "me-south-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "TimeoutError",
+          "message": "@smithy/node-http-handler - the request socket did not establish a connection with the server within the configured timeout of 5000 ms.",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "TimeoutError",
+          "message": "@smithy/node-http-handler - the request socket did not establish a connection with the server within the configured timeout of 5000 ms.",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "mx-central-1": {
+      "region": "mx-central-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "sa-east-1": {
+      "region": "sa-east-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "us-east-2": {
+      "region": "us-east-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "us-west-1": {
+      "region": "us-west-1",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
+          "n": 1,
+          "fields": [
+            "RequestItems"
+          ],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    },
+    "us-west-2": {
+      "region": "us-west-2",
+      "probes": [
+        {
+          "id": "o_bg_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchGetItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchGetItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        },
+        {
+          "id": "o_bw_empty_requestitems",
+          "family": "ordering",
+          "note": "BatchWriteItem RequestItems={}",
+          "threw": true,
+          "name": "ValidationException",
+          "message": "The requestItems parameter is required for BatchWriteItem",
+          "n": null,
+          "fields": [],
+          "cancellationReasons": null
+        }
+      ]
+    }
+  }
+}
