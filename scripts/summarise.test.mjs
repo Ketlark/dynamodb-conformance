@@ -28,6 +28,7 @@ import {
   repoUrl,
   tableCaption,
   tableDateOf,
+  resolveMeasurement,
   tableRows,
   writeSummaryFile,
 } from './summarise.mjs'
@@ -929,7 +930,10 @@ describe('committed results pipeline', () => {
     .filter(isTargetResultFile)
     .map((f) => join('results', f))
   const targets = readTargets(files)
-  const fresh = buildSummary(targets, context)
+  // The committed board carries the identity of the run that measured it, so a
+  // build claiming to reproduce it has to be handed that same identity.
+  const committedMeasured = JSON.parse(readFileSync(SUMMARY_PATH, 'utf8')).suite
+  const fresh = buildSummary(targets, { ...context, measured: committedMeasured })
 
   it('results/summary.json matches a fresh build (and a re-run is deterministic)', () => {
     const committed = JSON.parse(readFileSync(SUMMARY_PATH, 'utf8'))
@@ -1251,5 +1255,99 @@ describe('the table discloses a pinned baseline', () => {
   it('stays quiet for a summary with no ground truth at all', () => {
     expect(tableCaption(regions)).not.toContain('pinned')
     expect(tableCaption(regions, null)).not.toContain('pinned')
+  })
+})
+
+describe('the measurement a board carries', () => {
+  const MEASURED = {
+    ref: 'v3.1.0',
+    kind: 'tag',
+    commit: '9129f0fbfb6fb5ff01aadf5f9f957fa0bf1871ad',
+    version: '3.1.0',
+    region: 'eu-west-2',
+    measuredAt: '2026-08-17T04:36:04Z',
+  }
+
+  it('stamps the identity it is given, without disturbing schemaVersion', () => {
+    const summary = buildSummary([target('alpha', suiteDoc('passed'))], {
+      registry: REGISTRY,
+      health: HEALTHY,
+      measured: MEASURED,
+    })
+    expect(summary.suite).toEqual(MEASURED)
+    // The block is additive, which is what lets schemaVersion stay put.
+    expect(summary.schemaVersion).toBe(SUMMARY_SCHEMA_VERSION)
+  })
+
+  it('omits the block rather than emitting nulls when nothing was supplied', () => {
+    const summary = buildSummary([target('alpha', suiteDoc('passed'))], {
+      registry: REGISTRY,
+      health: HEALTHY,
+    })
+    expect('suite' in summary).toBe(false)
+  })
+
+  it('refuses a half-written identity rather than stamping it', () => {
+    expect(() =>
+      buildSummary([target('alpha', suiteDoc('passed'))], {
+        registry: REGISTRY,
+        health: HEALTHY,
+        measured: { ref: 'v3.1.0', kind: 'tag' },
+      }),
+    ).toThrow(/incomplete/)
+  })
+
+  it('divides by the manifest it is handed, not the one on disk', () => {
+    // The publishing job stands on main because it commits back, so the
+    // manifest in its tree is main's rather than the measured suite's.
+    const summary = buildSummary([target('alpha', suiteDoc('passed'))], {
+      registry: REGISTRY,
+      health: HEALTHY,
+      suite: new Set(['only::one::test']),
+    })
+    expect(summary.groundTruth.suiteSize).toBe(1)
+  })
+})
+
+describe('resolveMeasurement', () => {
+  const board = (suite) => {
+    const d = mkdtempSync(join(tmpdir(), 'summary-'))
+    const p = join(d, 'summary.json')
+    writeFileSync(p, JSON.stringify(suite === null ? { schemaVersion: 1 } : { schemaVersion: 1, suite }))
+    return p
+  }
+
+  it('refuses when neither a measuring run nor a committed board supplies one', () => {
+    expect(() => resolveMeasurement({ summaryPath: board(null) })).toThrow(
+      /no measured suite identity/,
+    )
+  })
+
+  it('refuses when the summary file does not exist at all', () => {
+    expect(() =>
+      resolveMeasurement({ summaryPath: join(mkdtempSync(join(tmpdir(), 'none-')), 'summary.json') }),
+    ).toThrow(/no measured suite identity/)
+  })
+
+  it('carries a committed identity forward on a rebuild, reading its inputs at that ref', () => {
+    // A real ref, so the git read resolves: this repo's own first tag.
+    const committed = {
+      ref: 'v3.0.0',
+      kind: 'tag',
+      commit: 'cad170f7aff40b450fff1df7415532b19fae1c96',
+      version: '3.0.0',
+      region: 'eu-west-2',
+      measuredAt: '2026-08-13T09:00:00Z',
+    }
+    const out = resolveMeasurement({ summaryPath: board(committed) })
+    expect(out.rebuild).toBe(true)
+    expect(out.measured).toEqual(committed)
+    // Read at v3.0.0, not from the working tree: v3.0.0 still carries the
+    // validation-ordering split row that main has since retired.
+    const ids = out.registry.splits.map((r) => r.id)
+    expect(ids).toContain('batch-get-item-empty-request-items-ordering')
+    expect(loadScoringContext().registry.splits.map((r) => r.id)).not.toContain(
+      'batch-get-item-empty-request-items-ordering',
+    )
   })
 })

@@ -57,6 +57,12 @@ import {
 import { classifyResults } from './lib/classify.mjs'
 import { relativeTestPath, testIdentities } from './lib/identity.mjs'
 import { suiteIdentities, suiteSizeOf } from './suite-manifest.mjs'
+import {
+  gradingInputsAtRef,
+  measuredOf,
+  readMeasuredDir,
+  validateMeasured,
+} from './lib/measured.mjs'
 import { isObserved, observedRegions } from './lib/observed.mjs'
 import { BASELINE_LABEL, gradeOf } from './lib/grade.mjs'
 import {
@@ -289,11 +295,22 @@ const cohortCount = (matched, summary, rate) => {
  * and nothing here stamps a "generated at" time - the run dates come from the
  * result files, so a re-run over the same inputs is byte-identical.
  */
-export function buildSummary(targets, { registry, health, suite = suiteIdentities() }) {
+export function buildSummary(targets, { registry, health, suite = suiteIdentities(), measured = null }) {
   const standing = regionStanding(health)
 
   const summary = {
     schemaVersion: SUMMARY_SCHEMA_VERSION,
+    // What produced these figures. Additive, so schemaVersion stays put - see
+    // site/src/for-agents.md, which already promises consumers that new fields
+    // may appear at any version. `suite` here is the measurement identity; the
+    // `suite` option above is the test-identity set that sets the denominator,
+    // an unfortunate but pre-existing overlap in the word.
+    //
+    // Version alone does not identify a board. Live AWS is the oracle, so the
+    // same tag measured twice can legitimately disagree, and without the region
+    // and the timestamp a reader correlating a row against a version cannot
+    // tell which of the two they are looking at.
+    ...(measured === null ? {} : { suite: validateMeasured(measured) }),
     regions: {
       ...standing,
       detail: Object.fromEntries(
@@ -562,9 +579,17 @@ export function assertMeasuredSuite(targets, suite = suiteIdentities()) {
  * state the guards exist to prevent. Nothing published may be touched until
  * the whole board has been checked, so they run here, first.
  */
-export function publish(summary, targets, { readmePath = 'README.md', summaryPath = SUMMARY_PATH } = {}) {
-  assertOneDenominator(summary)
-  assertMeasuredSuite(targets)
+export function publish(
+  summary,
+  targets,
+  { readmePath = 'README.md', summaryPath = SUMMARY_PATH, manifest = undefined } = {},
+) {
+  // The denominator and the population are checked against the manifest the
+  // board was measured against, not the one the publishing job happens to have
+  // checked out. Those are the same tree only by luck: the publisher stands on
+  // main because it commits back.
+  assertOneDenominator(summary, manifest && suiteSizeOf(manifest))
+  assertMeasuredSuite(targets, manifest && suiteIdentities(manifest))
 
   const start = '<!-- results:start -->'
   const end = '<!-- results:end -->'
@@ -575,13 +600,13 @@ export function publish(summary, targets, { readmePath = 'README.md', summaryPat
     throw new Error(`Could not find ${start} / ${end} markers in ${readmePath}`)
   }
   writeFileSync(readmePath, `${md.slice(0, s + start.length)}\n${renderTable(summary)}\n${md.slice(e)}`)
-  writeSummaryFile(summary, targets, summaryPath)
+  writeSummaryFile(summary, targets, summaryPath, { manifest })
 }
 
 /** Write the summary artefact (results/summary.json). */
-export function writeSummaryFile(summary, targets, path = SUMMARY_PATH) {
-  assertOneDenominator(summary)
-  assertMeasuredSuite(targets)
+export function writeSummaryFile(summary, targets, path = SUMMARY_PATH, { manifest } = {}) {
+  assertOneDenominator(summary, manifest && suiteSizeOf(manifest))
+  assertMeasuredSuite(targets, manifest && suiteIdentities(manifest))
   writeFileSync(path, JSON.stringify(summary, null, 2) + '\n')
 }
 
@@ -928,10 +953,43 @@ export function renderTable(summary) {
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
 
+/**
+ * Where this run's measurement identity and suite-definition inputs come from.
+ *
+ * Three cases, and the third is a refusal:
+ *
+ * - `--measured <dir>` is a measuring run publishing what it just measured.
+ * - No flag, but the committed board already carries an identity: a rebuild.
+ *   It recomputes an existing measurement because health moved, so it carries
+ *   that identity forward and reads its grading inputs at that board's ref, not
+ *   at whatever the caller resolved and not from the working tree.
+ * - Neither: refuse. Falling back to the tree is how a board ends up graded
+ *   against main's denominator while stamped with a tag.
+ */
+export function resolveMeasurement({ measuredDir = null, summaryPath = SUMMARY_PATH } = {}) {
+  if (measuredDir !== null) return { ...readMeasuredDir(measuredDir), rebuild: false }
+
+  const committed = existsSync(summaryPath)
+    ? measuredOf(JSON.parse(readFileSync(summaryPath, 'utf8')))
+    : null
+  if (committed !== null) {
+    return { measured: committed, ...gradingInputsAtRef(committed.ref), rebuild: true }
+  }
+
+  throw new Error(
+    'refusing to publish: no measured suite identity. Pass --measured <dir> from a ' +
+      'conformance run, or publish over a board that already carries one. Reading the ' +
+      'suite from the working tree would grade the board against a denominator it was ' +
+      'not measured against.',
+  )
+}
+
 function main() {
   const argv = process.argv.slice(2)
   const write = argv.includes('--write')
-  const files = argv.filter((a) => !a.startsWith('--'))
+  const measuredAt = argv.indexOf('--measured')
+  const measuredDir = measuredAt === -1 ? null : argv[measuredAt + 1]
+  const files = argv.filter((a) => !a.startsWith('--') && a !== measuredDir)
 
   if (files.length === 0) {
     try {
@@ -952,12 +1010,24 @@ function main() {
   }
 
   const targets = readTargets(files)
-  const summary = buildSummary(targets, loadScoringContext())
+  const { measured, manifest, registry, rebuild } = resolveMeasurement({ measuredDir })
+  // Health is the one grading input read from the publisher's own checkout: it
+  // is live operational state, and a rebuild exists precisely because it moved.
+  const { health } = loadScoringContext()
+  const summary = buildSummary(targets, {
+    registry,
+    health,
+    suite: suiteIdentities(manifest),
+    measured,
+  })
   const table = renderTable(summary)
 
   if (write) {
-    publish(summary, targets)
-    console.error(`Updated the results table in README.md and wrote ${SUMMARY_PATH}.`)
+    publish(summary, targets, { manifest })
+    console.error(
+      `Updated the results table in README.md and wrote ${SUMMARY_PATH} ` +
+        `(${rebuild ? 'rebuilt' : 'measured'} at ${measured.ref}, ${measured.measuredAt}).`,
+    )
   } else {
     console.log(table)
   }

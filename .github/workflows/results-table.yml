@@ -121,6 +121,7 @@ jobs:
             --pattern 'results-*' \
             --pattern 'integration-results' \
             --pattern 'ground-truth-gsi' \
+            --pattern 'measured-suite' \
             --dir /tmp/artifacts
           # Each results-<target> artifact carries that target's fresh files
           # (plus stale copies of the others), so take only each target's own.
@@ -195,8 +196,13 @@ jobs:
 
       # Rewrites the README block between the results markers and refreshes
       # results/summary.json, the versioned per-region artefact the site reads.
+      # --measured names what the run measured, and carries the suite manifest
+      # and split registry as they stood at that ref. This job checks out main
+      # because it commits back, so reading either from its own tree would grade
+      # the board against a denominator main happens to have rather than the one
+      # the suite was measured against, and stamp a ref that disagrees with it.
       - name: Regenerate results table and summary
-        run: node scripts/summarise.mjs --write
+        run: node scripts/summarise.mjs --write --measured /tmp/artifacts/measured-suite
 
       - name: Regenerate per-target badges
         run: node scripts/badges.mjs
