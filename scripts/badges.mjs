@@ -41,8 +41,10 @@ import {
 } from './lib/score.mjs'
 import { BASELINE_GRADE, gradeOf } from './lib/grade.mjs'
 import { TARGETS } from './lib/targets.mjs'
-import { assertMeasuredSuite } from './summarise.mjs'
+import { assertMeasuredSuite, SUMMARY_PATH } from './summarise.mjs'
 import { suiteIdentities } from './suite-manifest.mjs'
+import { gradingInputsAtRef, measuredOf } from './lib/measured.mjs'
+import { loadRegionHealth, observedRegions } from './lib/observed.mjs'
 
 const RESULTS_DIR = 'results'
 
@@ -168,8 +170,30 @@ export function writeBadges(resultsDir = RESULTS_DIR, context = loadScoringConte
 }
 
 // CLI: regenerate the committed badges.
+//
+// Badges carry the same letters as the rows they mirror, so they have to be
+// graded against the same suite. This runs straight after summarise.mjs in the
+// publishing job, which stands on main because it commits back, so the default
+// arguments would grade from main's manifest and registry while the table beside
+// them graded at the measured ref - and a badge would contradict its own row.
+// The board has just recorded what it measured; read it back and use that.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { written, pruned, retired } = writeBadges()
+  const measured = existsSync(SUMMARY_PATH)
+    ? measuredOf(JSON.parse(readFileSync(SUMMARY_PATH, 'utf8')))
+    : null
+  if (measured === null) {
+    console.error(
+      `refusing to write badges: ${SUMMARY_PATH} names no measurement. Run summarise first.`,
+    )
+    process.exit(1)
+  }
+  const { manifest, registry } = gradingInputsAtRef(measured)
+  const health = loadRegionHealth()
+  const { written, pruned, retired } = writeBadges(
+    RESULTS_DIR,
+    { registry, health, observed: observedRegions(health) },
+    suiteIdentities(manifest),
+  )
   const notes = [retired && `${retired} tombstoned`, pruned && `${pruned} pruned`].filter(Boolean)
   console.error(`wrote ${written} badge file(s) to ${RESULTS_DIR}/${notes.length ? `, ${notes.join(', ')}` : ''}`)
 }

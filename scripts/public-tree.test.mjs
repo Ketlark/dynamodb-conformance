@@ -58,6 +58,17 @@ describe('the public tree carries no internal scaffolding', () => {
     expect(hits(/(^|\s)(\/\/|#)\s*U\d{1,2}\b\s*[:.\-]?\s/)).toEqual([])
   })
 
+  it('names no planning unit mid-sentence either', () => {
+    // The opener-only rule above missed a real leak: "...; U2 leaves it there
+    // deliberately" sat mid-comment and sailed through. A unit id reads as
+    // internal wherever it appears next to a verb, so match that shape rather
+    // than the position. Anchored on a following verb so it cannot fire on a
+    // register name, a size, or a CSS unit.
+    expect(
+      hits(/\bU\d{1,2}\s+(leaves|adds|owns|closes|covers|handles|introduces|deliberately|does|will|is|was)\b/),
+    ).toEqual([])
+  })
+
   it('references no knowledge base or planning document', () => {
     expect(hits(/knowledge-os|~\/kos\/|\bbrainstorms?\/|docs\/plans\//i)).toEqual([])
   })

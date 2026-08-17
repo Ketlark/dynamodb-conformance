@@ -23,6 +23,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
+import { validateRegistry } from './registry.mjs'
 
 /** Every field a measurement identity must carry to be usable. */
 export const MEASURED_FIELDS = ['ref', 'kind', 'commit', 'version', 'region', 'measuredAt']
@@ -88,10 +89,13 @@ export function readMeasuredDir(dir) {
     }
   }
 
+  const registry = JSON.parse(readFileSync(splitsPath, 'utf8'))
+  validateRegistry(registry)
+
   return {
     measured,
     manifest: JSON.parse(readFileSync(manifestPath, 'utf8')),
-    registry: JSON.parse(readFileSync(splitsPath, 'utf8')),
+    registry,
   }
 }
 
@@ -105,22 +109,34 @@ export function readMeasuredDir(dir) {
  * use whatever ref the caller happens to have resolved, which can be newer than
  * the board's. Health is the only input a rebuild is allowed to move.
  */
-export function gradingInputsAtRef(ref, { git = gitShow } = {}) {
+export function gradingInputsAtRef(measured, { git = gitShow } = {}) {
+  // Read at the commit, not the ref. A ref is a mutable name: a tag can be
+  // deleted and re-cut at a different commit, and `main` moves constantly. The
+  // identity already recorded the commit the measurement actually ran against,
+  // so using the name instead would let a re-cut tag silently regrade a board
+  // that was published before it moved. The ref is kept for display only.
+  const at = typeof measured === 'string' ? measured : (measured?.commit ?? measured?.ref)
+  const shown = typeof measured === 'string' ? measured : (measured?.ref ?? at)
+
   const read = (path) => {
     try {
-      return JSON.parse(git(`${ref}:${path}`))
+      return JSON.parse(git(`${at}:${path}`))
     } catch (cause) {
       throw new Error(
-        `cannot read ${path} at ${ref}, which the committed board names as its measured ref. ` +
-          'Refusing to fall back to the working tree.',
+        `cannot read ${path} at ${at} (${shown}), which the committed board names as what it ` +
+          'measured. Refusing to fall back to the working tree.',
         { cause },
       )
     }
   }
-  return {
-    manifest: read('registry/suite-manifest.json'),
-    registry: read('registry/splits.json'),
-  }
+
+  const registry = read('registry/splits.json')
+  // The registry read here never passed through loadRegistry, which is where
+  // every other reader gets its validation. A malformed row from an old ref
+  // would otherwise be scored against silently.
+  validateRegistry(registry)
+
+  return { manifest: read('registry/suite-manifest.json'), registry }
 }
 
 function gitShow(spec) {

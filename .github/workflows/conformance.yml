@@ -213,6 +213,10 @@ jobs:
           MEASURED_KIND: ${{ needs.changes.outputs.kind }}
           MEASURED_COMMIT: ${{ needs.changes.outputs.commit }}
           MEASURED_VERSION: ${{ needs.changes.outputs.version }}
+          # The region the suite actually ran against, not a second copy of the
+          # literal: the two drifting apart would stamp a board with a region it
+          # was not measured in.
+          AWS_REGION: eu-west-2
         run: |
           mkdir -p measured
           cat > measured/suite.json <<EOF
@@ -221,7 +225,7 @@ jobs:
             "kind": "$MEASURED_KIND",
             "commit": "$MEASURED_COMMIT",
             "version": "$MEASURED_VERSION",
-            "region": "eu-west-2",
+            "region": "$AWS_REGION",
             "measuredAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           }
           EOF

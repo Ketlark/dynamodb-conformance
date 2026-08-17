@@ -294,6 +294,10 @@ export function buildSummaryModel(raw, { pinned = PINNED } = {}) {
   return {
     available: true,
     schemaVersion: raw.schemaVersion,
+    // What produced this board. Absent on a board written before the field
+    // existed, which reads as "not stated" rather than as an error so an older
+    // summary still renders.
+    suite: raw.suite ?? null,
     groundTruth: raw.groundTruth ?? null,
     runDate: raw.groundTruth?.runDate ?? null,
     regions: {

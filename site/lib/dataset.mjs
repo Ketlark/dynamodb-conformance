@@ -305,8 +305,15 @@ function envelope(conformance, site, summary = null) {
   // /ground-truth both say so, and this is the same fact for a reader who is
   // not a person.
   const obs = controlObservation(summary?.latest?.groundTruth);
+  // What the board was measured from. A reader following the endpoints rather
+  // than the page has no other way to tell a released board from a validation
+  // one, and `kind` is the field that says which - the page says "(unreleased)"
+  // in prose, and an agent cannot read prose off a table it was told not to
+  // scrape.
+  const measured = summary?.latest?.suite ?? null;
   return {
     schemaVersion: DATA_SCHEMA_VERSION,
+    ...(measured ? { suite: measured } : {}),
     metrics: METRICS,
     source: site.url,
     repository: site.sourceRepo,
@@ -360,6 +367,8 @@ export function buildIndex(conformance, site, summary = null) {
       version: DATA_SCHEMA_VERSION,
       description:
         "A field you already read will not change type or meaning while `schemaVersion` stays put, so a consumer on this version can keep reading what it reads. New fields may appear at any version: treat one you do not recognise as new rather than as an error. It is removals, renames and changes of meaning that bump the version.",
+      suite:
+        "A third axis, and the one that says what these figures were measured from. The `suite` block names the ref, its commit, the suite version at that ref, the region measured against, and when. `kind` is the field to branch on: `tag` means a released suite with a dated changelog entry behind it, anything else means a board measured from an unreleased commit. The denominator every figure divides by moves when a release moves it, not when the default branch does, so two boards carrying the same `suite.version` are comparable and two carrying different ones are not. Region health is the exception: it is read live rather than at the measured ref, so a board's regional cohorts can be recomputed after its measurement without the measurement changing.",
       gradingVersion:
         "A separate axis, and the exception that matters. The grading criteria carry their own version (`metrics.grade.version`), and a change to the bands changes what a letter means without `schemaVersion` moving - the shape of the field is unaffected, so a schema bump would say nothing to a consumer parsing it. Anything storing or comparing letters over time should watch both numbers; anything reading only divergence and coverage can ignore the second.",
     },

@@ -8,15 +8,18 @@ import { testIdentities } from './lib/identity.mjs'
 import { GROUND_TRUTH_SLUG, axesOf, isTargetResultFile, loadScoringContext, scoreTarget, verdictsForRegion } from './lib/score.mjs'
 import { classifyResults } from './lib/classify.mjs'
 import { splitFor } from './lib/registry.mjs'
+import { gradingInputsAtRef } from './lib/measured.mjs'
 import { BASELINE_LABEL, gradeOf } from './lib/grade.mjs'
-import { suiteIdentities, suiteSizeOf } from './suite-manifest.mjs'
+import { readManifest, suiteIdentities, suiteSizeOf } from './suite-manifest.mjs'
 import {
   DISPLAY,
   REPO,
   SUMMARY_PATH,
   SUMMARY_SCHEMA_VERSION,
+  assertMeasuredManifest,
   assertMeasuredSuite,
   assertOneDenominator,
+  assertPublishableMeasurement,
   buildSummary,
   display,
   label,
@@ -936,10 +939,19 @@ describe('committed results pipeline', () => {
     .filter(isTargetResultFile)
     .map((f) => join('results', f))
   const targets = readTargets(files)
-  // The committed board carries the identity of the run that measured it, so a
-  // build claiming to reproduce it has to be handed that same identity.
+  // The committed board carries the identity of the run that measured it, and
+  // was graded against the suite definition at that ref. Reproducing it means
+  // using both: grading from the working tree instead would turn this test red
+  // the first time main's manifest or registry moved past the measured ref,
+  // reporting the board stale when it is exactly right.
   const committedMeasured = JSON.parse(readFileSync(SUMMARY_PATH, 'utf8')).suite
-  const fresh = buildSummary(targets, { ...context, measured: committedMeasured })
+  const measuredInputs = gradingInputsAtRef(committedMeasured)
+  const fresh = buildSummary(targets, {
+    ...context,
+    registry: measuredInputs.registry,
+    suite: suiteIdentities(measuredInputs.manifest),
+    measured: committedMeasured,
+  })
 
   it('results/summary.json matches a fresh build (and a re-run is deterministic)', () => {
     const committed = JSON.parse(readFileSync(SUMMARY_PATH, 'utf8'))
@@ -1087,9 +1099,15 @@ describe('committed results pipeline', () => {
     const before = Object.fromEntries(files.map((f) => [f, hash(f)]))
 
     const read = readTargets(files)
-    const summary = buildSummary(read, context)
+    // A publishable identity and the manifest it was measured against: both
+    // guards refuse without them, and this test is about what the pipeline
+    // writes, not about the guards.
+    const measured = { ...committedMeasured, kind: 'tag', ref: 'v3.1.0' }
+    const summary = buildSummary(read, { ...context, measured })
     renderTable(summary)
-    writeSummaryFile(summary, read, join(mkdtempSync(join(tmpdir(), 'summarise-')), 'summary.json'))
+    writeSummaryFile(summary, read, join(mkdtempSync(join(tmpdir(), 'summarise-')), 'summary.json'), {
+      manifest: measuredInputs.manifest,
+    })
 
     for (const f of files) {
       expect(hash(f), `${f} was modified by the results pipeline`).toBe(before[f])
@@ -1315,6 +1333,22 @@ describe('the measurement a board carries', () => {
   })
 })
 
+// A minimal valid registry carrying the row main retired, so a rebuild's read
+// can be told apart from a working-tree read without needing tags in CI.
+const RETIRED_ROW_REGISTRY = [
+  {
+    id: 'batch-get-item-empty-request-items-ordering',
+    test: { file: 'tests/tier3/validation-ordering/batchOperations.test.ts', fullName: 'x y' },
+    pinned: 'eu-west-2',
+    firstObserved: '2026-08-08',
+    lastRefreshed: '2026-08-12',
+    regions: {
+      'eu-west-2': { outcome: 'rejected', error: { name: 'ValidationException', message: 'a' } },
+      'us-east-1': { outcome: 'rejected', error: { name: 'ValidationException', message: 'b' } },
+    },
+  },
+]
+
 describe('resolveMeasurement', () => {
   const board = (suite) => {
     const d = mkdtempSync(join(tmpdir(), 'summary-'))
@@ -1335,8 +1369,7 @@ describe('resolveMeasurement', () => {
     ).toThrow(/no measured suite identity/)
   })
 
-  it('carries a committed identity forward on a rebuild, reading its inputs at that ref', () => {
-    // A real ref, so the git read resolves: this repo's own first tag.
+  it('carries a committed identity forward on a rebuild, reading its inputs at its commit', () => {
     const committed = {
       ref: 'v3.0.0',
       kind: 'tag',
@@ -1345,13 +1378,25 @@ describe('resolveMeasurement', () => {
       region: 'eu-west-2',
       measuredAt: '2026-08-13T09:00:00Z',
     }
-    const out = resolveMeasurement({ summaryPath: board(committed) })
+    // Injected rather than shelling out: CI checks out at depth 1 with no tags,
+    // so a real `git show v3.0.0:...` here would pass locally and fail there.
+    // The stub answers only for the recorded commit, which is the assertion.
+    const asked = []
+    const git = (spec) => {
+      asked.push(spec)
+      const [at, path] = spec.split(':')
+      if (at !== committed.commit) throw new Error(`unexpected read at ${at}`)
+      return path.endsWith('splits.json')
+        ? JSON.stringify({ splits: RETIRED_ROW_REGISTRY })
+        : JSON.stringify({ tests: ['a::b'] })
+    }
+    const out = resolveMeasurement({ summaryPath: board(committed), git })
     expect(out.rebuild).toBe(true)
     expect(out.measured).toEqual(committed)
-    // Read at v3.0.0, not from the working tree: v3.0.0 still carries the
-    // validation-ordering split row that main has since retired.
-    const ids = out.registry.splits.map((r) => r.id)
-    expect(ids).toContain('batch-get-item-empty-request-items-ordering')
+    expect(asked.every((s) => s.startsWith(committed.commit))).toBe(true)
+    // What it read is the measured suite's registry, which still carries the
+    // validation-ordering row main has since retired.
+    expect(out.registry.splits.map((r) => r.id)).toContain('batch-get-item-empty-request-items-ordering')
     expect(loadScoringContext().registry.splits.map((r) => r.id)).not.toContain(
       'batch-get-item-empty-request-items-ordering',
     )
@@ -1401,5 +1446,46 @@ describe('the measured line', () => {
   it('says nothing about health when no region has resolved', () => {
     expect(healthLabel({ detail: {} })).toBe('')
     expect(healthLabel(undefined)).toBe('')
+  })
+})
+
+describe('what may be published', () => {
+  const tagged = {
+    ref: 'v3.2.0',
+    kind: 'tag',
+    commit: 'abc1234',
+    version: '3.2.0',
+    region: 'eu-west-2',
+    measuredAt: '2026-08-19T04:00:00Z',
+  }
+
+  it('publishes a board measured at a release tag', () => {
+    expect(() => assertPublishableMeasurement(tagged)).not.toThrow()
+  })
+
+  it('refuses a board measured at a pushed sha', () => {
+    // A push validates the tests as they land. Publishing it would move every
+    // target's denominator with no dated changelog entry behind it.
+    expect(() => assertPublishableMeasurement({ ...tagged, kind: 'sha' })).toThrow(/Only a release tag/)
+  })
+
+  it('refuses a board measured at a ref git would not confirm as a tag', () => {
+    expect(() => assertPublishableMeasurement({ ...tagged, kind: 'other' })).toThrow(/Only a release tag/)
+  })
+
+  it('refuses a board carrying no measurement at all', () => {
+    expect(() => assertPublishableMeasurement(undefined)).toThrow(/Only a release tag/)
+  })
+
+  it('refuses to grade against the working tree when no manifest is supplied', () => {
+    // `manifest && suiteSizeOf(manifest)` used to hand undefined to a parameter
+    // whose own default reads registry/suite-manifest.json from disk, restoring
+    // the fallback this whole mechanism exists to remove.
+    expect(() => assertMeasuredManifest(undefined)).toThrow(/no suite manifest from the measured ref/)
+    expect(() => assertMeasuredManifest({})).toThrow(/no suite manifest from the measured ref/)
+  })
+
+  it('accepts a manifest that came from the measurement', () => {
+    expect(() => assertMeasuredManifest({ tests: ['a'] })).not.toThrow()
   })
 })

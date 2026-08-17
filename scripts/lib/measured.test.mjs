@@ -92,35 +92,46 @@ describe('readMeasuredDir', () => {
 })
 
 describe('gradingInputsAtRef', () => {
-  it('reads both suite-definition files at the given ref', () => {
+  it('reads both suite-definition files at the identity\'s commit, not its ref', () => {
+    // The ref is a mutable name; the commit is what was measured. A re-cut tag
+    // must not regrade a board that was published before it moved.
     const seen = []
     const git = (spec) => {
       seen.push(spec)
       return spec.endsWith('suite-manifest.json') ? '{"tests":["x"]}' : '{"splits":[]}'
     }
-    const out = gradingInputsAtRef('v3.0.0', { git })
-    expect(seen).toEqual(['v3.0.0:registry/suite-manifest.json', 'v3.0.0:registry/splits.json'])
+    const out = gradingInputsAtRef(WHOLE, { git })
+    expect(seen).toEqual([
+      `${WHOLE.commit}:registry/splits.json`,
+      `${WHOLE.commit}:registry/suite-manifest.json`,
+    ])
     expect(out.manifest.tests).toEqual(['x'])
   })
 
-  it('reads the ref it is given, not whatever is newer', () => {
+  it('validates the registry it read, rather than scoring against a malformed one', () => {
+    const git = (spec) =>
+      spec.endsWith('suite-manifest.json') ? '{"tests":[]}' : '{"splits":[{"id":"broken"}]}'
+    expect(() => gradingInputsAtRef(WHOLE, { git })).toThrow(/invalid split registry/)
+  })
+
+  it('reads what it is given, not whatever is newer', () => {
     // A rebuild recomputes an existing measurement. The sweep that triggers it
     // may have resolved a newer tag; that tag is not this board's.
     const seen = []
-    gradingInputsAtRef('v3.2.0', {
+    gradingInputsAtRef(WHOLE, {
       git: (spec) => {
         seen.push(spec.split(':')[0])
         return '{"tests":[],"splits":[]}'
       },
     })
-    expect(new Set(seen)).toEqual(new Set(['v3.2.0']))
+    expect(new Set(seen)).toEqual(new Set([WHOLE.commit]))
   })
 
-  it('refuses rather than falling back when the ref no longer resolves', () => {
+  it('refuses rather than falling back when what it names no longer resolves', () => {
     const git = () => {
       throw new Error('fatal: invalid object name')
     }
-    expect(() => gradingInputsAtRef('v9.9.9', { git })).toThrow(
+    expect(() => gradingInputsAtRef(WHOLE, { git })).toThrow(
       /Refusing to fall back to the working tree/,
     )
   })

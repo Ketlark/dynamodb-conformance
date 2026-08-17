@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import yaml from 'js-yaml'
-import { releaseTagsByVersion, resolveMeasuredRef } from './resolve-measured-ref.mjs'
+import { confirmTagKind, releaseTagsByVersion, resolveMeasuredRef } from './resolve-measured-ref.mjs'
 
 const TAGS = ['v2.0.0', 'v2.1.0', 'v3.0.0', 'v3.1.0']
 
@@ -81,6 +81,55 @@ describe('resolveMeasuredRef', () => {
   it('refuses a push that names no sha rather than guessing', () => {
     expect(() => resolveMeasuredRef({ event: 'push', tags: TAGS })).toThrow(/sha/)
   })
+
+  it('measures the PR head on a pull_request, never the released tag', () => {
+    // The event list is closed. An open one sent every PR's jobs to the latest
+    // release, so a PR adding a conformance test ran the old tests and passed.
+    const r = resolveMeasuredRef({ event: 'pull_request', sha: 'prhead1', tags: TAGS })
+    expect(r).toEqual({ ref: 'prhead1', kind: 'sha' })
+  })
+
+  it('measures its own sha for any event that is not a schedule or a dispatch', () => {
+    for (const event of ['pull_request', 'push', 'merge_group', 'repository_dispatch', 'release']) {
+      const r = resolveMeasuredRef({ event, sha: 'abc123', tags: TAGS })
+      expect(r.kind, `${event} resolved to ${r.ref}`).toBe('sha')
+      expect(r.ref, `${event} resolved to ${r.ref}`).toBe('abc123')
+    }
+  })
+})
+
+describe('confirmTagKind', () => {
+  const COMMIT = '9129f0fbfb6fb5ff01aadf5f9f957fa0bf1871ad'
+
+  it('confirms a tag that exists and points at the measured commit', () => {
+    expect(confirmTagKind('v3.1.0', COMMIT, { git: () => COMMIT })).toBe('tag')
+  })
+
+  it('refuses a branch that merely looks like a tag', () => {
+    // A branch named v9.9.9 pattern-matches as a release. Publishing is gated
+    // on this field, so the claim is settled by git rather than by the string.
+    const git = () => {
+      throw new Error('fatal: needed a single revision')
+    }
+    expect(confirmTagKind('v9.9.9', COMMIT, { git })).toBe('other')
+  })
+
+  it('refuses a tag that resolves to a different commit than was measured', () => {
+    // A tag deleted and re-cut elsewhere after the measurement ran.
+    expect(confirmTagKind('v3.1.0', COMMIT, { git: () => 'deadbeef' })).toBe('other')
+  })
+
+  it('does not call git for a ref that is not tag-shaped', () => {
+    let called = false
+    const kind = confirmTagKind('abc123', COMMIT, {
+      git: () => {
+        called = true
+        return COMMIT
+      },
+    })
+    expect(kind).toBe('other')
+    expect(called).toBe(false)
+  })
 })
 
 describe('the committed workflow consumes the resolved ref', () => {
@@ -96,7 +145,7 @@ describe('the committed workflow consumes the resolved ref', () => {
 
   // `changes` resolves the ref, so it reads the triggering ref by definition.
   // `capture-cross-region` commits back to main and has to stand on main to do
-  // it; U2 leaves it there deliberately.
+  // it, so it is deliberately left there.
   const RESOLVES_OR_COMMITS = new Set(['changes', 'capture-cross-region'])
 
   it('every suite checkout outside the resolver and the committer takes the resolved ref', () => {

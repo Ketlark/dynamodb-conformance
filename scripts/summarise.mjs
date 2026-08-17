@@ -587,9 +587,14 @@ export function publish(
   // The denominator and the population are checked against the manifest the
   // board was measured against, not the one the publishing job happens to have
   // checked out. Those are the same tree only by luck: the publisher stands on
-  // main because it commits back.
-  assertOneDenominator(summary, manifest && suiteSizeOf(manifest))
-  assertMeasuredSuite(targets, manifest && suiteIdentities(manifest))
+  // main because it commits back. Absent is refused rather than defaulted -
+  // `manifest && suiteSizeOf(manifest)` would hand `undefined` to a parameter
+  // whose own default reads the tree, restoring the exact fallback this exists
+  // to remove.
+  assertPublishableMeasurement(summary.suite)
+  assertMeasuredManifest(manifest)
+  assertOneDenominator(summary, suiteSizeOf(manifest))
+  assertMeasuredSuite(targets, suiteIdentities(manifest))
 
   const start = '<!-- results:start -->'
   const end = '<!-- results:end -->'
@@ -603,10 +608,44 @@ export function publish(
   writeSummaryFile(summary, targets, summaryPath, { manifest })
 }
 
+/**
+ * The manifest a board is graded against has to come from the measurement, not
+ * from whichever tree the publisher stands in. Refuse rather than default.
+ */
+export function assertPublishableMeasurement(measured) {
+  // Only a release may move the public board. A push measures its own sha to
+  // validate the tests as they land, and a dispatch can name any ref at all;
+  // publishing either would move every target's denominator with no dated
+  // changelog entry describing why, which is the whole problem this exists to
+  // remove. `kind` is confirmed against git by the resolver, so a branch named
+  // like a tag cannot reach here claiming to be one.
+  if (measured?.kind !== 'tag') {
+    throw new Error(
+      `refusing to publish a board measured at ${measured?.ref ?? '(unknown)'} ` +
+        `(kind: ${measured?.kind ?? 'none'}). Only a release tag may be published, because ` +
+        'only a tag has a dated changelog entry behind it. Cut a release, or dispatch a ' +
+        'measurement naming the tag.',
+    )
+  }
+  return measured
+}
+
+export function assertMeasuredManifest(manifest) {
+  if (!manifest || !Array.isArray(manifest.tests)) {
+    throw new Error(
+      'refusing to publish: no suite manifest from the measured ref. Pass { manifest } ' +
+        'read from the measuring run or from the committed board\'s ref; reading the ' +
+        'working tree would grade the board against a suite it was not measured against.',
+    )
+  }
+}
+
 /** Write the summary artefact (results/summary.json). */
 export function writeSummaryFile(summary, targets, path = SUMMARY_PATH, { manifest } = {}) {
-  assertOneDenominator(summary, manifest && suiteSizeOf(manifest))
-  assertMeasuredSuite(targets, manifest && suiteIdentities(manifest))
+  assertPublishableMeasurement(summary.suite)
+  assertMeasuredManifest(manifest)
+  assertOneDenominator(summary, suiteSizeOf(manifest))
+  assertMeasuredSuite(targets, suiteIdentities(manifest))
   writeFileSync(path, JSON.stringify(summary, null, 2) + '\n')
 }
 
@@ -900,8 +939,15 @@ export function measuredLabel(measured, tableDate) {
  * did not produce.
  */
 export function healthLabel(regions) {
-  const dates = Object.values(regions?.detail ?? {})
-    .map((r) => r?.lastResolved)
+  // Scoped to the observed set, which is what the board scores against. A
+  // dropped region still sits in `detail` carrying the date it stopped
+  // answering, and dating the line from it would report health the board does
+  // not use - usually older, occasionally newer than anything scored.
+  const observed = new Set(regions?.observed ?? [])
+  const entries = Object.entries(regions?.detail ?? {})
+  const scoped = observed.size > 0 ? entries.filter(([r]) => observed.has(r)) : entries
+  const dates = scoped
+    .map(([, r]) => r?.lastResolved)
     .filter(Boolean)
     .sort()
   const latest = dates[dates.length - 1]
@@ -1000,14 +1046,17 @@ export function renderTable(summary) {
  * - Neither: refuse. Falling back to the tree is how a board ends up graded
  *   against main's denominator while stamped with a tag.
  */
-export function resolveMeasurement({ measuredDir = null, summaryPath = SUMMARY_PATH } = {}) {
+export function resolveMeasurement({ measuredDir = null, summaryPath = SUMMARY_PATH, git } = {}) {
   if (measuredDir !== null) return { ...readMeasuredDir(measuredDir), rebuild: false }
 
   const committed = existsSync(summaryPath)
     ? measuredOf(JSON.parse(readFileSync(summaryPath, 'utf8')))
     : null
   if (committed !== null) {
-    return { measured: committed, ...gradingInputsAtRef(committed.ref), rebuild: true }
+    // `git` is injectable so the rebuild path can be tested without a checkout
+    // that carries tags: CI clones at depth 1 with none, so a test reaching for
+    // a real tag here would pass locally and fail there.
+    return { measured: committed, ...gradingInputsAtRef(committed, git ? { git } : {}), rebuild: true }
   }
 
   throw new Error(
@@ -1023,6 +1072,17 @@ function main() {
   const write = argv.includes('--write')
   const measuredAt = argv.indexOf('--measured')
   const measuredDir = measuredAt === -1 ? null : argv[measuredAt + 1]
+  // A bare `--measured`, or one followed by another flag, is a mistake at the
+  // call site. Reading it as "no flag" would quietly take the rebuild path and
+  // publish the previous measurement over a fresh one.
+  if (measuredAt !== -1 && (measuredDir === undefined || measuredDir.startsWith('--'))) {
+    console.error('--measured needs a directory: --measured <dir>')
+    process.exit(1)
+  }
+  if (argv.some((a) => a.startsWith('--measured='))) {
+    console.error('--measured takes a separate argument: --measured <dir>, not --measured=<dir>')
+    process.exit(1)
+  }
   const files = argv.filter((a) => !a.startsWith('--') && a !== measuredDir)
 
   if (files.length === 0) {

@@ -8,10 +8,14 @@
 //
 // The rule:
 //
-//   an explicit ref input  -> that ref, verbatim
-//   a push                 -> the pushed sha (validation, never published)
-//   anything else          -> the latest release tag (measurement)
-//   no release tags at all -> main
+//   an explicit ref input      -> that ref, verbatim
+//   a schedule or a dispatch   -> the latest release tag (measurement)
+//   any other event            -> the sha that triggered it (validation)
+//   no release tags at all     -> main
+//
+// The event list is closed, not open. An earlier version tested for `push` and
+// let everything else fall through to the tag, which sent every pull request to
+// the released suite instead of the branch under review.
 //
 // "Latest" is the highest version number, not the most recently created tag and
 // not the nearest tag by commit topology. Creation order is already unsound in
@@ -60,13 +64,20 @@ export function resolveMeasuredRef({ event, inputRef = '', sha = '', tags = [] }
   const explicit = String(inputRef).trim()
   if (explicit !== '') {
     // A dispatch naming a ref is a deliberate re-measure, including of an old
-    // tag after a bad release. It is taken verbatim, and its kind is read from
-    // its shape so a re-measure of a tag still publishes.
+    // tag after a bad release. It is taken verbatim. Its kind is provisional
+    // here - the shape of a string is not proof a tag exists, so the publisher
+    // re-derives it from git before trusting it.
     return { ref: explicit, kind: RELEASE_TAG.test(explicit) ? 'tag' : 'other' }
   }
 
-  if (event === 'push') {
-    if (String(sha).trim() === '') throw new Error('a push must name the sha it pushed')
+  // Only a schedule or a dispatch measures a release. Everything else measures
+  // what triggered it, and the list is closed rather than open: an earlier
+  // version tested for `push` and let everything else fall through to the tag,
+  // which sent every pull request's jobs to the released suite instead of the
+  // branch under review. A PR that added a conformance test would have run the
+  // old tests and passed. Anything not named here measures its own sha.
+  if (event !== 'schedule' && event !== 'workflow_dispatch') {
+    if (String(sha).trim() === '') throw new Error(`${event || 'this event'} must name the sha it triggered on`)
     return { ref: String(sha).trim(), kind: 'sha' }
   }
 
@@ -83,6 +94,33 @@ function gitTags() {
   return out.split('\n').filter((line) => line.trim() !== '')
 }
 
+/**
+ * Whether a ref really is a release tag, asked of git rather than of the
+ * string's shape.
+ *
+ * `resolveMeasuredRef` can only pattern-match what it was handed, so a branch
+ * named `v9.9.9` comes back as `kind: 'tag'`. Publishing is gated on that
+ * field, so the claim has to be proven: the tag must exist under refs/tags and
+ * resolve to the same commit the run measured. This runs where the tags are -
+ * the resolver checks out with full depth - so nothing downstream has to fetch
+ * to re-check it.
+ */
+export function confirmTagKind(ref, commit, { git = gitRevParse } = {}) {
+  if (!RELEASE_TAG.test(ref)) return 'other'
+  try {
+    return git(`refs/tags/${ref}^{commit}`) === commit ? 'tag' : 'other'
+  } catch {
+    return 'other'
+  }
+}
+
+function gitRevParse(spec) {
+  return execFileSync('git', ['rev-parse', '--verify', '--quiet', spec], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  }).trim()
+}
+
 function main() {
   const event = process.env.EVENT ?? ''
   const resolved = resolveMeasuredRef({
@@ -96,6 +134,10 @@ function main() {
     encoding: 'utf8',
   }).trim()
 
+  // The provisional kind is a guess about a string; this is the answer from git.
+  // Only a claimed tag needs confirming - a sha is already what it says it is.
+  const kind = resolved.kind === 'tag' ? confirmTagKind(resolved.ref, commit) : resolved.kind
+
   // The suite version is read at the measured ref, never from the working tree.
   // The job that writes the board checks out main because it commits back, so a
   // version read there would describe main and be stamped onto a board measured
@@ -105,7 +147,7 @@ function main() {
 
   const lines = [
     `ref=${resolved.ref}`,
-    `kind=${resolved.kind}`,
+    `kind=${kind}`,
     `commit=${commit}`,
     `version=${version}`,
   ]
