@@ -13,7 +13,10 @@ describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'
   it('empty RequestItems: full required-parameter error', async (ctx) => {
     // Split behaviour (registry row batch-get-item-empty-request-items-message):
     // the answer differs by region, so what the target actually returned is
-    // recorded for per-region scoring.
+    // recorded for per-region scoring. eu-west-2 is pinned, and it moved to the
+    // validation framework's generic constraint message between the 2026-08-08
+    // and 2026-08-15 sweeps; 22 regions still answer the bespoke sentence
+    // `The requestItems parameter is required for BatchGetItem`.
     try {
       await observeSplit(ctx.task, () => ddb.send(new BatchGetItemCommand({ RequestItems: {} })))
       expect.unreachable('should have thrown')
@@ -21,7 +24,7 @@ describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'
       expect(err).toBeInstanceOf(DynamoDBServiceException)
       expect((err as DynamoDBServiceException).name).toBe('ValidationException')
       expect((err as DynamoDBServiceException).message).toBe(
-        'The requestItems parameter is required for BatchGetItem',
+        "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1",
       )
     }
   })

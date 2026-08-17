@@ -708,16 +708,16 @@
         "file": "tests/tier3/error-messages/batchGetItem.test.ts",
         "fullName": "BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
       },
-      "behaviour": "BatchGetItem with an empty RequestItems map: part of the 2026-06 validation-framework rollout. New-cohort regions reject with the framework's generic constraint message naming 'RequestItems'; the rest return the bespoke required-parameter sentence.",
+      "behaviour": "BatchGetItem with an empty RequestItems map: part of the 2026-06 validation-framework rollout. New-cohort regions reject with the framework's generic constraint message naming 'RequestItems'; the rest return the bespoke required-parameter sentence. eu-west-2 crossed to the new cohort between the 2026-08-08 and 2026-08-15 sweeps, so the pinned answer is now the generic message.",
       "pinned": "eu-west-2",
       "firstObserved": "2026-08-08",
-      "lastRefreshed": "2026-08-12",
+      "lastRefreshed": "2026-08-17",
       "regions": {
         "af-south-1": {
           "outcome": "rejected",
           "error": {
             "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
+            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
           }
         },
         "ap-east-1": {
@@ -745,7 +745,7 @@
           "outcome": "rejected",
           "error": {
             "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
+            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
           }
         },
         "ap-northeast-3": {
@@ -794,14 +794,14 @@
           "outcome": "rejected",
           "error": {
             "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
+            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
           }
         },
         "ap-southeast-5": {
           "outcome": "rejected",
           "error": {
             "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
+            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
           }
         },
         "ap-southeast-6": {
@@ -878,7 +878,7 @@
           "outcome": "rejected",
           "error": {
             "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
+            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
           }
         },
         "eu-west-3": {
@@ -893,6 +893,13 @@
           "error": {
             "name": "ValidationException",
             "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "me-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchGetItem"
           }
         },
         "mx-central-1": {
@@ -927,7 +934,7 @@
           "outcome": "rejected",
           "error": {
             "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
+            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
           }
         },
         "us-west-2": {
@@ -940,258 +947,13 @@
       },
       "evidence": [
         "captures/2026-08-12-batch-empty-and-nesting.json",
-        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/31586467950"
+        "captures/2026-08-17-batch-empty-request-items.json",
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/31861859337"
       ],
       "admitted": {
         "by": "Martin Hicks",
         "date": "2026-08-12",
         "issue": "https://github.com/paritysuite/dynamodb-conformance/issues/126"
-      }
-    },
-    {
-      "id": "batch-get-item-empty-request-items-ordering",
-      "test": {
-        "file": "tests/tier3/validation-ordering/batchOperations.test.ts",
-        "fullName": "Batch operations — validation ordering BatchGetItem rejects empty RequestItems"
-      },
-      "behaviour": "BatchGetItem with an empty RequestItems map: part of the 2026-06 validation-framework rollout. New-cohort regions reject with the framework's generic constraint message naming 'RequestItems'; the rest return the bespoke required-parameter sentence.",
-      "pinned": "eu-west-2",
-      "firstObserved": "2026-08-08",
-      "lastRefreshed": "2026-08-12",
-      "regions": {
-        "af-south-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-east-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-east-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-northeast-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-northeast-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-northeast-3": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-south-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-south-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-southeast-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
-          }
-        },
-        "ap-southeast-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-southeast-3": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
-          }
-        },
-        "ap-southeast-4": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-southeast-5": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-southeast-6": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ap-southeast-7": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ca-central-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "ca-west-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "eu-central-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
-          }
-        },
-        "eu-central-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "eu-north-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
-          }
-        },
-        "eu-south-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "eu-south-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "eu-west-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "eu-west-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "eu-west-3": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "il-central-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
-          }
-        },
-        "mx-central-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "sa-east-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "us-east-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "us-east-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "us-west-1": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        },
-        "us-west-2": {
-          "outcome": "rejected",
-          "error": {
-            "name": "ValidationException",
-            "message": "The requestItems parameter is required for BatchGetItem"
-          }
-        }
-      },
-      "evidence": [
-        "captures/2026-08-12-batch-empty-and-nesting.json",
-        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/31586467950"
-      ],
-      "admitted": {
-        "by": "Martin Hicks",
-        "date": "2026-08-12",
-        "issue": "https://github.com/paritysuite/dynamodb-conformance/issues/127"
       }
     }
   ]

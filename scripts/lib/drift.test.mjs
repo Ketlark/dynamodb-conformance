@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { diffCaptures, diffProbe, diffRegions, isClean } from './drift.mjs'
+import { diffCaptures, diffProbe, diffRegions, driftedProbes, isClean } from './drift.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const snapshot = JSON.parse(
@@ -66,6 +66,26 @@ describe('diffCaptures', () => {
     const ids = diffCaptures(base, obs).probes
     expect(ids.find((p) => p.id === 'only-base').changed).toEqual(['removed'])
     expect(ids.find((p) => p.id === 'only-obs').changed).toEqual(['added'])
+  })
+
+  it('does not count an added or removed probe as drift', () => {
+    // Adding a probe to the capture script leaves every older baseline without
+    // it. That is a changed probe set, not a changed answer, and reporting it
+    // as drift made a scheduled red name the new probe as the thing that moved.
+    const base = block(probe({ id: 'kept' }))
+    const obs = block(probe({ id: 'kept' }), probe({ id: 'brand-new' }))
+    const d = diffCaptures(base, obs)
+    expect(d.probes.map((p) => p.id)).toEqual(['brand-new'])
+    expect(driftedProbes(d)).toEqual([])
+    expect(isClean(d)).toBe(true)
+  })
+
+  it('still counts a probe whose answer moved, alongside an added one', () => {
+    const base = block(probe({ id: 'kept', message: 'before' }))
+    const obs = block(probe({ id: 'kept', message: 'after' }), probe({ id: 'brand-new' }))
+    const d = diffCaptures(base, obs)
+    expect(driftedProbes(d).map((p) => p.id)).toEqual(['kept'])
+    expect(isClean(d)).toBe(false)
   })
 
   it('flags a nullRoundTrip divergence', () => {

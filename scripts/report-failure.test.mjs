@@ -86,6 +86,21 @@ describe('verdictFromDrift', () => {
     expect(v.probes).toEqual(['s_put_table_empty', 'b_put_dup_ss'])
   })
 
+  it('does not list a probe the baseline never carried', () => {
+    // A probe added to the capture script is absent from every older baseline,
+    // so listing it as drift points triage at a probe that has not moved.
+    const v = verdictFromDrift({
+      clean: false,
+      drift: {
+        probes: [
+          { id: 's_put_table_empty', changed: ['message'] },
+          { id: 'o_bg_empty_requestitems', changed: ['added'] },
+        ],
+      },
+    })
+    expect(v.probes).toEqual(['s_put_table_empty'])
+  })
+
   it('gives no verdict when the diff was not comparable (missing region block)', () => {
     expect(verdictFromDrift({ comparable: false, clean: false, drift: { probes: [] } })).toBeNull()
   })
