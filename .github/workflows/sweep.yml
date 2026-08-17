@@ -21,6 +21,10 @@ on:
     - cron: '30 5 * * *' # cleanup: daily, catching tables a dead run stranded
   workflow_dispatch:
     inputs:
+      ref:
+        description: "Suite ref to sweep (blank = the latest release tag)"
+        required: false
+        default: ""
       regions:
         description: "Comma-separated region subset (blank = all commercial regions)"
         required: false
@@ -45,11 +49,26 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       regions: ${{ steps.set.outputs.regions }}
+      ref: ${{ steps.measured.outputs.ref }}
+      commit: ${{ steps.measured.outputs.commit }}
+      version: ${{ steps.measured.outputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+
+      # The sweep measures the same suite the board publishes. Resolved once
+      # here and read by the jobs below, the same rule conformance.yml uses:
+      # a dispatch may name a ref, otherwise it is the latest release tag.
+      - id: measured
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_REF: ${{ inputs.ref }}
+          SHA: ${{ github.sha }}
+        run: node scripts/resolve-measured-ref.mjs
 
       # src/regions.ts is the single source of the region set; the matrix is
       # derived from it rather than hand-maintained here.
@@ -99,6 +118,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.regions.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -232,13 +253,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXPECT: ${{ needs.regions.outputs.regions }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # The commit, not the ref: a tag can move, and detection has to read
+          # what the sweep actually ran under.
+          MEASURED_REF: ${{ needs.regions.outputs.commit }}
         run: |
           flags=()
           if [ "$RECORD" = "true" ]; then
             flags+=(--record-health registry/regions.json --file-issues)
           fi
+          # Detection compares what the regions answered against the registry
+          # the sweep measured, not against main's. This job stands on main
+          # because it commits back, so the row a candidate is raised against
+          # would otherwise be one the swept suite never ran under.
+          git show "$MEASURED_REF:registry/splits.json" > "$RUNNER_TEMP/splits.json"
+
           node scripts/sweep-detect.mjs ground-truth \
             --expect "$(node -e 'console.log(JSON.parse(process.env.EXPECT).join(","))')" \
+            --registry "$RUNNER_TEMP/splits.json" \
             --confirm \
             --run-url "$RUN_URL" \
             --out ground-truth/sweep-report.json \

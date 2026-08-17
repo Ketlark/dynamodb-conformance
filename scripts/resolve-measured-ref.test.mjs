@@ -185,3 +185,36 @@ describe('the committed workflow consumes the resolved ref', () => {
     }
   })
 })
+
+describe('the sweep measures the same suite the board publishes', () => {
+  const sweep = yaml.load(readFileSync('.github/workflows/sweep.yml', 'utf8'))
+
+  it('resolves the measured ref once and publishes it as an output', () => {
+    const outputs = sweep.jobs.regions.outputs
+    for (const key of ['ref', 'commit', 'version']) {
+      expect(outputs, `regions job does not output ${key}`).toHaveProperty(key)
+    }
+  })
+
+  it('runs the suite at the measured ref', () => {
+    const checkout = (sweep.jobs.sweep.steps ?? []).find((s) =>
+      (s.uses ?? '').startsWith('actions/checkout'),
+    )
+    expect(checkout.with?.ref).toContain('needs.regions.outputs.ref')
+  })
+
+  it('keeps the committing job on main, which is why it cannot read the suite from its own tree', () => {
+    const checkout = (sweep.jobs.detect.steps ?? []).find((s) =>
+      (s.uses ?? '').startsWith('actions/checkout'),
+    )
+    expect(checkout.with?.ref).toBe('main')
+  })
+
+  it('detects splits against the registry the sweep measured, at the commit not the ref', () => {
+    const step = (sweep.jobs.detect.steps ?? []).find((s) =>
+      (s.run ?? '').includes('sweep-detect.mjs'),
+    )
+    expect(step.run).toContain('--registry')
+    expect(step.env?.MEASURED_REF).toContain('needs.regions.outputs.commit')
+  })
+})
