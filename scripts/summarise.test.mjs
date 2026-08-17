@@ -28,6 +28,8 @@ import {
   repoUrl,
   tableCaption,
   tableDateOf,
+  healthLabel,
+  measuredLabel,
   resolveMeasurement,
   tableRows,
   writeSummaryFile,
@@ -584,7 +586,9 @@ describe('tableRows / renderTable', () => {
     // rather than as nothing to report. The caption still dates the table, and
     // drops the clause pointing at a column that is no longer there.
     const table = renderTable(summary)
-    expect(table).toContain('_Measured 2026-07-06._')
+    // No identity on this fixture, so the line falls back to the bare date;
+    // health is dated separately because it can move without a re-measure.
+    expect(table).toContain('_Measured 2026-07-06. Region health as of 2026-07-06._')
     expect(table).not.toContain('except where a row carries its own date')
     expect(table).not.toContain('| Measured |')
     // No row ends on an empty cell, which is what the dropped column left behind.
@@ -601,7 +605,9 @@ describe('tableRows / renderTable', () => {
       { registry: REGISTRY, health: HEALTHY, suite: testIdentities(suiteDoc('passed')) },
     )
     const table = renderTable(carried)
-    expect(table).toContain('_Measured 2026-07-06, except where a row carries its own date._')
+    expect(table).toContain(
+      '_Measured 2026-07-06, except where a row carries its own date. Region health as of 2026-07-06._',
+    )
     expect(table).toContain('| Regions | Measured |')
     // And only the carried row restates a date; the rest leave the cell empty.
     const dated = table.split('\n').filter((l) => /\| 2026-07-01 \|$/.test(l))
@@ -1349,5 +1355,51 @@ describe('resolveMeasurement', () => {
     expect(loadScoringContext().registry.splits.map((r) => r.id)).not.toContain(
       'batch-get-item-empty-request-items-ordering',
     )
+  })
+})
+
+describe('the measured line', () => {
+  const at = (over) => ({
+    ref: 'v3.2.0',
+    kind: 'tag',
+    commit: '9aa0337b455ed4c0ccdf71d9e4e8bb306991d778',
+    version: '3.2.0',
+    region: 'eu-west-2',
+    measuredAt: '2026-08-19T04:36:04Z',
+    ...over,
+  })
+
+  it('names a tag as the release it is', () => {
+    expect(measuredLabel(at({}), '2026-08-19')).toBe(
+      'Suite v3.2.0, measured against real DynamoDB on 2026-08-19',
+    )
+  })
+
+  it('refuses to call a commit on main a release, even though it reads a version', () => {
+    // package.json at a commit past v3.1.0 still says 3.1.0. Printing "Suite
+    // v3.1.0" there would name a release this board is not.
+    const label = measuredLabel(at({ kind: 'sha', ref: '9aa0337b455e', version: '3.1.0' }), '2026-08-17')
+    expect(label).toContain('(unreleased)')
+    expect(label).toContain('9aa0337b')
+    expect(label).not.toContain('v3.1.0')
+  })
+
+  it('falls back to the bare date for a board carrying no identity', () => {
+    expect(measuredLabel(null, '2026-08-19')).toBe('Measured 2026-08-19')
+  })
+
+  it('dates region health from the most recently resolved region', () => {
+    const regions = {
+      detail: {
+        'eu-west-2': { lastResolved: '2026-08-15' },
+        'us-east-1': { lastResolved: '2026-08-22' },
+      },
+    }
+    expect(healthLabel(regions)).toBe(' Region health as of 2026-08-22.')
+  })
+
+  it('says nothing about health when no region has resolved', () => {
+    expect(healthLabel({ detail: {} })).toBe('')
+    expect(healthLabel(undefined)).toBe('')
   })
 })

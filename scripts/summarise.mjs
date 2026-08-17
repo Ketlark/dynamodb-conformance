@@ -776,7 +776,7 @@ export function tableRows(summary) {
  * able to mistake an unresolved region for an agreeing one, so absence is
  * spelled out rather than implied.
  */
-export function tableCaption(regions, groundTruth = null, tableDate = null, carried = true) {
+export function tableCaption(regions, groundTruth = null, tableDate = null, carried = true, measured = null) {
   const list = (rs) => rs.map((r) => `\`${r}\``).join(', ')
   // Two figures, said plainly. The long form spent a paragraph on what they
   // measure before a reader reached a number, when the pair is simple:
@@ -865,13 +865,47 @@ export function tableCaption(regions, groundTruth = null, tableDate = null, carr
   // that re-measured everything there is no row carrying its own date, and
   // pointing at a column the table no longer has sends a reader looking for it.
   if (tableDate) {
-    sentences.push(
-      carried
-        ? `_Measured ${tableDate}, except where a row carries its own date._`
-        : `_Measured ${tableDate}._`,
-    )
+    const except = carried ? ', except where a row carries its own date' : ''
+    sentences.push(`_${measuredLabel(measured, tableDate)}${except}.${healthLabel(regions)}_`)
   }
   return sentences.join('\n\n')
+}
+
+/**
+ * What the board was measured from, said so the date attaches to the
+ * measurement rather than to the figures.
+ *
+ * A tag is named as a release. Anything else is not: `version` is read from
+ * package.json at the measured ref, so a commit on main past v3.1.0 reports
+ * "3.1.0" while being neither that tag nor a release. Printing "Suite v3.1.0"
+ * there would claim a release that does not exist, so the ref is named instead
+ * and the state is said out loud.
+ */
+export function measuredLabel(measured, tableDate) {
+  if (!measured) return `Measured ${tableDate}`
+  const suite =
+    measured.kind === 'tag'
+      ? `Suite ${measured.ref}`
+      : `Suite at ${String(measured.commit).slice(0, 8)} (unreleased)`
+  return `${suite}, measured against real DynamoDB on ${tableDate}`
+}
+
+/**
+ * When region health was last resolved: the most recent `lastResolved` across
+ * the observed set.
+ *
+ * Health is the one grading input read live rather than at the measured ref, so
+ * a board's cohorts can be recomputed after its measurement. Without this date
+ * the measurement date is the only one on the page, sitting next to figures it
+ * did not produce.
+ */
+export function healthLabel(regions) {
+  const dates = Object.values(regions?.detail ?? {})
+    .map((r) => r?.lastResolved)
+    .filter(Boolean)
+    .sort()
+  const latest = dates[dates.length - 1]
+  return latest ? ` Region health as of ${latest}.` : ''
 }
 
 /** Render the full table block: caption plus Markdown table. */
@@ -948,7 +982,7 @@ export function renderTable(summary) {
     `|--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|${carried ? '----------|' : ''}`,
     ...rendered.map(fmt),
   ].join('\n')
-  return `${tableCaption(summary.regions, summary.groundTruth, tableDate, carried)}\n\n${body}`
+  return `${tableCaption(summary.regions, summary.groundTruth, tableDate, carried, summary.suite ?? null)}\n\n${body}`
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
