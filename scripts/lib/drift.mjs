@@ -100,9 +100,29 @@ export function diffCaptures(baseline, observed) {
   return { probes, nullRoundTrip: diffNullRoundTrip(baseline?.nullRoundTrip, observed?.nullRoundTrip) }
 }
 
+/**
+ * The probes in a diff that actually moved.
+ *
+ * A probe present on only one side is reported by diffCaptures as added or
+ * removed, which is true and worth seeing, but it is not drift: a probe with no
+ * baseline has no earlier answer to have moved from. Only an across-time diff
+ * can produce those - a cross-region diff compares two blocks from the same
+ * capture run, so both sides always carry the same probe set - and across time
+ * they mean the capture script gained or lost a probe, not that AWS changed.
+ * Counted as drift, a newly added probe is named on every red run that follows,
+ * against a baseline that never carried it.
+ */
+export function driftedProbes(diff) {
+  const onlyTheProbeSetMoved = (p) =>
+    Array.isArray(p?.changed) &&
+    p.changed.length > 0 &&
+    p.changed.every((c) => c === 'added' || c === 'removed')
+  return (diff?.probes ?? []).filter((p) => !onlyTheProbeSetMoved(p))
+}
+
 /** True when a diff result carries no divergence at all. */
 export function isClean(diff) {
-  return (diff?.probes?.length ?? 0) === 0 && !diff?.nullRoundTrip
+  return driftedProbes(diff).length === 0 && !diff?.nullRoundTrip
 }
 
 /**

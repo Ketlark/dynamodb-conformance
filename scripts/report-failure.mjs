@@ -34,6 +34,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { classifyResults } from './lib/classify.mjs'
+import { driftedProbes } from './lib/drift.mjs'
 
 /**
  * Classify every assertion in a Vitest JSON report (merging its indeterminate
@@ -96,7 +97,7 @@ export function verdictFromDrift(driftResult) {
       probes: [],
     }
   }
-  const probes = (driftResult.drift?.probes ?? []).map((p) => p.id)
+  const probes = driftedProbes(driftResult.drift).map((p) => p.id)
   // A round-trip-only change carries no probe id, so name it explicitly or the
   // issue would claim drift with nothing to act on.
   if (driftResult.drift?.nullRoundTrip) probes.push('{ NULL: false } round-trip')
