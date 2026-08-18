@@ -146,6 +146,39 @@ export function confirmTagKind(ref, commit, { git = gitRevParse } = {}) {
   }
 }
 
+/**
+ * Refuse a release-shaped name that is both a tag and a branch.
+ *
+ * This module asks git for `refs/tags/<name>`, but `actions/checkout` resolves
+ * a bare name its own way and checks for a branch first. So an ambiguous name
+ * would have every measuring job read the branch while this confirmed `tag`
+ * from the tag's commit - a board measured from unreviewed code and published
+ * as a release.
+ *
+ * Refusing rather than qualifying every ref. No such branch has ever existed
+ * here, so a refusal costs nothing until the day it saves something, whereas
+ * rewriting the ref every checkout and every `git show` uses would change paths
+ * that only run for real against live AWS.
+ */
+export function assertUnambiguousRef(ref, { git = gitRevParse } = {}) {
+  if (!RELEASE_TAG.test(ref)) return ref
+  let branch = null
+  try {
+    branch = git(`refs/heads/${ref}`)
+  } catch {
+    return ref
+  }
+  if (branch) {
+    throw new Error(
+      `refusing to measure ${ref}: a branch of that name exists as well as the tag. ` +
+        'Every job would check out the branch while the publish gate confirmed the tag, ' +
+        'so the board would be measured from one and published as the other. Delete or ' +
+        'rename the branch.',
+    )
+  }
+  return ref
+}
+
 function gitRevParse(spec) {
   return execFileSync('git', ['rev-parse', '--verify', '--quiet', spec], {
     encoding: 'utf8',
@@ -169,6 +202,9 @@ function main() {
   // The provisional kind is a guess about a string; this is the answer from git.
   // Only a claimed tag needs confirming - a sha is already what it says it is.
   const kind = resolved.kind === 'tag' ? confirmTagKind(resolved.ref, commit) : resolved.kind
+  // Only once it is really a tag: a branch called v9.9.9 with no tag beside it
+  // resolves to `other` above and is unpublishable anyway.
+  if (kind === 'tag') assertUnambiguousRef(resolved.ref)
 
   // The suite version is read at the measured ref, never from the working tree.
   // The job that writes the board checks out main because it commits back, so a

@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import yaml from 'js-yaml'
-import { confirmTagKind, releaseTagsByVersion, resolveMeasuredRef } from './resolve-measured-ref.mjs'
+import {
+  assertPlainVersion,
+  assertUnambiguousRef,
+  confirmTagKind,
+  releaseTagsByVersion,
+  resolveMeasuredRef,
+} from './resolve-measured-ref.mjs'
 
 const TAGS = ['v2.0.0', 'v2.1.0', 'v3.0.0', 'v3.1.0']
 
@@ -216,5 +222,47 @@ describe('the sweep measures the same suite the board publishes', () => {
     )
     expect(step.run).toContain('--registry')
     expect(step.env?.MEASURED_REF).toContain('needs.regions.outputs.commit')
+  })
+})
+
+describe('assertUnambiguousRef', () => {
+  const gitWith = (present) => (spec) => {
+    if (present.includes(spec)) return 'abc123'
+    throw new Error(`unknown revision ${spec}`)
+  }
+
+  it('accepts a tag with no branch of the same name', () => {
+    expect(assertUnambiguousRef('v3.2.0', { git: gitWith(['refs/tags/v3.2.0']) })).toBe('v3.2.0')
+  })
+
+  it('refuses a name that is both a tag and a branch', () => {
+    // actions/checkout resolves a bare name by looking for a branch first,
+    // while this module asks git for refs/tags - so the measuring jobs would
+    // read the branch and the publish gate would confirm the tag.
+    expect(() =>
+      assertUnambiguousRef('v3.2.0', { git: gitWith(['refs/tags/v3.2.0', 'refs/heads/v3.2.0']) }),
+    ).toThrow(/a branch of that name exists/)
+  })
+
+  it('ignores anything that is not release-shaped', () => {
+    // A sha or a branch name is never resolved through refs/tags, so there is
+    // no ambiguity to refuse.
+    expect(assertUnambiguousRef('main', { git: gitWith(['refs/heads/main']) })).toBe('main')
+  })
+})
+
+describe('assertPlainVersion', () => {
+  it('accepts a version the tag and JSON conventions can both carry', () => {
+    for (const v of ['3.2.0', '3.10.12', '1.2.3-rc1+build']) {
+      expect(assertPlainVersion(v)).toBe(v)
+    }
+  })
+
+  it('refuses a version that could close a JSON string and forge a field', () => {
+    // Read from package.json at whatever ref was dispatched, so it is not ours
+    // to trust. `kind` is the only gate on publishing.
+    expect(() => assertPlainVersion('3.1.0", "kind": "tag')).toThrow(/may contain only/)
+    expect(() => assertPlainVersion('3.1.0\n')).toThrow(/may contain only/)
+    expect(() => assertPlainVersion(undefined)).toThrow(/may contain only/)
   })
 })

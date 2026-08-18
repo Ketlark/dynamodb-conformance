@@ -295,16 +295,30 @@ const cohortCount = (matched, summary, rate) => {
  * and nothing here stamps a "generated at" time - the run dates come from the
  * result files, so a re-run over the same inputs is byte-identical.
  */
-export function buildSummary(targets, { registry, health, suite = suiteIdentities(), measured = null }) {
+export function buildSummary(targets, options) {
+  const { registry, health, suiteTests = suiteIdentities(), measured = null } = options
+  // The test-identity set used to travel under `suite`, which collided with the
+  // published measurement identity of the same name. Renaming it left a trap:
+  // the option has a working-tree default, so a caller still passing the old key
+  // would be silently graded against main's manifest - the exact failure this
+  // whole mechanism exists to prevent, arriving quietly. Refuse it by name.
+  if ('suite' in options) {
+    throw new Error(
+      'buildSummary no longer takes `suite`: pass the test-identity set as `suiteTests`. ' +
+        'The published `suite` field is the measurement identity and travels as `measured`.',
+    )
+  }
+
   const standing = regionStanding(health)
 
   const summary = {
     schemaVersion: SUMMARY_SCHEMA_VERSION,
     // What produced these figures. Additive, so schemaVersion stays put - see
     // site/src/for-agents.md, which already promises consumers that new fields
-    // may appear at any version. `suite` here is the measurement identity; the
-    // `suite` option above is the test-identity set that sets the denominator,
-    // an unfortunate but pre-existing overlap in the word.
+    // may appear at any version. The published `suite` is the measurement
+    // identity; the set of test identities that sets the denominator travels
+    // under `suiteTests`, because one word meaning both in the same object was
+    // a trap for anyone reading this later.
     //
     // Version alone does not identify a board. Live AWS is the oracle, so the
     // same tag measured twice can legitimately disagree, and without the region
@@ -330,7 +344,7 @@ export function buildSummary(targets, { registry, health, suite = suiteIdentitie
       runDate: '-',
       derived: false,
       testsObserved: 0,
-      suiteSize: suite.size,
+      suiteSize: suiteTests.size,
       lanes: [],
       missingLanes: [...GROUND_TRUTH_LANES],
       counts: null,
@@ -379,7 +393,7 @@ export function buildSummary(targets, { registry, health, suite = suiteIdentitie
   }
 
   if (baseline) {
-    recordGroundTruth(summary, baseline, { registry, observed: standing.observed, suite })
+    recordGroundTruth(summary, baseline, { registry, observed: standing.observed, suiteTests })
   }
 
   return summary
@@ -443,13 +457,13 @@ function recordGroundTruth(summary, baseline, context) {
   // What the suite contains, by test identity, from the suite's own manifest.
   // This used to be the widest emulator run on the board, which put one of the
   // measured things in charge of the denominator every other figure divides by.
-  const { suite } = context
+  const { suiteTests } = context
 
   // Spanning, not counting. A cardinality check passes on the right number of
   // the wrong tests, and the three lanes have independently changing test sets,
   // which is exactly the shape that produces one. So the row derives only when
   // every test the suite contains was actually observed against real AWS.
-  gt.unobserved = [...suite].filter((id) => !observedTests.has(id)).sort()
+  gt.unobserved = [...suiteTests].filter((id) => !observedTests.has(id)).sort()
 
   // Nothing else on the board means no suite to check against, which is not the
   // same as agreement.
@@ -1111,7 +1125,7 @@ function main() {
   const summary = buildSummary(targets, {
     registry,
     health,
-    suite: suiteIdentities(manifest),
+    suiteTests: suiteIdentities(manifest),
     measured,
   })
   const table = renderTable(summary)

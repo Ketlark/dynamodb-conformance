@@ -68,6 +68,27 @@ test("the measurement identity reaches every endpoint, and absence is tolerated"
   }
 });
 
+test("each historical run says which suite measured it", () => {
+  // The envelope's identity describes only the current board. A consumer
+  // walking run-over-run history could see the denominator move and have no way
+  // to attribute it to the release that moved it.
+  const runs = buildRuns(model, site).runs;
+  assert.ok(runs.length > 0);
+  for (const r of runs) {
+    assert.ok("suite" in r, `run ${r.id} carries no suite field`);
+  }
+
+  const dated = runs.find((r) => r.date);
+  const summary = {
+    byRunDate: { [dated.date]: { suite: { ref: "v3.0.0", kind: "tag", version: "3.0.0" } } },
+  };
+  const joined = buildRuns(model, site, summary).runs.find((r) => r.id === dated.id);
+  assert.equal(joined.suite.ref, "v3.0.0");
+  // A run with no identity recorded reads null rather than borrowing another's.
+  const others = buildRuns(model, site, summary).runs.filter((r) => r.id !== dated.id);
+  for (const r of others) assert.equal(r.suite, null, `run ${r.id} borrowed another run's identity`);
+});
+
 test("index documents the measurement identity it publishes", () => {
   // A consumer branching on `kind` needs the field described where the schema
   // describes itself, not only in prose on the site.

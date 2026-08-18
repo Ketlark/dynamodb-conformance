@@ -220,7 +220,7 @@ is `main`.
 
 A release explains movement in the *denominator*: the suite the board divides
 by, and the tests it is composed of. It does not explain every movement on
-the board. Three things move figures, and only the first is tied to a
+the board. Four things move figures, and only the first is tied to a
 release.
 
 1. **The suite changed.** More tests, or different ones. This is what a
@@ -235,6 +235,11 @@ release.
    every target's cohort and headline. Health is read as it stands today
    rather than as it stood at the tag, because a region that stopped
    answering yesterday is a fact about today.
+4. **The same suite was measured again.** Live AWS is the oracle, not a
+   fixture, so re-measuring one tag can legitimately produce different figures
+   from the last time it was measured. Two boards naming the same commit are
+   independent observations, which is why each one records the region it ran
+   in and when.
 
 ## Licensing
 

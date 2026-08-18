@@ -375,7 +375,7 @@ describe('the ground truth as three lanes', () => {
   // `whole` is this fixture's suite manifest: the four tests the lanes divide
   // between them.
   const summaryOf = (targets) =>
-    buildSummary(targets, { registry: REGISTRY, health: HEALTHY, suite: testIdentities(whole) })
+    buildSummary(targets, { registry: REGISTRY, health: HEALTHY, suiteTests: testIdentities(whole) })
   const baselineRow = (summary) => tableRows(summary).find((r) => r.slug === GROUND_TRUTH_SLUG)
 
   it('unions the lanes into one document, with no test counted twice', () => {
@@ -480,7 +480,7 @@ describe('tableRows / renderTable', () => {
   }
   const summary = buildSummary(
     Object.entries(docs).map(([slug, doc]) => target(slug, doc)),
-    { registry: REGISTRY, health: HEALTHY, suite: testIdentities(suiteDoc('passed')) },
+    { registry: REGISTRY, health: HEALTHY, suiteTests: testIdentities(suiteDoc('passed')) },
   )
   const rows = tableRows(summary)
 
@@ -605,7 +605,7 @@ describe('tableRows / renderTable', () => {
       Object.entries(docs).map(([slug, doc]) =>
         target(slug, doc, slug === 'beta' ? { runDate: '2026-07-01' } : {}),
       ),
-      { registry: REGISTRY, health: HEALTHY, suite: testIdentities(suiteDoc('passed')) },
+      { registry: REGISTRY, health: HEALTHY, suiteTests: testIdentities(suiteDoc('passed')) },
     )
     const table = renderTable(carried)
     expect(table).toContain(
@@ -948,7 +948,7 @@ describe('committed results pipeline', () => {
   const fresh = buildSummary(targets, {
     ...context,
     registry: measuredInputs.registry,
-    suite: suiteIdentities(measuredInputs.manifest),
+    suiteTests: suiteIdentities(measuredInputs.manifest),
     measured: committedMeasured,
   })
 
@@ -1301,6 +1301,18 @@ describe('the table discloses a pinned baseline', () => {
   })
 })
 
+describe('buildSummary refuses the option name it used to take', () => {
+  it('throws rather than silently grading against the working tree', () => {
+    // The rename's own hazard: `suiteTests` defaults to the working tree's
+    // manifest, so a caller left on the old key would be graded against main
+    // while stamped with a tag, and nothing would say so. The CLI itself was
+    // one such caller for the length of a single edit.
+    expect(() =>
+      buildSummary([], { registry: REGISTRY, health: HEALTHY, suite: new Set(['a::b']) }),
+    ).toThrow(/no longer takes `suite`/)
+  })
+})
+
 describe('the measurement a board carries', () => {
   const MEASURED = {
     ref: 'v3.1.0',
@@ -1346,7 +1358,7 @@ describe('the measurement a board carries', () => {
     const summary = buildSummary([target('alpha', suiteDoc('passed'))], {
       registry: REGISTRY,
       health: HEALTHY,
-      suite: new Set(['only::one::test']),
+      suiteTests: new Set(['only::one::test']),
     })
     expect(summary.groundTruth.suiteSize).toBe(1)
   })

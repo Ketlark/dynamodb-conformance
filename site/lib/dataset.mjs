@@ -465,6 +465,12 @@ export function buildRuns(conformance, site, summary = null) {
       // archived by other people and keeps its original timestamp. Same fact,
       // two correct answers, so the flag says which you are reading.
       gradedUnderCriteria: r.headline?.graded ?? null,
+      // Which suite measured this run. The envelope's `suite` describes only the
+      // current board, so a consumer walking run-over-run history could see the
+      // denominator move and not tell which release moved it. Joined on run date,
+      // the same key the history model uses for per-run enrichment. Null for a
+      // run measured before the identity existed.
+      suite: summary?.byRunDate?.[r.date]?.suite ?? null,
       targets: r.standings.map(targetRow),
     })),
   };

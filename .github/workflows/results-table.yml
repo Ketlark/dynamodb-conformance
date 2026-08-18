@@ -178,6 +178,25 @@ jobs:
           node scripts/strip-lane-detail.mjs \
             results/dynamodb.integrations.json results/dynamodb.gsi.json
 
+      # A dispatched re-measure of a branch is a legitimate thing to do, and it
+      # triggers this workflow like any other dispatched run. It cannot publish -
+      # summarise.mjs refuses a non-tag identity - but failing there paints a red
+      # X on the repository for an action that did exactly what was asked. Read
+      # the identity first and stop quietly instead, leaving the refusal in
+      # summarise.mjs as the backstop rather than the thing that fires.
+      - name: Is this run publishable
+        id: gate
+        run: |
+          set -euo pipefail
+          kind=$(jq -r '.kind // "none"' /tmp/artifacts/measured-suite/suite.json)
+          ref=$(jq -r '.ref // "unknown"' /tmp/artifacts/measured-suite/suite.json)
+          if [ "$kind" = "tag" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Nothing published::This run measured $ref (kind: $kind), which is not a release tag. The board is published from releases only."
+          fi
+
       # Only the real-AWS lanes sanitise before upload, because only they can
       # carry an account ID. Vitest absolutises every test path against the
       # checkout it ran in regardless, so every emulator artefact arrives
@@ -185,6 +204,7 @@ jobs:
       # covers all of them on the one path that commits, whatever each lane
       # uploaded.
       - name: Sanitize account IDs and machine paths
+        if: steps.gate.outputs.publish == 'true'
         run: node scripts/sanitize-arns.mjs
 
       # The check that the step above did its job, on the exact files about to
@@ -192,6 +212,7 @@ jobs:
       # anything, so nothing verified the sanitising before these files were
       # committed.
       - name: Refuse to commit a leaked account ID
+        if: steps.gate.outputs.publish == 'true'
         run: node scripts/check-account-ids.mjs
 
       # Rewrites the README block between the results markers and refreshes
@@ -202,12 +223,15 @@ jobs:
       # the board against a denominator main happens to have rather than the one
       # the suite was measured against, and stamp a ref that disagrees with it.
       - name: Regenerate results table and summary
+        if: steps.gate.outputs.publish == 'true'
         run: node scripts/summarise.mjs --write --measured /tmp/artifacts/measured-suite
 
       - name: Regenerate per-target badges
+        if: steps.gate.outputs.publish == 'true'
         run: node scripts/badges.mjs
 
       - name: Commit if changed
+        if: steps.gate.outputs.publish == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
