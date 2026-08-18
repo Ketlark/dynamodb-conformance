@@ -141,14 +141,22 @@ jobs:
             --notes-file "$NOTES" \
             --draft
 
-      # The measurement that will publish it. Explicit about the ref rather than
-      # letting the resolver pick the latest tag, so this stays correct if
-      # another tag is cut while the run is queued.
+      # The measurement that will publish it.
+      #
+      # Dispatched on main with the tag as an input, not on the tag itself.
+      # results-table.yml only publishes a conformance run whose head_branch is
+      # main, and a run dispatched on a tag ref does not report main - so
+      # dispatching at the tag would measure it correctly, publish nothing, and
+      # leave the draft open with no failure anywhere to say why. The resolver
+      # takes an explicit ref verbatim, so the suite still runs from the tag.
+      #
+      # Explicit rather than letting the resolver pick the latest tag, so this
+      # stays correct if another tag is cut while the run is queued.
       - name: Measure the new tag
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          gh workflow run conformance.yml --ref "v$VERSION" -f "ref=v$VERSION"
+          gh workflow run conformance.yml --ref main -f "ref=v$VERSION"
           echo "::notice title=Release v$VERSION drafted::Conformance is measuring v$VERSION. The draft publishes itself when the board lands, in about three hours."

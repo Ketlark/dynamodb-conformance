@@ -402,6 +402,21 @@ describe('release.yml', () => {
     expect(yamlText).toMatch(/gh release create[\s\S]{0,400}--draft/)
     expect(yamlText).toMatch(/gh workflow run conformance\.yml/)
   })
+
+  it('dispatches that run on main with the tag as an input, not on the tag ref', () => {
+    // results-table.yml publishes only a conformance run whose head_branch is
+    // main, and a run dispatched on a tag ref does not report main. Dispatching
+    // at the tag would measure the right suite, publish nothing, and leave the
+    // draft open with no failure anywhere to say why - three hours later.
+    const yamlText = readFileSync('.github/workflows/release.yml', 'utf8')
+    expect(yamlText).toMatch(/gh workflow run conformance\.yml --ref main -f "ref=v\$VERSION"/)
+
+    const publisher = readFileSync('.github/workflows/results-table.yml', 'utf8')
+    expect(
+      publisher,
+      'results-table.yml no longer gates on head_branch, so this pairing may be stale',
+    ).toContain("workflow_run.head_branch == 'main'")
+  })
 })
 
 describe('publish-release.yml', () => {
