@@ -13,6 +13,7 @@ import {
   hashBTableDef,
   cleanupItems,
   declareTables,
+  absentTableName
 } from '../../../src/helpers.js'
 
 declareTables(hashTableDef, hashBTableDef)
@@ -111,7 +112,7 @@ describe('TransactWriteItems — exact error messages', { tags: ['transactions',
           TransactItems: [
             {
               Put: {
-                TableName: '_conformance_does_not_exist_em_twi',
+                TableName: absentTableName('does_not_exist_em_twi'),
                 Item: { pk: { S: 'x' } },
               },
             },

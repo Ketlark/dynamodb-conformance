@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { isUnsupportedFault } from '../../../src/infra.js'
-import { declareTables, hashTableDef, compositeTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, compositeTableDef, cleanupItems, expectDynamoError, absentTableName } from '../../../src/helpers.js'
 import type { AttributeValue } from '@aws-sdk/client-dynamodb'
 
 declareTables(hashTableDef, compositeTableDef)
@@ -1363,7 +1363,7 @@ describe('ExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] }, ()
   it('rejects a reference to a non-existent table', async () => {
     try {
       await ddb.send(new ExecuteStatementCommand({
-        Statement: `SELECT * FROM "_conformance_nonexistent_table" WHERE pk = 'x'`,
+        Statement: `SELECT * FROM "${absentTableName('nonexistent_table')}" WHERE pk = 'x'`,
       }))
       expect.unreachable('should have thrown')
     } catch (e: unknown) {

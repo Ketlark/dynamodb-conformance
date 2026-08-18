@@ -21,7 +21,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from './client.js'
 import { region } from './aws-config.js'
-import { uniqueTableName, waitUntilActive, deleteTable } from './helpers.js'
+import { uniqueTableName, absentTableName, waitUntilActive, deleteTable } from './helpers.js'
 import { IndeterminateError } from './indeterminate.js'
 import { isUnsupportedFault } from './unsupported.js'
 import { supportsControlPlaneOp } from './infra.js'
@@ -34,13 +34,17 @@ function sleep(ms: number): Promise<void> {
 // ── Data-plane probe: SearchVectors ─────────────────────────────────────────
 
 /**
- * Probe input for SearchVectors: a table that cannot exist (the reserved
- * `_conformance_` prefix plus a name no test creates). Real AWS answers
+ * Probe input for SearchVectors: a table that cannot exist (this run's own
+ * namespace plus a name no test creates). Real AWS answers
  * ResourceNotFoundException — a real error, so the operation counts as
  * implemented. A target without the operation answers an unsupported fault.
+ *
+ * The namespace matters against real AWS: a name outside it is refused by IAM
+ * before DynamoDB can answer that the table is missing, and the probe would
+ * read an AccessDeniedException as the operation being unimplemented.
  */
 const SEARCH_PROBE_INPUT = {
-  TableName: '_conformance_no_such_table_probe',
+  TableName: absentTableName('no_such_table_probe'),
   IndexName: 'no-such-index',
   SearchVector: [{ N: '1' }, { N: '0' }, { N: '0' }] as AttributeValue[],
   TopK: 1,

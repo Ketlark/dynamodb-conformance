@@ -9,6 +9,7 @@ import {
   hashTableDef,
   cleanupItems,
   declareTables,
+  absentTableName
 } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
@@ -91,7 +92,7 @@ describe('Scan — exact error messages', { tags: ['scan', 'data-plane', 'negati
     try {
       await ddb.send(
         new ScanCommand({
-          TableName: '_conformance_does_not_exist_em_scan',
+          TableName: absentTableName('does_not_exist_em_scan'),
         }),
       )
       expect.unreachable('should have thrown')

@@ -5,7 +5,7 @@ import {
   TransactionCanceledException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, hashTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, absentTableName } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
 
@@ -53,7 +53,7 @@ describe('TransactGetItems — exact error messages', { tags: ['transactions', '
           TransactItems: [
             {
               Get: {
-                TableName: '_conformance_does_not_exist_em_tgi',
+                TableName: absentTableName('does_not_exist_em_tgi'),
                 Key: { pk: { S: 'x' } },
               },
             },

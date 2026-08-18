@@ -1,6 +1,6 @@
 import { BatchGetItemCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError, absentTableName } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
 
@@ -38,7 +38,7 @@ describe('BatchGetItem — validation', { tags: ['batch', 'data-plane', 'negativ
       () => ddb.send(
         new BatchGetItemCommand({
           RequestItems: {
-            _conformance_nonexistent_table: {
+            [absentTableName('nonexistent_table')]: {
               Keys: [{ pk: { S: 'test' } }],
             },
           },

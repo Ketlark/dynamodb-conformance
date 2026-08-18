@@ -1,6 +1,6 @@
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError, absentTableName } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
 
@@ -9,7 +9,7 @@ describe('UpdateItem — validation', { tags: ['update-item', 'data-plane', 'neg
     await expectDynamoError(
       () => ddb.send(
         new UpdateItemCommand({
-          TableName: '_conformance_nonexistent_table',
+          TableName: absentTableName('nonexistent_table'),
           Key: { pk: { S: 'test' } },
           UpdateExpression: 'SET x = :v',
           ExpressionAttributeValues: { ':v': { S: 'test' } },

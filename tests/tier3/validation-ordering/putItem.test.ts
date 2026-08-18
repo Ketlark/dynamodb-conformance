@@ -3,6 +3,7 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { absentTableName } from '../../../src/helpers.js'
 import { observeSplit } from '../../../src/observation-sink.js'
 
 describe('PutItem — validation ordering', { tags: ['put-item', 'data-plane', 'negative-path'] }, () => {
@@ -59,7 +60,7 @@ describe('PutItem — validation ordering', { tags: ['put-item', 'data-plane', '
     try {
       await ddb.send(
         new PutItemCommand({
-          TableName: '_conformance_valid_table_name',
+          TableName: absentTableName('valid_table_name'),
           Item: { pk: { S: 'test' } },
           ReturnConsumedCapacity: 'INVALID',
           ReturnItemCollectionMetrics: 'INVALID',

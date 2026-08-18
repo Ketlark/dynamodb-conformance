@@ -1,6 +1,6 @@
 import { ScanCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, hashTableDef, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, expectDynamoError, absentTableName } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
 
@@ -10,7 +10,7 @@ describe('Scan — validation', { tags: ['scan', 'data-plane', 'negative-path'] 
       () =>
         ddb.send(
           new ScanCommand({
-            TableName: '_conformance_nonexistent_table',
+            TableName: absentTableName('nonexistent_table'),
           }),
         ),
       'ResourceNotFoundException',

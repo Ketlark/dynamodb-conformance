@@ -52,6 +52,12 @@ on:
 permissions:
   contents: read
 
+# The table namespace this workflow owns. src/helpers.ts infers it from CI when
+# the variable is unset, but the sweep deletes every table matching its prefix,
+# so the side that would lose a live run to a wrong guess names it outright.
+env:
+  CONFORMANCE_TABLE_PREFIX: _conformance_
+
 jobs:
   # Whether this push changed anything that could move a measurement against
   # real DynamoDB. Real DynamoDB's behaviour is AWS's, so what makes the

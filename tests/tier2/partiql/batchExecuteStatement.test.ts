@@ -6,7 +6,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { isUnsupportedFault } from '../../../src/infra.js'
-import { declareTables, hashTableDef, cleanupItems, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, cleanupItems, expectDynamoError, absentTableName } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
 
@@ -122,7 +122,7 @@ describe('BatchExecuteStatement — PartiQL', { tags: ['partiql', 'data-plane'] 
     const result = await ddb.send(new BatchExecuteStatementCommand({
       Statements: [
         { Statement: `SELECT * FROM "${hashTableDef.name}" WHERE pk = 'batch-partial-1'` },
-        { Statement: `SELECT * FROM "_conformance_nonexistent_table" WHERE pk = 'x'` },
+        { Statement: `SELECT * FROM "${absentTableName('nonexistent_table')}" WHERE pk = 'x'` },
       ],
     }))
 

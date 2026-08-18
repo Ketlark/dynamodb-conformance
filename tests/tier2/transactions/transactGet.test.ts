@@ -9,6 +9,7 @@ import {
   cleanupItems,
   expectDynamoError,
   declareTables,
+  absentTableName
 } from '../../../src/helpers.js'
 
 declareTables(hashTableDef, compositeTableDef)
@@ -216,7 +217,7 @@ describe('TransactGetItems - validation', { tags: ['transactions', 'data-plane',
             TransactItems: [
               {
                 Get: {
-                  TableName: '_conformance_nonexistent_table',
+                  TableName: absentTableName('nonexistent_table'),
                   Key: { pk: { S: 'x' } },
                 },
               },

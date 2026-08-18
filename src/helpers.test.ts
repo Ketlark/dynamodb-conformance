@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { createTableRegistry } from './helpers.js'
+import { createTableRegistry, isSuiteTable, uniqueTableName, absentTableName } from './helpers.js'
+import { resolveTablePrefix, CI_TABLE_PREFIX, LOCAL_TABLE_NAMESPACE } from './table-namespace.js'
 import type { TestTableDef } from './types.js'
 
 // The declaration registry behind demand-driven provisioning. Asserted against
@@ -265,5 +266,51 @@ describe('createTableRegistry — the leftover sweep', () => {
     })
 
     expect({ sweeps, calls }).toEqual({ sweeps: 2, calls: ['a'] })
+  })
+})
+
+describe('isSuiteTable', () => {
+  it('selects a table in the given namespace', () => {
+    expect(isSuiteTable(`${CI_TABLE_PREFIX}hash_1_0`, CI_TABLE_PREFIX)).toBe(true)
+  })
+
+  it('rejects a table in the other namespace, which is what protects a live run', () => {
+    expect(isSuiteTable(`${CI_TABLE_PREFIX}hash_1_0`, '_capture_20260818_abcdef_')).toBe(false)
+    expect(isSuiteTable(`${LOCAL_TABLE_NAMESPACE}hash_1_0`, CI_TABLE_PREFIX)).toBe(false)
+  })
+
+  it('rejects another local session in the same namespace', () => {
+    expect(isSuiteTable('_capture_20260818_aaaaaa_hash_1_0', '_capture_20260818_bbbbbb_')).toBe(false)
+  })
+
+  it('rejects a table belonging to nobody', () => {
+    expect(isSuiteTable('orders', CI_TABLE_PREFIX)).toBe(false)
+  })
+})
+
+describe('uniqueTableName', () => {
+  it('names into the namespace this run resolved', () => {
+    expect(isSuiteTable(uniqueTableName('hash'))).toBe(true)
+  })
+
+  it('leaves at least three characters after the prefix, which some targets require', () => {
+    const name = uniqueTableName('h')
+    expect(name.slice(resolveTablePrefix().length).length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('does not repeat a name within a run', () => {
+    expect(uniqueTableName('hash')).not.toBe(uniqueTableName('hash'))
+  })
+})
+
+describe('absentTableName', () => {
+  // A name outside the namespace is refused by IAM before DynamoDB can answer
+  // that the table is missing, so the test sees the wrong exception.
+  it('sits inside the namespace this run can reach', () => {
+    expect(isSuiteTable(absentTableName('nonexistent_table'))).toBe(true)
+  })
+
+  it('keeps the suffix it was given', () => {
+    expect(absentTableName('nonexistent_table').endsWith('nonexistent_table')).toBe(true)
   })
 })

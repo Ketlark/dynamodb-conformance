@@ -48,6 +48,14 @@ headline score is its best-matching region.
   - `npm test` (runs vitest)
   - `npm run test:quick` (faster, skips the online-index lifecycle tests - GSI and vector)
   - `npm run test:tier1` / `tier2` / `tier3` for a single tier
+- Tables are created under a namespace prefix and cleaned up by deleting
+  everything matching it, so two runs sharing a prefix delete each
+  other's tables. CI uses `_conformance_` and everything else uses
+  `_capture_`, resolved from `CONFORMANCE_TABLE_PREFIX` or, failing
+  that, from whether `CI` is set. Credentials are scoped to match, so a
+  run in the wrong namespace fails with `AccessDeniedException` rather
+  than deleting someone else's tables. Set the variable explicitly to
+  run two local suites against one account at once.
 
 ## Test philosophy
 

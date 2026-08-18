@@ -4,7 +4,7 @@ import {
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, compositeTableDef, hashTableDef, hashBTableDef } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, hashTableDef, hashBTableDef, absentTableName } from '../../../src/helpers.js'
 
 declareTables(compositeTableDef, hashTableDef, hashBTableDef)
 
@@ -16,7 +16,7 @@ describe('DeleteItem — exact error messages', { tags: ['delete-item', 'data-pl
     try {
       await ddb.send(
         new DeleteItemCommand({
-          TableName: '_conformance_does_not_exist_em_delete',
+          TableName: absentTableName('does_not_exist_em_delete'),
           Key: { pk: { S: 'test' } },
         }),
       )
