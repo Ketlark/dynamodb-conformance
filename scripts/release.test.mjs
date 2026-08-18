@@ -375,26 +375,47 @@ describe('release.yml', () => {
     expect(inputs.version.required).toBe(true)
   })
 
-  it('asks the App only for the permission its installation grants', () => {
-    // create-github-app-token can narrow what an installation was granted, not
-    // add to it, so requesting a permission the App does not hold fails the
-    // mint with a 422 before any other step runs. The results bot has
-    // contents:write and nothing else - results-table.yml has relied on exactly
-    // that for as long as it has existed. A cut asking for actions:write and
-    // checks:read died at step two of twelve.
-    const mint = workflow.jobs.release.steps.find((s) =>
+  it('mints each App token with only the permission the step it feeds needs', () => {
+    // Two tokens, because they are handed to different things. The first is
+    // read by actions/checkout and sits beside `npm ci` on a freshly bumped
+    // tree, so it stays at contents:write however much the installation
+    // grants. The second is read by the dispatch and nothing else.
+    //
+    // create-github-app-token narrows what an installation was granted, it
+    // never adds to it, so asking for a permission the App does not hold fails
+    // the mint with a 422 before any other step runs - which is why a cut that
+    // also asked for checks:read died at step two of twelve.
+    const mints = workflow.jobs.release.steps.filter((s) =>
       (s.uses ?? '').startsWith('actions/create-github-app-token'),
     )
-    expect(mint, 'release.yml no longer mints an App token').toBeTruthy()
-    expect(Object.keys(mint.with).filter((k) => k.startsWith('permission-'))).toEqual([
-      'permission-contents',
-    ])
+    expect(mints, 'release.yml no longer mints two App tokens').toHaveLength(2)
+    expect(mints.map((m) => Object.keys(m.with).filter((k) => k.startsWith('permission-')))).toEqual(
+      [['permission-contents'], ['permission-actions']],
+    )
+  })
+
+  it('mints both tokens before anything is committed, tagged or drafted', () => {
+    // A mint of a permission the installation does not hold fails outright.
+    // Minted beside the dispatch, that failure would land after the bump, the
+    // tag and the draft, leaving a cut only a person can finish.
+    const names = workflow.jobs.release.steps.map((s) => s.name ?? s.uses)
+    const lastMint = names.findLastIndex((n) => (n ?? '').startsWith('actions/create-github-app-token') || /Mint/.test(n ?? ''))
+    const firstSideEffect = names.findIndex((n) => ['Commit the bump', 'Tag and push', 'Create the draft release'].includes(n))
+    expect(lastMint, 'release.yml no longer mints App tokens').toBeGreaterThan(-1)
+    expect(firstSideEffect, 'release.yml no longer commits, tags or drafts').toBeGreaterThan(-1)
+    expect(lastMint).toBeLessThan(firstSideEffect)
   })
 
   it('takes what the App cannot grant from GITHUB_TOKEN instead', () => {
-    // Reading the head commit's check runs and dispatching the measurement are
-    // both within GITHUB_TOKEN's reach; neither is within the App's.
-    expect(workflow.permissions).toMatchObject({ checks: 'read', actions: 'write' })
+    // The head commit's check runs. The App has no Checks grant, and asking
+    // for one fails the mint outright.
+    //
+    // actions is read, not write: GITHUB_TOKEN reads this run's own check
+    // suite here but no longer starts the measurement. A run dispatched with
+    // GITHUB_TOKEN is attributed to github-actions[bot], and a run attributed
+    // that way emits no workflow_run event when it completes, so the board
+    // never lands and the draft never flips.
+    expect(workflow.permissions).toMatchObject({ checks: 'read', actions: 'read' })
   })
 
   it('confirms the measurement run actually started', () => {

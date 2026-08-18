@@ -65,6 +65,34 @@ describe('the release measurement reaches the publisher', () => {
     const release = uncommented(read('release'))
     expect(release).toMatch(/gh workflow run conformance\.yml --ref main -f "ref=v\$VERSION"/)
   })
+
+  it('dispatches as the App rather than with GITHUB_TOKEN', () => {
+    // GITHUB_TOKEN starts the run - a workflow_dispatch is the documented
+    // exception to it not starting further runs - but GitHub attributes that
+    // run to github-actions[bot] and emits no workflow_run event when it
+    // completes. So results-table.yml never hears the measurement finish and
+    // the draft never flips, which is what happened to v3.2.0: three hours
+    // green, nothing published, nothing red to say why. Only the identity
+    // holding the token fixes it, so only the identity is asserted here.
+    const steps = yaml.load(read('release')).jobs.release.steps
+    const measure = steps.find((step) => step.name === 'Measure the new tag')
+    expect(measure, 'release.yml no longer has a step named "Measure the new tag"').toBeTruthy()
+
+    const token = measure.env?.GH_TOKEN ?? ''
+    expect(token, 'the measurement is dispatched with GITHUB_TOKEN again').not.toContain(
+      'github.token',
+    )
+
+    const mintedBy = /steps\.([\w-]+)\.outputs\.token/.exec(token)?.[1]
+    expect(mintedBy, `the dispatch reads ${token}, which no step in this job mints`).toBeTruthy()
+
+    const mint = steps.find((step) => step.id === mintedBy)
+    expect(mint, `no step with id ${mintedBy} mints the token the dispatch reads`).toBeTruthy()
+    expect(mint.uses).toContain('actions/create-github-app-token')
+    // Narrowed at the mint, not inherited: create-github-app-token hands back
+    // everything the installation grants unless it is asked for less.
+    expect(mint.with?.['permission-actions']).toBe('write')
+  })
 })
 
 describe('a lane never measures a ref the resolver did not give it', () => {
