@@ -315,7 +315,14 @@ jobs:
     # gating job so the two don't race the by-prefix table cleanup; `always()`
     # keeps it running even when the gate is red.
     needs: [changes, test-dynamodb]
-    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    # always() so a failed gating run does not skip this lane, but not when the
+    # resolver itself failed: needs.changes.outputs.ref would be empty, and
+    # actions/checkout reads an empty ref as "use the triggering ref", so the
+    # lane would spend real-AWS time measuring main instead of the resolved tag
+    # with nothing failing to say so.
+    if: >-
+      always() && needs.changes.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     continue-on-error: true
     runs-on: ubuntu-latest
     concurrency:
@@ -386,7 +393,14 @@ jobs:
     # gate. It exists so real DynamoDB's published row is evidenced across the
     # whole suite rather than only across the gating subset.
     needs: [changes, test-dynamodb-integrations]
-    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    # always() so a failed gating run does not skip this lane, but not when the
+    # resolver itself failed: needs.changes.outputs.ref would be empty, and
+    # actions/checkout reads an empty ref as "use the triggering ref", so the
+    # lane would spend real-AWS time measuring main instead of the resolved tag
+    # with nothing failing to say so.
+    if: >-
+      always() && needs.changes.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     continue-on-error: true
     runs-on: ubuntu-latest
     # Under GitHub's own 6h ceiling on a hosted job, so the step is killed by
@@ -482,7 +496,14 @@ jobs:
     # something nobody observed, which is the one failure that must not be
     # quiet.
     needs: [changes, test-dynamodb, test-dynamodb-integrations, test-dynamodb-gsi]
-    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    # always() so a failed gating run does not skip this lane, but not when the
+    # resolver itself failed: needs.changes.outputs.ref would be empty, and
+    # actions/checkout reads an empty ref as "use the triggering ref", so the
+    # lane would spend real-AWS time measuring main instead of the resolved tag
+    # with nothing failing to say so.
+    if: >-
+      always() && needs.changes.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read

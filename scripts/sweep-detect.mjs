@@ -63,6 +63,9 @@ import { assessRegion } from './lib/health.mjs'
 import { isRegionName, loadRegistry, sameObservation, splitFor } from './lib/registry.mjs'
 import { loadRegionHealth, recordSweep, validateRegionHealth } from './lib/observed.mjs'
 
+// The one file this script must never write, whatever it was asked to read.
+const SPLIT_REGISTRY = 'registry/splits.json'
+
 // ── Reading a sweep directory ────────────────────────────────────────────────
 
 /**
@@ -523,7 +526,7 @@ export function parseArgs(argv) {
   const args = {
     dir: null,
     expect: null,
-    registry: 'registry/splits.json',
+    registry: SPLIT_REGISTRY,
     recordHealth: null,
     date: new Date().toISOString().slice(0, 10),
     confirm: false,
@@ -557,8 +560,13 @@ export function parseArgs(argv) {
   // Belt and braces on the integrity guarantee: no output path this script
   // accepts may ever be the split registry.
   for (const path of [args.out, args.recordHealth]) {
-    if (path && resolve(path) === resolve(args.registry)) {
-      throw new Error(`refusing to write the split registry: only a human edits ${args.registry}`)
+    // Both the file that was read and the real registry in the repo. The sweep
+    // now reads splits.json at the measured ref, out of a temp file, so
+    // comparing against args.registry alone would leave the guard protecting a
+    // scratch copy while the file the header promises never to write went
+    // unchecked.
+    if (path && [args.registry, SPLIT_REGISTRY].some((p) => resolve(path) === resolve(p))) {
+      throw new Error(`refusing to write the split registry: only a human edits ${path}`)
     }
   }
   return args

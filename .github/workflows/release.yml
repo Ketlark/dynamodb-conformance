@@ -51,6 +51,10 @@ jobs:
           private-key: ${{ secrets.RESULTS_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-actions: write
+          # Reading the head commit's check runs is its own fine-grained
+          # permission; contents and actions do not cover it, and without it the
+          # first precondition 403s.
+          permission-checks: read
 
       - uses: actions/checkout@v7
         with:
