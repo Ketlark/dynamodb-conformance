@@ -27,8 +27,19 @@ on:
         description: "Version to release (MAJOR.MINOR.PATCH, no leading v)"
         required: true
 
+# For GITHUB_TOKEN, which does the reading and the dispatching. The App token
+# minted below is separate and is only used for what needs to get past main's
+# ruleset. Splitting them this way keeps the App's grant at contents:write,
+# which is all it has ever had.
 permissions:
   contents: read
+  # The head commit's check runs are their own permission; contents does not
+  # cover them.
+  checks: read
+  # Dispatching the measurement. A workflow_dispatch is the documented exception
+  # to GITHUB_TOKEN not starting further workflow runs, so the conformance run
+  # does start - and the last step confirms it did rather than assuming.
+  actions: write
 
 # One cut at a time. Queue rather than cancel: a cancelled run can leave a
 # bumped tree committed with no tag behind it.
@@ -42,10 +53,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # The `main: gated PRs` ruleset already lists this App as a bypass actor,
-      # so pushing the bump commit relaxes no protection. It also needs actions
-      # write to dispatch the measurement, and a run dispatched by an App token
-      # starts further workflows where one dispatched by GITHUB_TOKEN would not.
+      # The `main: gated PRs` ruleset lists this App as a bypass actor, so
+      # pushing the bump commit and the tag relaxes no protection. It is also
+      # what can see draft releases, which need push access.
+      #
+      # contents:write and nothing else. create-github-app-token can only narrow
+      # what the installation was granted, so asking for a permission it does
+      # not hold fails the whole step with a 422 before anything else runs -
+      # which is exactly what happened when this also asked for actions:write
+      # and checks:read. Everything those were for now runs on GITHUB_TOKEN.
       - name: Mint a token for the results bot
         id: app-token
         uses: actions/create-github-app-token@v3
@@ -53,11 +69,6 @@ jobs:
           client-id: ${{ vars.RESULTS_BOT_CLIENT_ID }}
           private-key: ${{ secrets.RESULTS_BOT_PRIVATE_KEY }}
           permission-contents: write
-          permission-actions: write
-          # Reading the head commit's check runs is its own fine-grained
-          # permission; contents and actions do not cover it, and without it the
-          # first precondition 403s.
-          permission-checks: read
 
       - uses: actions/checkout@v7
         with:
@@ -76,9 +87,11 @@ jobs:
         with:
           node-version: 24
 
-      - name: Read the head commit's checks and the open releases
+      - name: Read the head commit's checks
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GITHUB_TOKEN, which carries checks:read from the block above. The
+          # App has no Checks grant and asking for one fails the mint outright.
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           # This dispatched run creates check runs of its own against main's
@@ -94,8 +107,15 @@ jobs:
           gh api "repos/${GITHUB_REPOSITORY}/commits/main/check-runs?per_page=100" --paginate \
             | jq -s "{ check_runs: [.[].check_runs[] | select(.check_suite.id != $OURS)] }" \
             > "$RUNNER_TEMP/checks.json"
-          # Drafts are only visible to a token with push access, which is why
-          # this reads the API rather than the public releases list.
+
+      - name: Read the open releases
+        env:
+          # The App token, not GITHUB_TOKEN: a draft release is only visible to
+          # a token with push access, and the open-draft precondition is the one
+          # that stops two measurements racing the board.
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
           gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --paginate \
             | jq -s '[.[][] | {tag_name, draft}]' > "$RUNNER_TEMP/releases.json"
 
@@ -183,9 +203,31 @@ jobs:
       # stays correct if another tag is cut while the run is queued.
       - name: Measure the new tag
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # GITHUB_TOKEN, carrying actions:write. A workflow_dispatch is the
+          # documented exception to GITHUB_TOKEN not starting further runs.
+          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
+          # The newest conformance run before dispatching, so the check below
+          # can tell a new one from the one already there.
+          before=$(gh run list --workflow conformance.yml -L 1 --json databaseId --jq '.[0].databaseId // 0')
+
           gh workflow run conformance.yml --ref main -f "ref=v$VERSION"
-          echo "::notice title=Release v$VERSION drafted::Conformance is measuring v$VERSION. The draft publishes itself when the board lands, in about three hours."
+
+          # Confirmed, not assumed. Everything up to here has already landed -
+          # the tag is pushed and the draft exists - so a dispatch that quietly
+          # produced no run would leave a draft that never flips, discovered
+          # three hours later by someone wondering why. Better to go red now,
+          # with the tag and draft in the state the recovery path expects.
+          for _ in $(seq 1 18); do
+            sleep 5
+            after=$(gh run list --workflow conformance.yml -L 1 --json databaseId --jq '.[0].databaseId // 0')
+            if [ "$after" != "$before" ]; then
+              echo "::notice title=Release v$VERSION drafted::Conformance run $after is measuring v$VERSION. The draft publishes itself when the board lands, in about three hours."
+              exit 0
+            fi
+          done
+
+          echo "::error title=Measurement not started::v$VERSION is tagged and its draft release exists, but no conformance run appeared within 90s of dispatching. Recover by dispatching Conformance Tests from main with its ref input set to v$VERSION."
+          exit 1
