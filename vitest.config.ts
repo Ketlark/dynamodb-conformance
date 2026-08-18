@@ -1,15 +1,25 @@
 import { defineConfig } from 'vitest/config'
 import { TAGS } from './src/tags.js'
 import { resultTargetFrom } from './scripts/lib/result-target.mjs'
+import { pinTablePrefix } from './src/table-namespace.js'
 
 // Naming a target is what opts a run into writing a published results file;
 // an unconfigured run goes to the gitignored scratch slug. See
 // scripts/lib/result-target.mjs for why the default is not the ground truth.
 const resultTarget = resultTargetFrom()
 
+// Pin the table namespace here, before anything spawns. Tests run in a worker
+// and the teardown that sweeps their tables runs in the main process, so a
+// prefix resolved independently in each would differ and the sweep would find
+// nothing. Pinning it into this process's environment covers the main process,
+// and handing the same value to `env` below covers the worker.
+// See src/table-namespace.ts.
+const tablePrefix = pinTablePrefix()
+
 export default defineConfig({
   test: {
     globals: true,
+    env: { CONFORMANCE_TABLE_PREFIX: tablePrefix },
     testTimeout: 30_000,
     hookTimeout: 180_000,
     // Bounded retry, opt-in via CONFORMANCE_RETRY (set only on the real-AWS

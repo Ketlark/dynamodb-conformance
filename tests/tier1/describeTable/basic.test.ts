@@ -4,6 +4,7 @@ import {
   hashTableDef,
   expectDynamoError,
   declareTables,
+  absentTableName
 } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
@@ -52,7 +53,7 @@ describe('DescribeTable — validation', { tags: ['describe-table', 'control-pla
     await expectDynamoError(
       () => ddb.send(
         new DescribeTableCommand({
-          TableName: '_conformance_nonexistent_table',
+          TableName: absentTableName('nonexistent_table'),
         }),
       ),
       'ResourceNotFoundException',

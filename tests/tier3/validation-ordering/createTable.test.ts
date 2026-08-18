@@ -3,6 +3,7 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { absentTableName } from '../../../src/helpers.js'
 
 describe('CreateTable — validation ordering', { tags: ['create-table', 'control-plane', 'negative-path'] }, () => {
   it('empty TableName reports only tableName constraint', async () => {
@@ -45,7 +46,7 @@ describe('CreateTable — validation ordering', { tags: ['create-table', 'contro
     try {
       await ddb.send(
         new CreateTableCommand({
-          TableName: '_conformance_valid_table_name',
+          TableName: absentTableName('valid_table_name'),
           AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
           KeySchema: [
             { AttributeName: 'pk', KeyType: 'INVALID' },
@@ -66,7 +67,7 @@ describe('CreateTable — validation ordering', { tags: ['create-table', 'contro
     try {
       await ddb.send(
         new CreateTableCommand({
-          TableName: '_conformance_valid_table_name',
+          TableName: absentTableName('valid_table_name'),
           AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
           KeySchema: [
             { AttributeName: 'pk', KeyType: 'INVALID' },
@@ -87,7 +88,7 @@ describe('CreateTable — validation ordering', { tags: ['create-table', 'contro
     try {
       await ddb.send(
         new CreateTableCommand({
-          TableName: '_conformance_dupkey',
+          TableName: absentTableName('dupkey'),
           AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
           KeySchema: [
             { AttributeName: 'pk', KeyType: 'HASH' },
@@ -109,7 +110,7 @@ describe('CreateTable — validation ordering', { tags: ['create-table', 'contro
     try {
       await ddb.send(
         new CreateTableCommand({
-          TableName: '_conformance_threekey',
+          TableName: absentTableName('threekey'),
           AttributeDefinitions: [
             { AttributeName: 'pk', AttributeType: 'S' },
             { AttributeName: 'sk', AttributeType: 'S' },
@@ -138,7 +139,7 @@ describe('CreateTable — validation ordering', { tags: ['create-table', 'contro
     try {
       await ddb.send(
         new CreateTableCommand({
-          TableName: '_conformance_badbilling',
+          TableName: absentTableName('badbilling'),
           AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }],
           KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }],
           // @ts-expect-error -- testing invalid BillingMode

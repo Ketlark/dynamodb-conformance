@@ -5,7 +5,7 @@ import {
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { observeSplit } from '../../../src/observation-sink.js'
-import { declareTables, hashTableDef, hashBTableDef, compositeTableDef } from '../../../src/helpers.js'
+import { declareTables, hashTableDef, hashBTableDef, compositeTableDef, absentTableName } from '../../../src/helpers.js'
 
 declareTables(hashTableDef, hashBTableDef, compositeTableDef)
 
@@ -54,7 +54,7 @@ describe('BatchGetItem — exact error messages', { tags: ['batch', 'data-plane'
       await ddb.send(
         new BatchGetItemCommand({
           RequestItems: {
-            '_conformance_does_not_exist_em_bg': {
+            [absentTableName('does_not_exist_em_bg')]: {
               Keys: [{ pk: { S: 'test' } }],
             },
           },

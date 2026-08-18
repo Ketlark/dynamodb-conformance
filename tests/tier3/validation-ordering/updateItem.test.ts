@@ -3,6 +3,7 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { absentTableName } from '../../../src/helpers.js'
 import { observeSplit } from '../../../src/observation-sink.js'
 
 describe('UpdateItem — validation ordering', { tags: ['update-item', 'data-plane', 'negative-path'] }, () => {
@@ -35,7 +36,7 @@ describe('UpdateItem — validation ordering', { tags: ['update-item', 'data-pla
       await observeSplit(ctx.task, () =>
         ddb.send(
           new UpdateItemCommand({
-            TableName: '_conformance_valid_table_name',
+            TableName: absentTableName('valid_table_name'),
             Key: { pk: { S: 'test' } },
             ReturnValues: 'INVALID',
             ReturnConsumedCapacity: 'INVALID',

@@ -1,6 +1,6 @@
 import { GetItemCommand } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { declareTables, compositeTableDef, expectDynamoError } from '../../../src/helpers.js'
+import { declareTables, compositeTableDef, expectDynamoError, absentTableName } from '../../../src/helpers.js'
 
 declareTables(compositeTableDef)
 
@@ -10,7 +10,7 @@ describe('GetItem — validation', { tags: ['get-item', 'data-plane', 'negative-
       () =>
         ddb.send(
           new GetItemCommand({
-            TableName: '_conformance_nonexistent_table',
+            TableName: absentTableName('nonexistent_table'),
             Key: { pk: { S: 'test' } },
           }),
         ),

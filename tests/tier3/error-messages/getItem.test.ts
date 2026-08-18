@@ -9,6 +9,7 @@ import {
   hashBTableDef,
   compositeTableDef,
   declareTables,
+  absentTableName
 } from '../../../src/helpers.js'
 
 declareTables(hashTableDef, hashBTableDef, compositeTableDef)
@@ -18,7 +19,7 @@ describe('GetItem — exact error messages', { tags: ['get-item', 'data-plane', 
     try {
       await ddb.send(
         new GetItemCommand({
-          TableName: '_conformance_does_not_exist_em_get',
+          TableName: absentTableName('does_not_exist_em_get'),
           Key: { pk: { S: 'test' } },
         }),
       )

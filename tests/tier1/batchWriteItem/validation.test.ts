@@ -4,6 +4,7 @@ import {
   hashTableDef,
   expectDynamoError,
   declareTables,
+  absentTableName
 } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
@@ -42,7 +43,7 @@ describe('BatchWriteItem — validation', { tags: ['batch', 'data-plane', 'negat
       () => ddb.send(
         new BatchWriteItemCommand({
           RequestItems: {
-            _conformance_nonexistent_table: [
+            [absentTableName('nonexistent_table')]: [
               {
                 PutRequest: { Item: { pk: { S: 'test' } } },
               },

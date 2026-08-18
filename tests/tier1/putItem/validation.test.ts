@@ -4,6 +4,7 @@ import {
   hashTableDef,
   expectDynamoError,
   declareTables,
+  absentTableName
 } from '../../../src/helpers.js'
 
 declareTables(hashTableDef)
@@ -13,7 +14,7 @@ describe('PutItem — validation', { tags: ['put-item', 'data-plane', 'negative-
     await expectDynamoError(
       () => ddb.send(
         new PutItemCommand({
-          TableName: '_conformance_nonexistent_table',
+          TableName: absentTableName('nonexistent_table'),
           Item: { pk: { S: 'test' } },
         }),
       ),

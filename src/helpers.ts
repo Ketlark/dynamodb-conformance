@@ -22,9 +22,29 @@ import { region } from './aws-config.js'
 import { IndeterminateError, indeterminateFrom } from './indeterminate.js'
 import { ceilingsFor } from './regions.js'
 import type { TestTableDef } from './types.js'
+import { resolveTablePrefix } from './table-namespace.js'
 
-const TABLE_PREFIX = '_conformance_'
+// The namespace this run owns. Resolved in vitest.config.ts before any worker
+// spawns and pinned into the environment there, so the worker that creates the
+// tables and the main-process teardown that sweeps them agree on one prefix.
+// src/table-namespace.ts carries the reasoning.
+const TABLE_PREFIX = resolveTablePrefix()
 let counter = 0
+
+/** Whether a table name belongs to the namespace this run owns. */
+export function isSuiteTable(name: string, prefix: string = TABLE_PREFIX): boolean {
+  return name.startsWith(prefix)
+}
+
+/**
+ * A name in this run's namespace that nothing creates, for tests needing a
+ * table that does not exist. It still has to sit inside the namespace: a name
+ * outside it is refused by IAM before DynamoDB can answer that it is missing,
+ * and the test sees AccessDeniedException instead of ResourceNotFoundException.
+ */
+export function absentTableName(suffix: string): string {
+  return `${TABLE_PREFIX}${suffix}`
+}
 
 /** Generate a unique table name for this test run */
 export function uniqueTableName(base: string): string {
@@ -428,7 +448,7 @@ export async function cleanupAllTables(): Promise<void> {
     const res = await ddb.send(
       new ListTablesCommand({ ExclusiveStartTableName: exclusiveStartTableName }),
     )
-    const names = (res.TableNames ?? []).filter((n) => n.startsWith(TABLE_PREFIX))
+    const names = (res.TableNames ?? []).filter((n) => isSuiteTable(n))
     allNames.push(...names)
     exclusiveStartTableName = res.LastEvaluatedTableName
   } while (exclusiveStartTableName)

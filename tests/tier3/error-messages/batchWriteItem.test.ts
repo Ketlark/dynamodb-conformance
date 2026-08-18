@@ -9,6 +9,7 @@ import {
   hashBTableDef,
   cleanupItems,
   declareTables,
+  absentTableName
 } from '../../../src/helpers.js'
 
 declareTables(hashTableDef, hashBTableDef)
@@ -93,7 +94,7 @@ describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plan
       await ddb.send(
         new BatchWriteItemCommand({
           RequestItems: {
-            '_conformance_does_not_exist_em_bw': [
+            [absentTableName('does_not_exist_em_bw')]: [
               { PutRequest: { Item: { pk: { S: 'test' } } } },
             ],
           },

@@ -9,6 +9,7 @@ import {
   waitUntilActive,
   deleteTable,
   expectDynamoError,
+  absentTableName
 } from '../../../src/helpers.js'
 
 /** Helper to create a simple hash-key table with the given billing mode */
@@ -200,7 +201,7 @@ describe('UpdateTable — validation', { tags: ['update-table', 'control-plane',
       () =>
         ddb.send(
           new UpdateTableCommand({
-            TableName: '_conformance_nonexistent_table',
+            TableName: absentTableName('nonexistent_table'),
             ProvisionedThroughput: {
               ReadCapacityUnits: 10,
               WriteCapacityUnits: 10,

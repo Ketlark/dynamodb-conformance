@@ -6,7 +6,7 @@ import {
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
-import { uniqueTableName, waitUntilActive, expectDynamoError } from '../../../src/helpers.js'
+import { uniqueTableName, waitUntilActive, expectDynamoError, absentTableName } from '../../../src/helpers.js'
 
 describe('DeleteTable — basic', { tags: ['delete-table', 'control-plane'] }, () => {
   it('deletes an existing table', async () => {
@@ -86,7 +86,7 @@ describe('DeleteTable — validation', { tags: ['delete-table', 'control-plane',
     await expectDynamoError(
       () => ddb.send(
         new DeleteTableCommand({
-          TableName: '_conformance_nonexistent_table',
+          TableName: absentTableName('nonexistent_table'),
         }),
       ),
       'ResourceNotFoundException',

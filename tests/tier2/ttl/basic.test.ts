@@ -10,6 +10,7 @@ import {
   waitUntilActive,
   deleteTable,
   expectDynamoError,
+  absentTableName
 } from '../../../src/helpers.js'
 
 /** Create a simple hash-only table for TTL tests */
@@ -156,7 +157,7 @@ describe('TTL — validation', { tags: ['ttl', 'control-plane', 'negative-path']
       () =>
         ddb.send(
           new UpdateTimeToLiveCommand({
-            TableName: '_conformance_nonexistent_table',
+            TableName: absentTableName('nonexistent_table'),
             TimeToLiveSpecification: {
               Enabled: true,
               AttributeName: 'ttl',
@@ -173,7 +174,7 @@ describe('TTL — validation', { tags: ['ttl', 'control-plane', 'negative-path']
       () =>
         ddb.send(
           new DescribeTimeToLiveCommand({
-            TableName: '_conformance_nonexistent_table',
+            TableName: absentTableName('nonexistent_table'),
           }),
         ),
       'ResourceNotFoundException',

@@ -69,6 +69,29 @@ is a maintainer task and does not block your PR.
   `DYNAMODB_ENDPOINT` points to. See the `README.md` for the usual
   patterns.
 
+### Table namespaces
+
+The suite creates tables under a prefix, and cleans up by deleting every
+table matching it. That cleanup runs once per run, before anything is
+created, so two runs sharing a prefix will delete each other's tables
+mid-suite.
+
+Local runs and CI therefore use different namespaces:
+
+| Where | Prefix |
+|---|---|
+| CI | `_conformance_` |
+| Anywhere else | `_capture_` |
+
+The choice comes from `CONFORMANCE_TABLE_PREFIX` when it is set, and
+otherwise from whether `CI` is set. You should not need to touch it. The
+AWS credentials for each side are scoped to match, so a run in the wrong
+namespace fails with `AccessDeniedException` rather than deleting tables
+belonging to something else.
+
+If you are running two local suites against the same account at once,
+give each one its own `CONFORMANCE_TABLE_PREFIX`.
+
 ## Tests
 
 - Tests live under `tests/tier1/`, `tests/tier2/`, `tests/tier3/`,

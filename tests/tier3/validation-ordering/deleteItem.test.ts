@@ -3,6 +3,7 @@ import {
   DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { absentTableName } from '../../../src/helpers.js'
 
 describe('DeleteItem — validation ordering', { tags: ['delete-item', 'data-plane', 'negative-path'] }, () => {
   it('empty TableName reports only tableName constraint', async () => {
@@ -30,7 +31,7 @@ describe('DeleteItem — validation ordering', { tags: ['delete-item', 'data-pla
     try {
       await ddb.send(
         new DeleteItemCommand({
-          TableName: '_conformance_valid_table_name',
+          TableName: absentTableName('valid_table_name'),
           Key: { pk: { S: 'test' } },
           ReturnValues: 'INVALID',
           ReturnConsumedCapacity: 'INVALID',
