@@ -40,15 +40,26 @@ import { appendFileSync } from 'node:fs'
 const RELEASE_TAG = /^v(\d+)\.(\d+)\.(\d+)$/
 
 /**
+ * A release tag's version components, or null when it is not one.
+ *
+ * The single statement of what a release tag is. scripts/release.mjs reads it
+ * too: a version that script accepts has to produce a tag this one can choose,
+ * so the two agreeing is a dependency rather than a comment asking them to.
+ */
+export function releaseTagParts(tag) {
+  const m = RELEASE_TAG.exec(String(tag).trim())
+  return m === null ? null : [Number(m[1]), Number(m[2]), Number(m[3])]
+}
+
+/**
  * The release tags in a list, highest version first. Anything that is not
  * exactly `vMAJOR.MINOR.PATCH` is dropped rather than sorted to the bottom,
  * because a tag this cannot read is a tag it must not choose.
  */
 export function releaseTagsByVersion(tags = []) {
   return tags
-    .map((tag) => ({ tag, m: RELEASE_TAG.exec(String(tag).trim()) }))
-    .filter(({ m }) => m !== null)
-    .map(({ tag, m }) => ({ tag, parts: [Number(m[1]), Number(m[2]), Number(m[3])] }))
+    .map((tag) => ({ tag, parts: releaseTagParts(tag) }))
+    .filter(({ parts }) => parts !== null)
     .sort((a, b) => b.parts[0] - a.parts[0] || b.parts[1] - a.parts[1] || b.parts[2] - a.parts[2])
     .map(({ tag }) => tag)
 }

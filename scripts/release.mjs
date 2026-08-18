@@ -22,9 +22,8 @@
 // fetches, so the rules are testable without the API.
 
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs'
+import { releaseTagParts } from './resolve-measured-ref.mjs'
 
-/** The suite's own version: exactly MAJOR.MINOR.PATCH, no `v`, no prerelease. */
-const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 // Any `## …` heading is an entry boundary, and the pending spellings the site
@@ -35,10 +34,10 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const HEADING = /^## +(.+?)\s*$/gm
 const UNRELEASED = /^\[?unreleased\]?\b/i
 
-function parts(version) {
-  const m = SEMVER.exec(String(version).trim())
-  return m === null ? null : [Number(m[1]), Number(m[2]), Number(m[3])]
-}
+// A version is whatever makes a tag the board can choose to measure, asked of
+// the resolver rather than restated here. The two drifting apart would let a
+// release cut a tag no measurement run would ever resolve to.
+const parts = (version) => releaseTagParts(`v${String(version).trim()}`)
 
 /**
  * The version is a shape the tag convention and the changelog heading can both
@@ -276,7 +275,7 @@ export function measuredVersionOf(summary) {
   const suite = summary?.suite
   if (suite?.kind !== 'tag') return null
   const version = suite.version
-  return typeof version === 'string' && SEMVER.test(version.trim()) ? version.trim() : null
+  return typeof version === 'string' && parts(version) !== null ? version.trim() : null
 }
 
 /**
