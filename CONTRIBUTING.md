@@ -191,6 +191,48 @@ Commits-style prefix (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`,
 `ci:`) is preferred when one fits but is not a gate. Bodies are
 welcome for anything non-obvious.
 
+## Releases and the published board
+
+Write your changelog notes under `## Unreleased` in `CHANGELOG.md` as part
+of the PR. The release gives that section its date and version, so several
+branches can write ahead of one cut.
+
+**The board measures the most recent release tag, not `main`.** Merging a
+test does not move the published figures. It still runs against real AWS on
+the way in, which is what validates it, but the numbers move at the next
+release and a dated changelog entry explains the move.
+
+Cutting one is a single dispatch of the **Cut a release** workflow in the
+Actions tab, with a version like `3.2.0`. It bumps `package.json` and the
+lockfile, dates the `## Unreleased` section, installs against the bumped
+tree, tags, and opens the release as a **draft**. Then it starts a
+conformance run at the new tag. A full run takes about three hours; when the
+board carrying that version lands, the draft publishes itself.
+
+So a draft sitting open means the measurement has not finished. If its run
+failed, re-dispatch **Conformance Tests** at the tag: the same path finishes
+the release.
+
+### What a release does and does not explain
+
+A release explains movement in the *denominator*: the suite the board divides
+by, and the tests it is composed of. It does not explain every movement on
+the board. Three things move figures, and only the first is tied to a
+release.
+
+1. **The suite changed.** More tests, or different ones. This is what a
+   changelog entry dates, and it moves every target's divergence and coverage
+   because they all divide by the suite size.
+2. **A target changed.** Each target carries its own version, published in
+   `results/summary.json` and in the README's Version column. It moves when
+   that target ships a build, or when live AWS drifts under it. No release of
+   this suite is involved.
+3. **Region health changed.** The weekly sweep can drop a region that stopped
+   answering, or re-admit one. That moves the observed set, which decides
+   every target's cohort and headline. Health is read as it stands today
+   rather than as it stood at the tag, because a region that stopped
+   answering yesterday is a fact about today.
+
 ## Licensing
 
 The conformance suite is licensed under the Apache License 2.0. By submitting a contribution, you agree that your contribution is licensed under the same terms.
