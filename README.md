@@ -58,7 +58,7 @@ Rows are sorted by divergence. The tier columns are divergence within that tier,
 
 `me-south-1` has been dropped from the observed set and is not scored against.
 
-_Suite at 9aa0337b (unreleased), measured against real DynamoDB on 2026-08-17. Region health as of 2026-08-15._
+_Suite v3.2.0, measured against real DynamoDB on 2026-08-18. Region health as of 2026-08-15._
 
 | Target | Grade | Version | Divergence | Coverage | Fail | Skip | Tier 1 | Tier 2 | Tier 3 | Regions |
 |--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|
@@ -71,7 +71,7 @@ _Suite at 9aa0337b (unreleased), measured against real DynamoDB on 2026-08-17. R
 | [Dynalite](https://github.com/architect/dynalite) | C | 4.0.0 | 12.8% | 77.0% | 135 | 242 | 10.8% | 12.4% | 15.9% | 25 of 33 |
 | [LocalStack](https://github.com/localstack/localstack) | C | 2026.7.4 | 14.8% | 95.3% | 156 | 50 | 6.3% | 16.0% | 26.2% | 25 of 33 |
 | [DynamoDB Local](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html) | C | ff89bd48ff32 | 15.1% | 94.0% | 159 | 63 | 7.6% | 14.2% | 26.5% | 25 of 33 |
-| [Floci](https://github.com/floci-io/floci) | C | eab36252ea43 | 21.0% | 95.2% | 221 | 51 | 10.8% | 32.4% | 27.9% | 21 of 33 |
+| [Floci](https://github.com/floci-io/floci) | C | bec9b9f74932 | 21.0% | 95.2% | 221 | 51 | 10.8% | 32.4% | 27.9% | 21 of 33 |
 <!-- results:end -->
 
 **Divergence** is `Fail / Total` and **Coverage** is `(Pass + Fail) / Total`,

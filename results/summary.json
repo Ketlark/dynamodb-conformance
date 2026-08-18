@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "suite": {
-    "ref": "9aa0337b455ed4c0ccdf71d9e4e8bb306991d778",
-    "kind": "sha",
-    "commit": "9aa0337b455ed4c0ccdf71d9e4e8bb306991d778",
-    "version": "3.1.0",
+    "ref": "v3.2.0",
+    "kind": "tag",
+    "commit": "6faa35c14843078c83341a3853ef6863353ade2c",
+    "version": "3.2.0",
     "region": "eu-west-2",
-    "measuredAt": "2026-08-17T17:39:39Z"
+    "measuredAt": "2026-08-18T15:57:24Z"
   },
   "regions": {
     "observed": [
@@ -190,24 +190,24 @@
   "groundTruth": {
     "slug": "dynamodb",
     "rate": 100,
-    "runDate": "2026-08-17",
+    "runDate": "2026-08-18",
     "derived": true,
     "testsObserved": 1054,
     "suiteSize": 1054,
     "lanes": [
       {
         "name": "gating",
-        "runDate": "2026-08-17",
+        "runDate": "2026-08-18",
         "tests": 1036
       },
       {
         "name": "integrations",
-        "runDate": "2026-08-12",
+        "runDate": "2026-08-18",
         "tests": 3
       },
       {
         "name": "gsi",
-        "runDate": "2026-08-12",
+        "runDate": "2026-08-18",
         "tests": 15
       }
     ],
@@ -1174,7 +1174,7 @@
         }
       },
       "version": "4.0.0",
-      "runDate": "2026-08-17"
+      "runDate": "2026-08-18"
     },
     "dynamodb-local": {
       "headline": {
@@ -2108,7 +2108,7 @@
         }
       },
       "version": "ff89bd48ff32",
-      "runDate": "2026-08-17"
+      "runDate": "2026-08-18"
     },
     "dynoxide": {
       "headline": {
@@ -3042,7 +3042,7 @@
         }
       },
       "version": "0.13.0",
-      "runDate": "2026-08-17"
+      "runDate": "2026-08-18"
     },
     "dynoxide-wasm": {
       "headline": {
@@ -3976,7 +3976,7 @@
         }
       },
       "version": "0.13.0",
-      "runDate": "2026-08-17"
+      "runDate": "2026-08-18"
     },
     "extenddb": {
       "headline": {
@@ -4910,7 +4910,7 @@
         }
       },
       "version": "v0.1.5",
-      "runDate": "2026-08-17"
+      "runDate": "2026-08-18"
     },
     "extenddb-sqlite": {
       "headline": {
@@ -5844,7 +5844,7 @@
         }
       },
       "version": "v0.1.5",
-      "runDate": "2026-08-17"
+      "runDate": "2026-08-18"
     },
     "floci": {
       "headline": {
@@ -6777,8 +6777,8 @@
           }
         }
       },
-      "version": "eab36252ea43",
-      "runDate": "2026-08-17"
+      "version": "bec9b9f74932",
+      "runDate": "2026-08-18"
     },
     "localstack": {
       "headline": {
@@ -7712,7 +7712,7 @@
         }
       },
       "version": "2026.7.4",
-      "runDate": "2026-08-17"
+      "runDate": "2026-08-18"
     },
     "ministack": {
       "headline": {
@@ -8646,7 +8646,7 @@
         }
       },
       "version": "5de3f08cd9c7",
-      "runDate": "2026-08-17"
+      "runDate": "2026-08-18"
     }
   }
 }
