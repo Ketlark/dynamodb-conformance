@@ -8,6 +8,8 @@ section its date and version, so several branches can write ahead of one.
 
 ## Unreleased
 
+## 2026-08-18 (3.2.0)
+
 The board now measures the most recent release tag rather than `main`. Merging
 a test still runs it against real AWS, which is what validates it, but the
 published figures no longer move until a release moves them, so a dated
