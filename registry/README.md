@@ -22,6 +22,16 @@ Unlike `splits.json` this one is generated, by `npm run suite:manifest`, and
 CI fails if it drifts from the tests. Regenerate it in the same commit as any
 test you add, move, or rename.
 
+Two of these three files are read **at the ref the board measured**, not from
+`main`: `splits.json` and `suite-manifest.json` are suite definition, so they
+belong to the tag. `regions.json` is not, and is read as it stands today,
+because a region that stopped answering yesterday is a fact about today rather
+than about the tag.
+
+The practical consequence for a row: admitting one to `main` does not change
+the published board. It takes effect at the next release, alongside the
+changelog entry that describes it.
+
 ## What a row means
 
 A row is a claim of the form "on this behaviour, these named regions returned

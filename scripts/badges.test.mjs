@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { buildBadge, colour, gradeFor } from './badges.mjs'
 import { BASELINE_GRADE } from './lib/grade.mjs'
 import { isTargetResultFile, loadScoringContext } from './lib/score.mjs'
+import { gradingInputsAtRef, measuredOf } from './lib/measured.mjs'
 
 const RESULTS_DIR = 'results'
 
@@ -180,9 +181,14 @@ describe('buildBadge', () => {
 })
 
 describe('committed badges are fresh', () => {
-  // The same committed inputs the CLI writer uses: the split registry and the
-  // observed region set, plus each run's indeterminate sidecar if present.
-  const context = loadScoringContext()
+  // The same committed inputs the CLI writer uses: the observed region set from
+  // the working tree, plus each run's indeterminate sidecar if present - and the
+  // split registry at the ref the board was measured from, not the tree's.
+  // Grading from the tree instead would report every badge stale the first time
+  // a split row was admitted to main after a release, when the committed badges
+  // are exactly right.
+  const measured = measuredOf(JSON.parse(readFileSync(join(RESULTS_DIR, 'summary.json'), 'utf8')))
+  const context = { ...loadScoringContext(), registry: gradingInputsAtRef(measured).registry }
   // The shared predicate, not a hand-rolled filter. Spelling it out here caught
   // summary.json and tag-manifest.json, which are companions rather than runs
   // and only ever asserted that they had no badge, and results/local.json,

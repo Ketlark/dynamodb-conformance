@@ -57,6 +57,12 @@ import {
 import { classifyResults } from './lib/classify.mjs'
 import { relativeTestPath, testIdentities } from './lib/identity.mjs'
 import { suiteIdentities, suiteSizeOf } from './suite-manifest.mjs'
+import {
+  gradingInputsAtRef,
+  measuredOf,
+  readMeasuredDir,
+  validateMeasured,
+} from './lib/measured.mjs'
 import { isObserved, observedRegions } from './lib/observed.mjs'
 import { BASELINE_LABEL, gradeOf } from './lib/grade.mjs'
 import {
@@ -289,11 +295,36 @@ const cohortCount = (matched, summary, rate) => {
  * and nothing here stamps a "generated at" time - the run dates come from the
  * result files, so a re-run over the same inputs is byte-identical.
  */
-export function buildSummary(targets, { registry, health, suite = suiteIdentities() }) {
+export function buildSummary(targets, options) {
+  const { registry, health, suiteTests = suiteIdentities(), measured = null } = options
+  // The test-identity set used to travel under `suite`, which collided with the
+  // published measurement identity of the same name. Renaming it left a trap:
+  // the option has a working-tree default, so a caller still passing the old key
+  // would be silently graded against main's manifest - the exact failure this
+  // whole mechanism exists to prevent, arriving quietly. Refuse it by name.
+  if ('suite' in options) {
+    throw new Error(
+      'buildSummary no longer takes `suite`: pass the test-identity set as `suiteTests`. ' +
+        'The published `suite` field is the measurement identity and travels as `measured`.',
+    )
+  }
+
   const standing = regionStanding(health)
 
   const summary = {
     schemaVersion: SUMMARY_SCHEMA_VERSION,
+    // What produced these figures. Additive, so schemaVersion stays put - see
+    // site/src/for-agents.md, which already promises consumers that new fields
+    // may appear at any version. The published `suite` is the measurement
+    // identity; the set of test identities that sets the denominator travels
+    // under `suiteTests`, because one word meaning both in the same object was
+    // a trap for anyone reading this later.
+    //
+    // Version alone does not identify a board. Live AWS is the oracle, so the
+    // same tag measured twice can legitimately disagree, and without the region
+    // and the timestamp a reader correlating a row against a version cannot
+    // tell which of the two they are looking at.
+    ...(measured === null ? {} : { suite: validateMeasured(measured) }),
     regions: {
       ...standing,
       detail: Object.fromEntries(
@@ -313,7 +344,7 @@ export function buildSummary(targets, { registry, health, suite = suiteIdentitie
       runDate: '-',
       derived: false,
       testsObserved: 0,
-      suiteSize: suite.size,
+      suiteSize: suiteTests.size,
       lanes: [],
       missingLanes: [...GROUND_TRUTH_LANES],
       counts: null,
@@ -362,7 +393,7 @@ export function buildSummary(targets, { registry, health, suite = suiteIdentitie
   }
 
   if (baseline) {
-    recordGroundTruth(summary, baseline, { registry, observed: standing.observed, suite })
+    recordGroundTruth(summary, baseline, { registry, observed: standing.observed, suiteTests })
   }
 
   return summary
@@ -426,13 +457,13 @@ function recordGroundTruth(summary, baseline, context) {
   // What the suite contains, by test identity, from the suite's own manifest.
   // This used to be the widest emulator run on the board, which put one of the
   // measured things in charge of the denominator every other figure divides by.
-  const { suite } = context
+  const { suiteTests } = context
 
   // Spanning, not counting. A cardinality check passes on the right number of
   // the wrong tests, and the three lanes have independently changing test sets,
   // which is exactly the shape that produces one. So the row derives only when
   // every test the suite contains was actually observed against real AWS.
-  gt.unobserved = [...suite].filter((id) => !observedTests.has(id)).sort()
+  gt.unobserved = [...suiteTests].filter((id) => !observedTests.has(id)).sort()
 
   // Nothing else on the board means no suite to check against, which is not the
   // same as agreement.
@@ -562,9 +593,22 @@ export function assertMeasuredSuite(targets, suite = suiteIdentities()) {
  * state the guards exist to prevent. Nothing published may be touched until
  * the whole board has been checked, so they run here, first.
  */
-export function publish(summary, targets, { readmePath = 'README.md', summaryPath = SUMMARY_PATH } = {}) {
-  assertOneDenominator(summary)
-  assertMeasuredSuite(targets)
+export function publish(
+  summary,
+  targets,
+  { readmePath = 'README.md', summaryPath = SUMMARY_PATH, manifest = undefined } = {},
+) {
+  // The denominator and the population are checked against the manifest the
+  // board was measured against, not the one the publishing job happens to have
+  // checked out. Those are the same tree only by luck: the publisher stands on
+  // main because it commits back. Absent is refused rather than defaulted -
+  // `manifest && suiteSizeOf(manifest)` would hand `undefined` to a parameter
+  // whose own default reads the tree, restoring the exact fallback this exists
+  // to remove.
+  assertPublishableMeasurement(summary.suite)
+  assertMeasuredManifest(manifest)
+  assertOneDenominator(summary, suiteSizeOf(manifest))
+  assertMeasuredSuite(targets, suiteIdentities(manifest))
 
   const start = '<!-- results:start -->'
   const end = '<!-- results:end -->'
@@ -575,13 +619,47 @@ export function publish(summary, targets, { readmePath = 'README.md', summaryPat
     throw new Error(`Could not find ${start} / ${end} markers in ${readmePath}`)
   }
   writeFileSync(readmePath, `${md.slice(0, s + start.length)}\n${renderTable(summary)}\n${md.slice(e)}`)
-  writeSummaryFile(summary, targets, summaryPath)
+  writeSummaryFile(summary, targets, summaryPath, { manifest })
+}
+
+/**
+ * The manifest a board is graded against has to come from the measurement, not
+ * from whichever tree the publisher stands in. Refuse rather than default.
+ */
+export function assertPublishableMeasurement(measured) {
+  // Only a release may move the public board. A push measures its own sha to
+  // validate the tests as they land, and a dispatch can name any ref at all;
+  // publishing either would move every target's denominator with no dated
+  // changelog entry describing why, which is the whole problem this exists to
+  // remove. `kind` is confirmed against git by the resolver, so a branch named
+  // like a tag cannot reach here claiming to be one.
+  if (measured?.kind !== 'tag') {
+    throw new Error(
+      `refusing to publish a board measured at ${measured?.ref ?? '(unknown)'} ` +
+        `(kind: ${measured?.kind ?? 'none'}). Only a release tag may be published, because ` +
+        'only a tag has a dated changelog entry behind it. Cut a release, or dispatch a ' +
+        'measurement naming the tag.',
+    )
+  }
+  return measured
+}
+
+export function assertMeasuredManifest(manifest) {
+  if (!manifest || !Array.isArray(manifest.tests)) {
+    throw new Error(
+      'refusing to publish: no suite manifest from the measured ref. Pass { manifest } ' +
+        'read from the measuring run or from the committed board\'s ref; reading the ' +
+        'working tree would grade the board against a suite it was not measured against.',
+    )
+  }
 }
 
 /** Write the summary artefact (results/summary.json). */
-export function writeSummaryFile(summary, targets, path = SUMMARY_PATH) {
-  assertOneDenominator(summary)
-  assertMeasuredSuite(targets)
+export function writeSummaryFile(summary, targets, path = SUMMARY_PATH, { manifest } = {}) {
+  assertPublishableMeasurement(summary.suite)
+  assertMeasuredManifest(manifest)
+  assertOneDenominator(summary, suiteSizeOf(manifest))
+  assertMeasuredSuite(targets, suiteIdentities(manifest))
   writeFileSync(path, JSON.stringify(summary, null, 2) + '\n')
 }
 
@@ -751,7 +829,7 @@ export function tableRows(summary) {
  * able to mistake an unresolved region for an agreeing one, so absence is
  * spelled out rather than implied.
  */
-export function tableCaption(regions, groundTruth = null, tableDate = null, carried = true) {
+export function tableCaption(regions, groundTruth = null, tableDate = null, carried = true, measured = null) {
   const list = (rs) => rs.map((r) => `\`${r}\``).join(', ')
   // Two figures, said plainly. The long form spent a paragraph on what they
   // measure before a reader reached a number, when the pair is simple:
@@ -840,13 +918,54 @@ export function tableCaption(regions, groundTruth = null, tableDate = null, carr
   // that re-measured everything there is no row carrying its own date, and
   // pointing at a column the table no longer has sends a reader looking for it.
   if (tableDate) {
-    sentences.push(
-      carried
-        ? `_Measured ${tableDate}, except where a row carries its own date._`
-        : `_Measured ${tableDate}._`,
-    )
+    const except = carried ? ', except where a row carries its own date' : ''
+    sentences.push(`_${measuredLabel(measured, tableDate)}${except}.${healthLabel(regions)}_`)
   }
   return sentences.join('\n\n')
+}
+
+/**
+ * What the board was measured from, said so the date attaches to the
+ * measurement rather than to the figures.
+ *
+ * A tag is named as a release. Anything else is not: `version` is read from
+ * package.json at the measured ref, so a commit on main past v3.1.0 reports
+ * "3.1.0" while being neither that tag nor a release. Printing "Suite v3.1.0"
+ * there would claim a release that does not exist, so the ref is named instead
+ * and the state is said out loud.
+ */
+export function measuredLabel(measured, tableDate) {
+  if (!measured) return `Measured ${tableDate}`
+  const suite =
+    measured.kind === 'tag'
+      ? `Suite ${measured.ref}`
+      : `Suite at ${String(measured.commit).slice(0, 8)} (unreleased)`
+  return `${suite}, measured against real DynamoDB on ${tableDate}`
+}
+
+/**
+ * When region health was last resolved: the most recent `lastResolved` across
+ * the observed set.
+ *
+ * Health is the one grading input read live rather than at the measured ref, so
+ * a board's cohorts can be recomputed after its measurement. Without this date
+ * the measurement date is the only one on the page, sitting next to figures it
+ * did not produce.
+ */
+export function healthLabel(regions) {
+  // Scoped to the observed set, which is what the board scores against. A
+  // dropped region still sits in `detail` carrying the date it stopped
+  // answering, and dating the line from it would report health the board does
+  // not use - usually older, occasionally newer than anything scored.
+  const observed = new Set(regions?.observed ?? [])
+  const entries = Object.entries(regions?.detail ?? {})
+  const scoped = observed.size > 0 ? entries.filter(([r]) => observed.has(r)) : entries
+  const dates = scoped
+    .map(([, r]) => r?.lastResolved)
+    .filter(Boolean)
+    .sort()
+  const latest = dates[dates.length - 1]
+  return latest ? ` Region health as of ${latest}.` : ''
 }
 
 /** Render the full table block: caption plus Markdown table. */
@@ -923,15 +1042,62 @@ export function renderTable(summary) {
     `|--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|${carried ? '----------|' : ''}`,
     ...rendered.map(fmt),
   ].join('\n')
-  return `${tableCaption(summary.regions, summary.groundTruth, tableDate, carried)}\n\n${body}`
+  return `${tableCaption(summary.regions, summary.groundTruth, tableDate, carried, summary.suite ?? null)}\n\n${body}`
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
 
+/**
+ * Where this run's measurement identity and suite-definition inputs come from.
+ *
+ * Three cases, and the third is a refusal:
+ *
+ * - `--measured <dir>` is a measuring run publishing what it just measured.
+ * - No flag, but the committed board already carries an identity: a rebuild.
+ *   It recomputes an existing measurement because health moved, so it carries
+ *   that identity forward and reads its grading inputs at that board's ref, not
+ *   at whatever the caller resolved and not from the working tree.
+ * - Neither: refuse. Falling back to the tree is how a board ends up graded
+ *   against main's denominator while stamped with a tag.
+ */
+export function resolveMeasurement({ measuredDir = null, summaryPath = SUMMARY_PATH, git } = {}) {
+  if (measuredDir !== null) return { ...readMeasuredDir(measuredDir), rebuild: false }
+
+  const committed = existsSync(summaryPath)
+    ? measuredOf(JSON.parse(readFileSync(summaryPath, 'utf8')))
+    : null
+  if (committed !== null) {
+    // `git` is injectable so the rebuild path can be tested without a checkout
+    // that carries tags: CI clones at depth 1 with none, so a test reaching for
+    // a real tag here would pass locally and fail there.
+    return { measured: committed, ...gradingInputsAtRef(committed, git ? { git } : {}), rebuild: true }
+  }
+
+  throw new Error(
+    'refusing to publish: no measured suite identity. Pass --measured <dir> from a ' +
+      'conformance run, or publish over a board that already carries one. Reading the ' +
+      'suite from the working tree would grade the board against a denominator it was ' +
+      'not measured against.',
+  )
+}
+
 function main() {
   const argv = process.argv.slice(2)
   const write = argv.includes('--write')
-  const files = argv.filter((a) => !a.startsWith('--'))
+  const measuredAt = argv.indexOf('--measured')
+  const measuredDir = measuredAt === -1 ? null : argv[measuredAt + 1]
+  // A bare `--measured`, or one followed by another flag, is a mistake at the
+  // call site. Reading it as "no flag" would quietly take the rebuild path and
+  // publish the previous measurement over a fresh one.
+  if (measuredAt !== -1 && (measuredDir === undefined || measuredDir.startsWith('--'))) {
+    console.error('--measured needs a directory: --measured <dir>')
+    process.exit(1)
+  }
+  if (argv.some((a) => a.startsWith('--measured='))) {
+    console.error('--measured takes a separate argument: --measured <dir>, not --measured=<dir>')
+    process.exit(1)
+  }
+  const files = argv.filter((a) => !a.startsWith('--') && a !== measuredDir)
 
   if (files.length === 0) {
     try {
@@ -952,12 +1118,24 @@ function main() {
   }
 
   const targets = readTargets(files)
-  const summary = buildSummary(targets, loadScoringContext())
+  const { measured, manifest, registry, rebuild } = resolveMeasurement({ measuredDir })
+  // Health is the one grading input read from the publisher's own checkout: it
+  // is live operational state, and a rebuild exists precisely because it moved.
+  const { health } = loadScoringContext()
+  const summary = buildSummary(targets, {
+    registry,
+    health,
+    suiteTests: suiteIdentities(manifest),
+    measured,
+  })
   const table = renderTable(summary)
 
   if (write) {
-    publish(summary, targets)
-    console.error(`Updated the results table in README.md and wrote ${SUMMARY_PATH}.`)
+    publish(summary, targets, { manifest })
+    console.error(
+      `Updated the results table in README.md and wrote ${SUMMARY_PATH} ` +
+        `(${rebuild ? 'rebuilt' : 'measured'} at ${measured.ref}, ${measured.measuredAt}).`,
+    )
   } else {
     console.log(table)
   }

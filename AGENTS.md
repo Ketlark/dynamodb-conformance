@@ -150,6 +150,57 @@ alongside others, and the reference only carries weight if it reads
 that way. The fuller convention, with a copyable block, is "Citing
 a finding" in the README.
 
+## Releases and the measured ref
+
+The published board measures the most recent release tag, not `main`. A merge
+to `main` still runs the full suite against real AWS, which is what validates
+the tests as they land, but it does not publish. Only a release moves the
+figures, so a dated changelog entry always sits behind a move in the
+denominator.
+
+`scripts/resolve-measured-ref.mjs` is where that decision is made, once, in
+`conformance.yml`'s `changes` job. Every downstream job checks out what it
+resolved rather than re-deriving the rule:
+
+| event | measures |
+|---|---|
+| an explicit `ref` input | that ref, verbatim, which is the re-measure escape hatch |
+| `schedule` or `workflow_dispatch` | the highest release tag |
+| anything else | the sha that triggered it, which is never publishable |
+
+"Highest" is by version number, not by when the tag object was written and
+not by commit topology: `v2.0.0` and `v2.1.0` were backfilled after `v3.0.0`
+already existed, so creation order is already unsound here.
+
+Two jobs deliberately stay on `main`: the cross-region capture and the region
+health record, because both commit back and neither can push from a detached
+tag. That is also why nothing about the measurement is read from the
+publisher's own tree. `summarise.mjs` takes the identity and the suite
+definition as input and refuses to invent either.
+
+The three grading inputs split by what they are:
+
+| input | read at | why |
+|---|---|---|
+| `registry/suite-manifest.json` | the measured ref | it is the denominator, and it is suite definition |
+| `registry/splits.json` | the measured ref | per-region expectations are suite definition |
+| `registry/regions.json` | `main` | region health is live operational state, not suite definition |
+
+A rebuild is the exception worth knowing. When the sweep records new region
+health it rebuilds the board without re-measuring anything, so it carries the
+committed board's `suite` block forward unchanged and reads its manifest and
+splits at that block's commit. Health is the only input a rebuild is allowed
+to move. Restamping the timestamp would have the board claim a measurement it
+never performed.
+
+`release.yml` cuts a version and leaves a draft release; `publish-release.yml`
+flips that draft when a board carrying its version is committed. The flip is
+keyed to the board changing rather than to a named upstream workflow, because
+`results-table.yml` and the sweep both write `results/` and either can be the
+one that lands a given board. `scripts/release.mjs` holds the mechanics for
+both, so the changelog rewrite is pinned by unit tests rather than discovered
+from a bad release.
+
 ## The site workspace (`site/`)
 
 [paritysuite.org](https://paritysuite.org) is built from `site/`, an npm

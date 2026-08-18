@@ -1,0 +1,91 @@
+name: Publish the release
+
+# Flip a draft release to published when the board carrying its version lands.
+#
+# A release is created as a draft at tag time, because the figures it describes
+# take about three hours to measure. This is the other half: the board arrives,
+# says which suite measured it, and the draft for that suite goes public. So a
+# release becomes visible exactly when the numbers it explains do.
+#
+# The trigger is the board changing, not a named upstream workflow. Two
+# workflows commit results/summary.json - results-table.yml and the sweep's
+# rebuild - and keying the flip to one caller's workflow_run would miss a board
+# the other wrote.
+#
+# Note what the sweep can and cannot do here, because an earlier version of this
+# comment got it wrong. A rebuild carries the committed board's identity forward
+# unchanged; it never re-measures, so it can only ever re-land a version
+# results-table.yml has already committed. It is a second chance at a flip that
+# did not happen, not a second way for a new version to arrive.
+#
+# Doing nothing is the normal case. A scheduled re-measure of an already
+# published release lands a board every week and this passes over it silently.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'results/summary.json'
+  # The recovery path, and the way to finish a release whose board landed while
+  # this workflow was broken or disabled.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Both board writers push here, so two boards landing close together would
+# otherwise run this twice at once. Queue rather than cancel: a cancelled run
+# drops a flip silently, which is the failure this workflow exists to avoid.
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Flip the draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Explicit, so a workflow_dispatch on some other ref still reads the
+          # board that is actually published rather than that ref's copy.
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # Drafts are only visible to a token with push access, so this reads the
+      # API rather than the public releases list.
+      - name: Read the open releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Slurped through jq rather than filtered by --jq inline: --paginate
+          # emits one JSON document per page, so an inline --jq would write
+          # several concatenated arrays and the script would fail to parse the
+          # second one once the repo has more than a page of releases.
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --paginate \
+            | jq -s '[.[][] | {tag_name, draft}]' > "$RUNNER_TEMP/releases.json"
+
+      # Names a tag only when the committed board carries a version with an open
+      # draft behind it. A board that names no version, or names one with no
+      # draft or an already published release, leaves the output empty and the
+      # step below is skipped.
+      - name: Decide whether this board finishes a release
+        id: decide
+        env:
+          RELEASES_JSON: ${{ runner.temp }}/releases.json
+        run: node scripts/release.mjs flip
+
+      - name: Publish
+        if: steps.decide.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.decide.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release edit "$TAG" --draft=false
+          echo "::notice title=$TAG published::The board measuring $TAG has landed, so its release is now public."

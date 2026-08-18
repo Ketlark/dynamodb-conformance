@@ -27,6 +27,10 @@ on:
       - 'site/**'
   workflow_dispatch:
     inputs:
+      ref:
+        description: "Suite ref to measure (blank = the latest release tag)"
+        required: false
+        default: ""
       extenddb_ref:
         description: "ExtendDB git ref to build (blank = latest release)"
         required: false
@@ -66,10 +70,26 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       suite: ${{ steps.filter.outputs.suite }}
+      ref: ${{ steps.measured.outputs.ref }}
+      kind: ${{ steps.measured.outputs.kind }}
+      commit: ${{ steps.measured.outputs.commit }}
+      version: ${{ steps.measured.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      # Which suite this run measures, decided once and read by every job below.
+      # A schedule or a dispatch measures the latest release tag, so the board
+      # reports figures a changelog entry describes; a push measures what was
+      # pushed, which validates the tests as they land and is never published.
+      # See scripts/resolve-measured-ref.mjs for why "latest" is the highest
+      # version rather than the newest tag object.
+      - id: measured
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_REF: ${{ inputs.ref }}
+          SHA: ${{ github.sha }}
+        run: node scripts/resolve-measured-ref.mjs
       - id: filter
         env:
           BEFORE: ${{ github.event.before }}
@@ -125,6 +145,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -172,6 +194,58 @@ jobs:
         with:
           name: results-dynamodb
           path: results/
+
+      # What this run measured, for the side that publishes it. The publishing
+      # jobs check out main because they commit back, so they cannot read any of
+      # this from their own tree: a version read there describes main, and a
+      # manifest read there is a denominator main has rather than the one the
+      # suite was graded against. Region and timestamp come from here because
+      # only the measuring job knows when it measured and where.
+      #
+      # registry/regions.json is deliberately absent. Health is live operational
+      # state, not suite definition: a region that stopped answering yesterday is
+      # a fact about today, not about the tag, so the publisher reads it from its
+      # own checkout.
+      - name: Record what was measured
+        if: always()
+        env:
+          MEASURED_REF: ${{ needs.changes.outputs.ref }}
+          MEASURED_KIND: ${{ needs.changes.outputs.kind }}
+          MEASURED_COMMIT: ${{ needs.changes.outputs.commit }}
+          MEASURED_VERSION: ${{ needs.changes.outputs.version }}
+          # The region the suite actually ran against, not a second copy of the
+          # literal: the two drifting apart would stamp a board with a region it
+          # was not measured in.
+          AWS_REGION: eu-west-2
+        run: |
+          set -euo pipefail
+          mkdir -p measured
+          # Built with jq --arg, not a heredoc. `version` is read from
+          # package.json at whatever ref was measured, so its contents are not
+          # this workflow's to trust: interpolated straight into a JSON string
+          # position, a value carrying a quote could close the field and append
+          # its own. `"kind": "tag"` is the single gate on publishing, so a
+          # forged one would publish a board measured from an arbitrary ref.
+          # jq escapes every value into its own field and cannot be escaped out
+          # of.
+          jq -n \
+            --arg ref "$MEASURED_REF" \
+            --arg kind "$MEASURED_KIND" \
+            --arg commit "$MEASURED_COMMIT" \
+            --arg version "$MEASURED_VERSION" \
+            --arg region "$AWS_REGION" \
+            --arg measuredAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{$ref, $kind, $commit, $version, $region, $measuredAt}' \
+            > measured/suite.json
+          cp registry/suite-manifest.json registry/splits.json measured/
+          cat measured/suite.json
+
+      - name: Upload what was measured
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: measured-suite
+          path: measured/
 
       # A scheduled red survived the retry, so it is deterministic: either real
       # AWS drift or a flake the retry missed. Re-capture eu-west-2's raw wording
@@ -248,8 +322,15 @@ jobs:
     # `needs` plus the shared conformance-aws group serialise this against the
     # gating job so the two don't race the by-prefix table cleanup; `always()`
     # keeps it running even when the gate is red.
-    needs: test-dynamodb
-    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    needs: [changes, test-dynamodb]
+    # always() so a failed gating run does not skip this lane, but not when the
+    # resolver itself failed: needs.changes.outputs.ref would be empty, and
+    # actions/checkout reads an empty ref as "use the triggering ref", so the
+    # lane would spend real-AWS time measuring main instead of the resolved tag
+    # with nothing failing to say so.
+    if: >-
+      always() && needs.changes.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     continue-on-error: true
     runs-on: ubuntu-latest
     concurrency:
@@ -262,6 +343,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -317,8 +400,15 @@ jobs:
     # This lane closes that: its own 6h credentials, its own timeout, off the
     # gate. It exists so real DynamoDB's published row is evidenced across the
     # whole suite rather than only across the gating subset.
-    needs: test-dynamodb-integrations
-    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    needs: [changes, test-dynamodb-integrations]
+    # always() so a failed gating run does not skip this lane, but not when the
+    # resolver itself failed: needs.changes.outputs.ref would be empty, and
+    # actions/checkout reads an empty ref as "use the triggering ref", so the
+    # lane would spend real-AWS time measuring main instead of the resolved tag
+    # with nothing failing to say so.
+    if: >-
+      always() && needs.changes.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     continue-on-error: true
     runs-on: ubuntu-latest
     # Under GitHub's own 6h ceiling on a hosted job, so the step is killed by
@@ -338,6 +428,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -411,8 +503,15 @@ jobs:
     # in ground truth is the opposite - it means the table is claiming
     # something nobody observed, which is the one failure that must not be
     # quiet.
-    needs: [test-dynamodb, test-dynamodb-integrations, test-dynamodb-gsi]
-    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    needs: [changes, test-dynamodb, test-dynamodb-integrations, test-dynamodb-gsi]
+    # always() so a failed gating run does not skip this lane, but not when the
+    # resolver itself failed: needs.changes.outputs.ref would be empty, and
+    # actions/checkout reads an empty ref as "use the triggering ref", so the
+    # lane would spend real-AWS time measuring main instead of the resolved tag
+    # with nothing failing to say so.
+    if: >-
+      always() && needs.changes.result == 'success' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -420,6 +519,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -549,6 +650,7 @@ jobs:
 
   test-dynamodb-local:
     name: DynamoDB Local
+    needs: changes
     continue-on-error: true
     runs-on: ubuntu-latest
     services:
@@ -559,6 +661,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -591,6 +695,7 @@ jobs:
 
   test-localstack:
     name: LocalStack
+    needs: changes
     continue-on-error: true
     runs-on: ubuntu-latest
     # LOCALSTACK_AUTH_TOKEN is not exposed to PRs from forks, and the
@@ -607,6 +712,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -639,11 +746,14 @@ jobs:
 
   test-dynoxide:
     name: Dynoxide
+    needs: changes
     continue-on-error: true
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -679,6 +789,7 @@ jobs:
 
   test-dynoxide-wasm:
     name: Dynoxide (wasm)
+    needs: changes
     # A separate engine from the native build above, scored as its own row.
     # It is the only target reachable by neither a container image nor an npm
     # binary: the wasm engine answers a postMessage RPC in a browser, and the
@@ -695,6 +806,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
 
       - name: Resolve the engine's repository and ref
         id: ref
@@ -782,6 +895,7 @@ jobs:
 
   test-floci:
     name: Floci
+    needs: changes
     continue-on-error: true
     runs-on: ubuntu-latest
     services:
@@ -792,6 +906,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -824,6 +940,7 @@ jobs:
 
   test-ministack:
     name: Ministack
+    needs: changes
     continue-on-error: true
     runs-on: ubuntu-latest
     services:
@@ -834,6 +951,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -866,11 +985,14 @@ jobs:
 
   test-dynalite:
     name: Dynalite
+    needs: changes
     continue-on-error: true
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -906,6 +1028,7 @@ jobs:
 
   test-extenddb:
     name: ExtendDB
+    needs: changes
     # ExtendDB ships no binaries and `main` is a moving target, so CI builds its
     # latest tagged *release* from source (override via the workflow_dispatch
     # input). The Rust build makes this the heaviest job, so it skips PRs and
@@ -929,6 +1052,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.changes.outputs.ref }}
 
       - name: Resolve ExtendDB ref (latest release unless overridden)
         id: ref
@@ -997,6 +1122,7 @@ jobs:
 
   test-extenddb-sqlite:
     name: ExtendDB (SQLite)
+    needs: changes
     # The same ExtendDB release as the job above, built with the SQLite storage
     # feature instead of the default PostgreSQL one. The backend is compiled in,
     # so this is a second build rather than a second configuration of one - but
@@ -1018,6 +1144,7 @@ jobs:
       # call below reads its token from the environment.
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.changes.outputs.ref }}
           persist-credentials: false
 
       - name: Resolve ExtendDB ref (latest release unless overridden)

@@ -8,6 +8,32 @@ section its date and version, so several branches can write ahead of one.
 
 ## Unreleased
 
+The board now measures the most recent release tag rather than `main`. Merging
+a test still runs it against real AWS, which is what validates it, but the
+published figures no longer move until a release moves them, so a dated
+changelog entry always sits behind a change in the denominator. Expect the
+figures to shift on this release: the board is switching from measuring `main`
+to measuring a tag, and those are different trees today.
+
+Every board now says what produced it. `results/summary.json` carries a `suite`
+block naming the ref measured, its commit, the suite version at that ref, the
+region it ran against and when. It is additive, so `schemaVersion` stays at 1.
+The same block reaches `/data/latest.json`, `/data/index.json` and
+`/data/runs.json`, where each historical run carries its own copy, so a
+denominator that moved between two runs can be attributed to the release that
+moved it. Branch on `kind`: only `tag` is a released board.
+
+A board is graded against the suite manifest and split registry as they stood
+at the ref it measured. Region health is the exception and is read live, so a
+region dropped since the tag still counts against today's cohorts. That is the
+one input allowed to move under a board without a new measurement, and the
+board carries a health date beside its measurement date to say so.
+
+Releases are cut by one workflow dispatch: it bumps the version, dates this
+section, installs against the bumped tree, tags, and opens a draft release,
+then starts the measurement. The draft publishes itself when the board carrying
+that version lands, which takes about three hours.
+
 eu-west-2 has crossed to the validation framework's generic constraint message
 for `BatchGetItem` with an empty `RequestItems` map, so the split row recording
 that behaviour is re-characterised against a 34-region capture taken on

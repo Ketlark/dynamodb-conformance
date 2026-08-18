@@ -458,6 +458,31 @@ describe('parseArgs', () => {
     ).toThrow(/only a human edits/)
   })
 
+  it('still refuses the real registry when told to read a copy of it', () => {
+    // The sweep now reads splits.json at the measured ref, out of a temp file,
+    // so `--registry` no longer names the file in the repo. Comparing output
+    // paths against `--registry` alone would leave the guard protecting the
+    // scratch copy while `registry/splits.json` - the file this script's own
+    // header promises never to write - went unchecked.
+    expect(() =>
+      parseArgs(['gt', '--registry', '/tmp/splits.json', '--out', 'registry/splits.json']),
+    ).toThrow(/only a human edits/)
+    expect(() =>
+      parseArgs([
+        'gt',
+        '--registry',
+        '/tmp/splits.json',
+        '--record-health',
+        './registry/../registry/splits.json',
+      ]),
+    ).toThrow(/only a human edits/)
+    // And the copy it was told to read is still protected too, so neither the
+    // scratch file nor the real one can be written over.
+    expect(() =>
+      parseArgs(['gt', '--registry', '/tmp/splits.json', '--out', '/tmp/splits.json']),
+    ).toThrow(/only a human edits/)
+  })
+
   it('rejects unknown options rather than ignoring them', () => {
     expect(() => parseArgs(['gt', '--frobnicate'])).toThrow(/unknown option/)
   })

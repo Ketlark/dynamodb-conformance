@@ -26,7 +26,15 @@ jobs:
     name: Suite health (typecheck + tooling tests)
     runs-on: ubuntu-latest
     steps:
+      # Full history, not the default depth of one. The tooling tests reproduce
+      # the committed board, and reproducing it means grading against the suite
+      # definition at the commit that measured it - read out of git, because
+      # falling back to the working tree would report the board stale the first
+      # time main moved past the measured ref. That commit is not in a shallow
+      # clone, so the test file fails to even load without this.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24

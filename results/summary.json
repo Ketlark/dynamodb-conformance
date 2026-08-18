@@ -1,5 +1,13 @@
 {
   "schemaVersion": 1,
+  "suite": {
+    "ref": "9aa0337b455ed4c0ccdf71d9e4e8bb306991d778",
+    "kind": "sha",
+    "commit": "9aa0337b455ed4c0ccdf71d9e4e8bb306991d778",
+    "version": "3.1.0",
+    "region": "eu-west-2",
+    "measuredAt": "2026-08-17T17:39:39Z"
+  },
   "regions": {
     "observed": [
       "af-south-1",
