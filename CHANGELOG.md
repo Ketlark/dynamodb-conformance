@@ -8,6 +8,11 @@ section its date and version, so several branches can write ahead of one.
 
 ## Unreleased
 
+A release now dispatches its measurement as the results bot rather than with
+the workflow's own token. GitHub raises no `workflow_run` event when a run
+started by `GITHUB_TOKEN` finishes, so 3.2.0 measured green for three hours and
+its board only landed once the results table was dispatched by hand.
+
 ## 2026-08-18 (3.2.0)
 
 The board now measures the most recent release tag rather than `main`. Merging
