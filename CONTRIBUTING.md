@@ -210,8 +210,11 @@ conformance run at the new tag. A full run takes about three hours; when the
 board carrying that version lands, the draft publishes itself.
 
 So a draft sitting open means the measurement has not finished. If its run
-failed, re-dispatch **Conformance Tests** at the tag: the same path finishes
-the release.
+failed, dispatch **Conformance Tests** from `main` and set its `ref` input to
+the tag. That runs the same path to completion and finishes the release.
+Selecting the tag as the workflow's own ref instead measures it correctly and
+publishes nothing, because the board is only published from a run whose branch
+is `main`.
 
 ### What a release does and does not explain
 

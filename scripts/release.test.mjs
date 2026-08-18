@@ -424,10 +424,12 @@ describe('publish-release.yml', () => {
   const workflow = yaml.load(yamlText)
 
   it('triggers on the board changing, not on one of the two workflows that write it', () => {
-    // sweep.yml and results-table.yml both commit results/, and the sweep runs
-    // Saturday against Sunday's conformance cron, so a Friday cut has its board
-    // landed by the sweep. A flip keyed to one caller strands the other's draft
-    // open forever with nothing failing to say why.
+    // sweep.yml and results-table.yml both commit results/summary.json, so a
+    // flip keyed to one caller's workflow_run would miss a board the other
+    // wrote. The sweep can only re-land a version results-table.yml already
+    // committed, since a rebuild carries the board's identity forward rather
+    // than measuring anything - so it is a second chance at a missed flip, not
+    // a second way for a new version to arrive.
     const on = workflow.true ?? workflow.on
     expect(Object.keys(on).sort()).toEqual(['push', 'workflow_dispatch'])
     expect(on.push.branches).toEqual(['main'])

@@ -335,12 +335,15 @@ function cut() {
  * Decide whether the board just committed finishes a release, and name the tag
  * if it does.
  *
- * Keyed off the board rather than off the workflow that wrote it. Two workflows
- * commit results/ - results-table.yml and the sweep's rebuild - and the crons
- * make the second one likely rather than theoretical: the sweep runs Saturday
- * and conformance Sunday, so a Friday cut has its board landed by the sweep a
- * full day before the conformance cron. A flip that only watched one caller
- * would leave that draft open forever with nothing failing to say why.
+ * Keyed off the board rather than off the workflow that wrote it, because two
+ * workflows commit results/summary.json: results-table.yml and the sweep's
+ * rebuild. Watching one caller's workflow_run would miss a board the other
+ * wrote.
+ *
+ * The sweep's rebuild carries the committed board's identity forward and never
+ * re-measures, so it can only re-land a version results-table.yml has already
+ * committed. That makes it a second chance at a flip that did not happen, not a
+ * second way for a new version to arrive.
  */
 function flip() {
   const version = measuredVersionOf(JSON.parse(readFileSync('results/summary.json', 'utf8')))

@@ -8,12 +8,15 @@ name: Publish the release
 # release becomes visible exactly when the numbers it explains do.
 #
 # The trigger is the board changing, not a named upstream workflow. Two
-# workflows commit results/ - results-table.yml and the sweep's rebuild - and
-# the crons make the second one likely rather than theoretical: the sweep runs
-# Saturday 03:00 UTC and conformance Sunday 04:00 UTC, so a Friday-evening cut
-# has its board landed by the sweep a full day before the conformance cron. A
-# flip keyed to one caller would strand that draft open forever, with nothing
-# failing to say why.
+# workflows commit results/summary.json - results-table.yml and the sweep's
+# rebuild - and keying the flip to one caller's workflow_run would miss a board
+# the other wrote.
+#
+# Note what the sweep can and cannot do here, because an earlier version of this
+# comment got it wrong. A rebuild carries the committed board's identity forward
+# unchanged; it never re-measures, so it can only ever re-land a version
+# results-table.yml has already committed. It is a second chance at a flip that
+# did not happen, not a second way for a new version to arrive.
 #
 # Doing nothing is the normal case. A scheduled re-measure of an already
 # published release lands a board every week and this passes over it silently.
@@ -41,8 +44,13 @@ jobs:
   publish:
     name: Flip the draft
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Explicit, so a workflow_dispatch on some other ref still reads the
+          # board that is actually published rather than that ref's copy.
+          ref: main
 
       - uses: actions/setup-node@v7
         with:

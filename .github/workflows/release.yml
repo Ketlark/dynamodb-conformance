@@ -12,8 +12,10 @@ name: Cut a release
 # the board carrying its version lands. A full conformance run takes about three
 # hours, so nothing here polls and nothing waits: a draft sitting open states the
 # situation exactly, which is tagged, notes written, board not yet settled. If
-# the run fails, re-dispatch conformance.yml at the tag; that same path finishes
-# the release.
+# the run fails, dispatch conformance.yml from main with its `ref` input set to
+# the tag; that same path finishes the release. Dispatching on the tag itself
+# measures it and publishes nothing - see the measurement step at the end of
+# this file.
 #
 # So this workflow runs once per version and never has to tolerate its own
 # output, which is what makes its preconditions safe to state absolutely.
@@ -38,6 +40,7 @@ jobs:
   release:
     name: Bump, date, tag, draft
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       # The `main: gated PRs` ruleset already lists this App as a bypass actor,
       # so pushing the bump commit relaxes no protection. It also needs actions
@@ -62,6 +65,12 @@ jobs:
           # Every tag, so the already-tagged precondition sees all of them.
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
+          # Do not leave the token in .git/config. This job runs `npm ci`
+          # against a freshly bumped tree, which executes every dependency's
+          # lifecycle scripts, and this token is a bypass actor on main's
+          # ruleset - a persisted credential would be readable by all of them.
+          # The one step that needs to push supplies it explicitly instead.
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -129,11 +138,22 @@ jobs:
       - name: Tag and push
         env:
           VERSION: ${{ inputs.version }}
+          BOT_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           git tag -a "v$VERSION" -m "v$VERSION"
-          git push origin main
-          git push origin "v$VERSION"
+          # One atomic push, not two. Landing main without the tag strands the
+          # cut in a state that cannot be recovered from either direction: the
+          # same version is refused because package.json already carries it, and
+          # the next version is refused because the changelog's `## Unreleased`
+          # section has already been consumed. --atomic makes both refs move or
+          # neither.
+          #
+          # Pushed to an explicitly authenticated remote because the checkout
+          # deliberately does not persist this token - see the checkout step.
+          git push --atomic \
+            "https://x-access-token:${BOT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            main "refs/tags/v$VERSION"
 
       # A draft, and its body cut from the changelog in the state the tag
       # captured rather than reassembled later from a file that has moved on

@@ -43,7 +43,7 @@ import { BASELINE_GRADE, gradeOf } from './lib/grade.mjs'
 import { TARGETS } from './lib/targets.mjs'
 import { assertMeasuredSuite, SUMMARY_PATH } from './summarise.mjs'
 import { suiteIdentities } from './suite-manifest.mjs'
-import { gradingInputsAtRef, measuredOf } from './lib/measured.mjs'
+import { committedGradingInputs } from './lib/measured.mjs'
 import { loadRegionHealth, observedRegions } from './lib/observed.mjs'
 
 const RESULTS_DIR = 'results'
@@ -178,16 +178,11 @@ export function writeBadges(resultsDir = RESULTS_DIR, context = loadScoringConte
 // them graded at the measured ref - and a badge would contradict its own row.
 // The board has just recorded what it measured; read it back and use that.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const measured = existsSync(SUMMARY_PATH)
-    ? measuredOf(JSON.parse(readFileSync(SUMMARY_PATH, 'utf8')))
-    : null
-  if (measured === null) {
-    console.error(
-      `refusing to write badges: ${SUMMARY_PATH} names no measurement. Run summarise first.`,
-    )
+  if (!existsSync(SUMMARY_PATH)) {
+    console.error(`refusing to write badges: ${SUMMARY_PATH} does not exist. Run summarise first.`)
     process.exit(1)
   }
-  const { manifest, registry } = gradingInputsAtRef(measured)
+  const { manifest, registry } = committedGradingInputs(SUMMARY_PATH)
   const health = loadRegionHealth()
   const { written, pruned, retired } = writeBadges(
     RESULTS_DIR,

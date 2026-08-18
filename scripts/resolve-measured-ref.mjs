@@ -100,6 +100,27 @@ export function resolveMeasuredRef({ event, inputRef = '', sha = '', tags = [] }
   return { ref: latest, kind: 'tag' }
 }
 
+/**
+ * A version string safe to carry through a job output and into a JSON field.
+ *
+ * This value comes from package.json at whatever ref was measured, so it is not
+ * ours to trust: a dispatch can name any ref, and a version carrying a quote
+ * interpolated into a JSON string position could close the field and append its
+ * own - forging `kind: tag`, which is the only gate on publishing. The artefact
+ * is now built with jq, which cannot be escaped out of, and this refuses the
+ * shape as well so the two would both have to fail. Prereleases and build
+ * metadata still pass; quotes, backslashes and newlines do not.
+ */
+export function assertPlainVersion(version) {
+  if (typeof version !== 'string' || !/^[0-9A-Za-z.+-]+$/.test(version)) {
+    throw new Error(
+      `refusing to record version ${JSON.stringify(version)} from the measured ref: a version ` +
+        'may contain only digits, letters, dots, plus signs and hyphens.',
+    )
+  }
+  return version
+}
+
 function gitTags() {
   const out = execFileSync('git', ['tag', '--list'], { encoding: 'utf8' })
   return out.split('\n').filter((line) => line.trim() !== '')
@@ -154,7 +175,7 @@ function main() {
   // version read there would describe main and be stamped onto a board measured
   // from a tag.
   const pkg = execFileSync('git', ['show', `${resolved.ref}:package.json`], { encoding: 'utf8' })
-  const version = JSON.parse(pkg).version
+  const version = assertPlainVersion(JSON.parse(pkg).version)
 
   const lines = [
     `ref=${resolved.ref}`,

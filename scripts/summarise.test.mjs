@@ -8,7 +8,7 @@ import { testIdentities } from './lib/identity.mjs'
 import { GROUND_TRUTH_SLUG, axesOf, isTargetResultFile, loadScoringContext, scoreTarget, verdictsForRegion } from './lib/score.mjs'
 import { classifyResults } from './lib/classify.mjs'
 import { splitFor } from './lib/registry.mjs'
-import { gradingInputsAtRef } from './lib/measured.mjs'
+import { committedGradingInputs } from './lib/measured.mjs'
 import { BASELINE_LABEL, gradeOf } from './lib/grade.mjs'
 import { readManifest, suiteIdentities, suiteSizeOf } from './suite-manifest.mjs'
 import {
@@ -944,8 +944,7 @@ describe('committed results pipeline', () => {
   // using both: grading from the working tree instead would turn this test red
   // the first time main's manifest or registry moved past the measured ref,
   // reporting the board stale when it is exactly right.
-  const committedMeasured = JSON.parse(readFileSync(SUMMARY_PATH, 'utf8')).suite
-  const measuredInputs = gradingInputsAtRef(committedMeasured)
+  const { measured: committedMeasured, ...measuredInputs } = committedGradingInputs(SUMMARY_PATH)
   const fresh = buildSummary(targets, {
     ...context,
     registry: measuredInputs.registry,
@@ -993,8 +992,17 @@ describe('committed results pipeline', () => {
     //
     // This calls the publishing gate rather than restating it, so the assertion
     // and the thing that runs before every write cannot drift apart.
-    expect(() => assertOneDenominator(fresh)).not.toThrow()
-    expect(suiteSizeOf()).toBe(
+    //
+    // Both of these divide by the manifest at the MEASURED ref, not the working
+    // tree's. Main is expected to run ahead of the released suite now - that is
+    // the whole point of the change - so grading the committed board against
+    // whatever main currently defines would turn this file red on the first
+    // test merged after a release. It would also deadlock: a red main fails the
+    // release workflow's own green-checks precondition, and cutting a release
+    // is the only thing that moves the measured ref forward again.
+    const measuredSize = suiteSizeOf(measuredInputs.manifest)
+    expect(() => assertOneDenominator(fresh, measuredSize)).not.toThrow()
+    expect(measuredSize).toBe(
       Math.max(
         0,
         ...Object.values(fresh.targets).map((t) => t.regions[t.headline.region]?.count ?? 0),
@@ -1190,6 +1198,13 @@ describe('the publishing gate refuses a forged population', () => {
   // synthetic shapes. A fixture that only looks like a run would let the guard
   // pass on the fixture and fail on the thing.
   const genuine = () => JSON.parse(readFileSync('results/dynoxide.json', 'utf8'))
+  // Every check here copies a real committed run, so the population it carries
+  // is the one the board was measured against - the manifest at that ref, not
+  // the working tree's, which main is expected to run ahead of.
+  const measuredSuite = (() => {
+    const { manifest } = committedGradingInputs(SUMMARY_PATH)
+    return { identities: suiteIdentities(manifest), size: suiteSizeOf(manifest) }
+  })()
 
   it('rejects a result counted twice, which keeps the total and lowers divergence', () => {
     // The cheapest forgery there is: drop a failing result, put a passing one
@@ -1205,22 +1220,26 @@ describe('the publishing gate refuses a forged population', () => {
     expect(
       raw.testResults.reduce((n, tr) => n + tr.assertionResults.length, 0),
       'the forgery must keep the total, or the count check would catch it first',
-    ).toBe(suiteSizeOf())
+    ).toBe(measuredSuite.size)
 
-    expect(() => assertMeasuredSuite([{ slug: 'dynoxide', raw }])).toThrow(/twice/)
+    expect(() => assertMeasuredSuite([{ slug: 'dynoxide', raw }], measuredSuite.identities)).toThrow(
+      /twice/,
+    )
   })
 
   it('rejects a test the suite no longer defines', () => {
     const raw = genuine()
     raw.testResults[0].assertionResults[0].fullName = 'a test that was renamed away'
-    expect(() => assertMeasuredSuite([{ slug: 'dynoxide', raw }])).toThrow(/no longer defines/)
+    expect(() => assertMeasuredSuite([{ slug: 'dynoxide', raw }], measuredSuite.identities)).toThrow(
+      /no longer defines/,
+    )
   })
 
   it('accepts the committed board, including the deliberately partial lanes', () => {
     // The repeat check runs on every target, so the ground-truth lanes - which
     // legitimately carry a handful of tests each - have to pass it.
     const files = readdirSync('results').filter(isTargetResultFile).map((f) => join('results', f))
-    expect(() => assertMeasuredSuite(readTargets(files))).not.toThrow()
+    expect(() => assertMeasuredSuite(readTargets(files), measuredSuite.identities)).not.toThrow()
   })
 
   it('rejects a headline naming a region the row has no results for', () => {
@@ -1441,6 +1460,23 @@ describe('the measured line', () => {
       },
     }
     expect(healthLabel(regions)).toBe(' Region health as of 2026-08-22.')
+  })
+
+  it('dates health from the observed set, not from a region that was dropped', () => {
+    // A dropped region stays in `detail` carrying the date it stopped
+    // answering, and that date can be newer than anything still scored. Dating
+    // the line from it would report health the board does not use. The
+    // scoping exists for this and nothing covered it, so a regression that
+    // collapsed it back to every entry would have passed every test here.
+    const regions = {
+      observed: ['eu-west-2', 'us-east-1'],
+      detail: {
+        'eu-west-2': { lastResolved: '2026-08-15' },
+        'us-east-1': { lastResolved: '2026-08-16' },
+        'ap-south-2': { lastResolved: '2026-08-17' },
+      },
+    }
+    expect(healthLabel(regions)).toBe(' Region health as of 2026-08-16.')
   })
 
   it('says nothing about health when no region has resolved', () => {

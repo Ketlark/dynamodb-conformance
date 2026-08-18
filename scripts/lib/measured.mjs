@@ -139,6 +139,28 @@ export function gradingInputsAtRef(measured, { git = gitShow } = {}) {
   return { manifest: read('registry/suite-manifest.json'), registry }
 }
 
+/**
+ * The identity a committed board carries, and its grading inputs read at that
+ * board's own commit.
+ *
+ * Three callers need exactly this pair - the badge writer, and the two suites
+ * that check a committed artefact reproduces - and each had written it out
+ * again with slightly different handling of the missing case. A board with no
+ * identity is refused here rather than at three call sites, because the
+ * fallback nobody wants is the working tree.
+ */
+export function committedGradingInputs(summaryPath = 'results/summary.json', { git } = {}) {
+  const measured = measuredOf(JSON.parse(readFileSync(summaryPath, 'utf8')))
+  if (measured === null) {
+    throw new Error(
+      `${summaryPath} names no measurement, so there is no ref to grade it at. ` +
+        'Refusing to fall back to the working tree, which would grade the board against a ' +
+        'suite it was not measured against.',
+    )
+  }
+  return { measured, ...gradingInputsAtRef(measured, git ? { git } : {}) }
+}
+
 function gitShow(spec) {
   return execFileSync('git', ['show', spec], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
 }

@@ -218,17 +218,25 @@ jobs:
           # was not measured in.
           AWS_REGION: eu-west-2
         run: |
+          set -euo pipefail
           mkdir -p measured
-          cat > measured/suite.json <<EOF
-          {
-            "ref": "$MEASURED_REF",
-            "kind": "$MEASURED_KIND",
-            "commit": "$MEASURED_COMMIT",
-            "version": "$MEASURED_VERSION",
-            "region": "$AWS_REGION",
-            "measuredAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          }
-          EOF
+          # Built with jq --arg, not a heredoc. `version` is read from
+          # package.json at whatever ref was measured, so its contents are not
+          # this workflow's to trust: interpolated straight into a JSON string
+          # position, a value carrying a quote could close the field and append
+          # its own. `"kind": "tag"` is the single gate on publishing, so a
+          # forged one would publish a board measured from an arbitrary ref.
+          # jq escapes every value into its own field and cannot be escaped out
+          # of.
+          jq -n \
+            --arg ref "$MEASURED_REF" \
+            --arg kind "$MEASURED_KIND" \
+            --arg commit "$MEASURED_COMMIT" \
+            --arg version "$MEASURED_VERSION" \
+            --arg region "$AWS_REGION" \
+            --arg measuredAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{$ref, $kind, $commit, $version, $region, $measuredAt}' \
+            > measured/suite.json
           cp registry/suite-manifest.json registry/splits.json measured/
           cat measured/suite.json
 

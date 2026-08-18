@@ -34,6 +34,51 @@ test("every endpoint carries the self-describing envelope", () => {
   }
 });
 
+test("the measurement identity reaches every endpoint, and absence is tolerated", () => {
+  // envelope() is an explicit field whitelist, so a new top-level field does not
+  // reach /data/ just because it is on the board - it has to be added by name.
+  // Nothing asserted that, and the field is how a machine consumer tells which
+  // suite produced the figures and how stale they are.
+  //
+  // The identity arrives on the summary model, the third argument, not on the
+  // conformance history - the endpoints take both.
+  const measured = {
+    ref: "v3.2.0",
+    kind: "tag",
+    commit: "0123456789abcdef0123456789abcdef01234567",
+    version: "3.2.0",
+    region: "eu-west-2",
+    measuredAt: "2026-08-18T04:00:00Z",
+  };
+  const summary = { latest: { suite: measured } };
+
+  for (const build of [buildIndex, buildLatest, buildRuns]) {
+    assert.deepEqual(build(model, site, summary).suite, measured, `${build.name} drops the identity`);
+  }
+
+  // A board written before the block existed still has to load: the site
+  // deploys on its own schedule, so it reads summaries older than itself.
+  for (const build of [buildIndex, buildLatest, buildRuns]) {
+    for (const older of [null, { latest: {} }]) {
+      assert.ok(
+        !("suite" in build(model, site, older)),
+        `${build.name} publishes an absent identity instead of omitting it`,
+      );
+    }
+  }
+});
+
+test("index documents the measurement identity it publishes", () => {
+  // A consumer branching on `kind` needs the field described where the schema
+  // describes itself, not only in prose on the site.
+  const index = buildIndex(model, site);
+  assert.ok(index.schema, "index.json no longer carries a self-describing schema block");
+  assert.ok(
+    JSON.stringify(index.schema).includes("suite"),
+    "index.json's schema block does not mention the suite identity",
+  );
+});
+
 test("latest exposes every target on an identical schema, baseline included", () => {
   const latest = buildLatest(model, site);
   assert.ok(latest.targets.length >= 2);
