@@ -55,8 +55,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate \
-            --jq '[.[] | {tag_name, draft}]' > "$RUNNER_TEMP/releases.json"
+          # Slurped through jq rather than filtered by --jq inline: --paginate
+          # emits one JSON document per page, so an inline --jq would write
+          # several concatenated arrays and the script would fail to parse the
+          # second one once the repo has more than a page of releases.
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --paginate \
+            | jq -s '[.[][] | {tag_name, draft}]' > "$RUNNER_TEMP/releases.json"
 
       # Names a tag only when the committed board carries a version with an open
       # draft behind it. A board that names no version, or names one with no

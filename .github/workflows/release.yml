@@ -73,13 +73,18 @@ jobs:
           # refuse every release. Its own check suite is excluded; every other
           # check on the commit still has to be complete and green.
           OURS=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq '.check_suite_id')
-          gh api "repos/${GITHUB_REPOSITORY}/commits/main/check-runs" --paginate \
-            --jq "{ check_runs: [.check_runs[] | select(.check_suite.id != $OURS)] }" \
+          # Slurped through jq rather than filtered by --jq inline: --paginate
+          # emits one JSON document per page, so an inline --jq would write
+          # several concatenated documents and the script would fail to parse
+          # the second one. Conformance alone contributes sixteen jobs, so a
+          # commit on main clears the 30-per-page default easily.
+          gh api "repos/${GITHUB_REPOSITORY}/commits/main/check-runs?per_page=100" --paginate \
+            | jq -s "{ check_runs: [.[].check_runs[] | select(.check_suite.id != $OURS)] }" \
             > "$RUNNER_TEMP/checks.json"
           # Drafts are only visible to a token with push access, which is why
           # this reads the API rather than the public releases list.
-          gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate --jq '[.[] | {tag_name, draft}]' \
-            > "$RUNNER_TEMP/releases.json"
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" --paginate \
+            | jq -s '[.[][] | {tag_name, draft}]' > "$RUNNER_TEMP/releases.json"
 
       # Refuses loudly on every precondition: not main, no pending notes, a red
       # or unfinished check, an already-tagged or backwards version, a draft
