@@ -394,6 +394,18 @@ describe('release.yml', () => {
     )
   })
 
+  it('mints both tokens before anything is committed, tagged or drafted', () => {
+    // A mint of a permission the installation does not hold fails outright.
+    // Minted beside the dispatch, that failure would land after the bump, the
+    // tag and the draft, leaving a cut only a person can finish.
+    const names = workflow.jobs.release.steps.map((s) => s.name ?? s.uses)
+    const lastMint = names.findLastIndex((n) => (n ?? '').startsWith('actions/create-github-app-token') || /Mint/.test(n ?? ''))
+    const firstSideEffect = names.findIndex((n) => ['Commit the bump', 'Tag and push', 'Create the draft release'].includes(n))
+    expect(lastMint, 'release.yml no longer mints App tokens').toBeGreaterThan(-1)
+    expect(firstSideEffect, 'release.yml no longer commits, tags or drafts').toBeGreaterThan(-1)
+    expect(lastMint).toBeLessThan(firstSideEffect)
+  })
+
   it('takes what the App cannot grant from GITHUB_TOKEN instead', () => {
     // The head commit's check runs. The App has no Checks grant, and asking
     // for one fails the mint outright.

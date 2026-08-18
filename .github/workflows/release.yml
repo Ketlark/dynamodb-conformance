@@ -64,7 +64,7 @@ jobs:
       #
       # contents:write and nothing else, because this is the token `checkout`
       # receives and `npm ci` runs beside. The dispatch needs actions:write and
-      # mints its own further down rather than widening this one.
+      # mints its own below rather than widening this one.
       #
       # create-github-app-token can only narrow what the installation was
       # granted, so asking for a permission it does not hold fails the whole
@@ -77,6 +77,24 @@ jobs:
           client-id: ${{ vars.RESULTS_BOT_CLIENT_ID }}
           private-key: ${{ secrets.RESULTS_BOT_PRIVATE_KEY }}
           permission-contents: write
+
+      # The token that starts the measurement, minted up here rather than
+      # beside the step at the end of the job that reads it. A mint fails
+      # outright when the installation does not hold what it asks for, and by
+      # the time the dispatch runs the bump is committed, the tag is pushed and
+      # the draft is open - so a late failure would strand a cut that then has
+      # to be finished by hand. Failing before any of that costs nothing.
+      #
+      # Separate from the token above because they are handed to different
+      # things: that one goes to actions/checkout and sits beside `npm ci` on a
+      # freshly bumped tree, this one is read by the dispatch and nowhere else.
+      - name: Mint a dispatch token
+        id: dispatch-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RESULTS_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RESULTS_BOT_PRIVATE_KEY }}
+          permission-actions: write
 
       - uses: actions/checkout@v7
         with:
@@ -197,18 +215,6 @@ jobs:
             --title "v$VERSION" \
             --notes-file "$NOTES" \
             --draft
-
-      # A second token, deliberately not the one minted at the top. This one is
-      # read by the step below and nowhere else, so it carries actions:write
-      # alone instead of widening the token that checkout and `npm ci` sit next
-      # to.
-      - name: Mint a dispatch token
-        id: dispatch-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ vars.RESULTS_BOT_CLIENT_ID }}
-          private-key: ${{ secrets.RESULTS_BOT_PRIVATE_KEY }}
-          permission-actions: write
 
       # The measurement that will publish it.
       #
