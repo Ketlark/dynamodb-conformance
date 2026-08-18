@@ -93,7 +93,7 @@ jobs:
           NOTES_OUT: ${{ runner.temp }}/release-notes.md
         run: |
           set -euo pipefail
-          TAGS=$(git tag --list) node scripts/release.mjs
+          TAGS=$(git tag --list) node scripts/release.mjs cut
           echo "--- release notes ---"
           cat "$NOTES_OUT"
 

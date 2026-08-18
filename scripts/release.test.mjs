@@ -12,6 +12,8 @@ import {
   assertVersionShape,
   bumpManifests,
   cutRelease,
+  draftToPublish,
+  measuredVersionOf,
 } from './release.mjs'
 
 const PREAMBLE = `# Conformance suite history
@@ -311,6 +313,55 @@ describe('assertNoOpenDraft', () => {
   })
 })
 
+describe('measuredVersionOf', () => {
+  it('reads the version the board says measured it', () => {
+    expect(measuredVersionOf({ suite: { version: '3.2.0', ref: 'v3.2.0', kind: 'tag' } })).toBe('3.2.0')
+  })
+
+  it('reads nothing from a board with no suite block, rather than throwing', () => {
+    // A board written before the block existed, or one a rebuild left alone.
+    // The flip is a no-op in that case; it must not take the workflow down.
+    expect(measuredVersionOf({})).toBeNull()
+    expect(measuredVersionOf({ suite: null })).toBeNull()
+    expect(measuredVersionOf({ suite: { ref: 'v3.2.0', kind: 'tag' } })).toBeNull()
+    expect(measuredVersionOf({ suite: { version: 42, kind: 'tag' } })).toBeNull()
+    expect(measuredVersionOf(null)).toBeNull()
+  })
+
+  it('reads nothing from a board that measured something other than a tag', () => {
+    // The version is read from package.json at the measured ref, so a board
+    // measured at a commit past v3.1.0 reports 3.1.0 while being neither that
+    // tag nor a release. summarise.mjs refuses to publish one, so this should
+    // never arrive - but flipping on it would publish notes describing a suite
+    // the board did not measure.
+    expect(measuredVersionOf({ suite: { version: '3.1.0', kind: 'sha', ref: '9aa0337' } })).toBeNull()
+    expect(measuredVersionOf({ suite: { version: '3.1.0', kind: 'other', ref: 'main' } })).toBeNull()
+  })
+})
+
+describe('draftToPublish', () => {
+  const releases = [
+    { id: 1, tag_name: 'v3.2.0', draft: true },
+    { id: 2, tag_name: 'v3.1.0', draft: false },
+  ]
+
+  it('finds the open draft for the version the board measured', () => {
+    expect(draftToPublish('3.2.0', releases)?.id).toBe(1)
+  })
+
+  it('is a no-op when that version is already published, so a re-measure does not churn it', () => {
+    expect(draftToPublish('3.1.0', releases)).toBeNull()
+  })
+
+  it('is a no-op when no release exists for the version at all', () => {
+    expect(draftToPublish('3.3.0', releases)).toBeNull()
+  })
+
+  it('is a no-op when the board names no version', () => {
+    expect(draftToPublish(null, releases)).toBeNull()
+  })
+})
+
 describe('release.yml', () => {
   const workflow = yaml.load(readFileSync('.github/workflows/release.yml', 'utf8'))
 
@@ -353,3 +404,23 @@ describe('release.yml', () => {
   })
 })
 
+describe('publish-release.yml', () => {
+  const yamlText = readFileSync('.github/workflows/publish-release.yml', 'utf8')
+  const workflow = yaml.load(yamlText)
+
+  it('triggers on the board changing, not on one of the two workflows that write it', () => {
+    // sweep.yml and results-table.yml both commit results/, and the sweep runs
+    // Saturday against Sunday's conformance cron, so a Friday cut has its board
+    // landed by the sweep. A flip keyed to one caller strands the other's draft
+    // open forever with nothing failing to say why.
+    const on = workflow.true ?? workflow.on
+    expect(Object.keys(on).sort()).toEqual(['push', 'workflow_dispatch'])
+    expect(on.push.branches).toEqual(['main'])
+    expect(on.push.paths).toEqual(['results/summary.json'])
+  })
+
+  it('publishes the draft rather than creating a second release for the tag', () => {
+    expect(yamlText).toMatch(/gh release edit/)
+    expect(yamlText).not.toMatch(/gh release create/)
+  })
+})

@@ -21,7 +21,7 @@
 // whether a draft is already open - are pure functions over data the workflow
 // fetches, so the rules are testable without the API.
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs'
 
 /** The suite's own version: exactly MAJOR.MINOR.PATCH, no `v`, no prerelease. */
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/
@@ -255,7 +255,44 @@ export function assertLockMatches(pkg, lock) {
   return lock
 }
 
-function main() {
+/**
+ * The suite version a committed board says measured it, or null when it says
+ * nothing readable.
+ *
+ * Null rather than a throw on every unreadable shape. A board written before
+ * the block existed is a real state between deploys, and so is a board whose
+ * block a future change gets wrong; neither is a reason to take down the
+ * workflow that flips a draft, because a flip that does not happen leaves a
+ * legible state and a crash leaves a red run nobody reads.
+ *
+ * Only a tag-measured board names a release. summarise.mjs already refuses to
+ * publish anything else, so this should never see one - but the version stamp
+ * is read from package.json at the measured ref, so a board measured at a
+ * commit past v3.1.0 reports 3.1.0 while being neither that tag nor a release.
+ * Flipping a draft on that would publish notes describing a suite the board
+ * did not measure.
+ */
+export function measuredVersionOf(summary) {
+  const suite = summary?.suite
+  if (suite?.kind !== 'tag') return null
+  const version = suite.version
+  return typeof version === 'string' && SEMVER.test(version.trim()) ? version.trim() : null
+}
+
+/**
+ * The open draft to publish for a measured version, or null when there is
+ * nothing to do.
+ *
+ * Nothing to do is the normal case, not an error: a scheduled re-measure of an
+ * already-published release lands a board every week, and the flip has to pass
+ * over it silently rather than churn the release or fail.
+ */
+export function draftToPublish(version, releases = []) {
+  if (version === null || version === undefined) return null
+  return releases.find((r) => r.tag_name === `v${version}` && r.draft) ?? null
+}
+
+function cut() {
   const version = assertVersionShape(process.env.VERSION ?? '')
   assertOnMain(process.env.GITHUB_REF_NAME ?? '')
 
@@ -293,6 +330,47 @@ function main() {
 
   console.log(`Cut ${version}: manifests bumped, changelog dated, notes written.`)
   return 0
+}
+
+/**
+ * Decide whether the board just committed finishes a release, and name the tag
+ * if it does.
+ *
+ * Keyed off the board rather than off the workflow that wrote it. Two workflows
+ * commit results/ - results-table.yml and the sweep's rebuild - and the crons
+ * make the second one likely rather than theoretical: the sweep runs Saturday
+ * and conformance Sunday, so a Friday cut has its board landed by the sweep a
+ * full day before the conformance cron. A flip that only watched one caller
+ * would leave that draft open forever with nothing failing to say why.
+ */
+function flip() {
+  const version = measuredVersionOf(JSON.parse(readFileSync('results/summary.json', 'utf8')))
+  if (version === null) {
+    console.log('The committed board names no suite version. Nothing to publish.')
+    return 0
+  }
+
+  const draft = draftToPublish(version, JSON.parse(readFileSync(process.env.RELEASES_JSON, 'utf8')))
+  if (draft === null) {
+    console.log(`No open draft for v${version}. Nothing to publish.`)
+    return 0
+  }
+
+  const out = process.env.GITHUB_OUTPUT
+  if (out) appendFileSync(out, `tag=v${version}\n`)
+  console.log(`v${version} has an open draft and its board has landed. Publishing.`)
+  return 0
+}
+
+const MODES = { cut, flip }
+
+function main() {
+  const mode = MODES[process.argv[2]]
+  if (mode === undefined) {
+    console.error(`usage: node scripts/release.mjs <${Object.keys(MODES).join('|')}>`)
+    return 2
+  }
+  return mode()
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) process.exit(main())
