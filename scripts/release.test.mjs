@@ -375,6 +375,38 @@ describe('release.yml', () => {
     expect(inputs.version.required).toBe(true)
   })
 
+  it('asks the App only for the permission its installation grants', () => {
+    // create-github-app-token can narrow what an installation was granted, not
+    // add to it, so requesting a permission the App does not hold fails the
+    // mint with a 422 before any other step runs. The results bot has
+    // contents:write and nothing else - results-table.yml has relied on exactly
+    // that for as long as it has existed. A cut asking for actions:write and
+    // checks:read died at step two of twelve.
+    const mint = workflow.jobs.release.steps.find((s) =>
+      (s.uses ?? '').startsWith('actions/create-github-app-token'),
+    )
+    expect(mint, 'release.yml no longer mints an App token').toBeTruthy()
+    expect(Object.keys(mint.with).filter((k) => k.startsWith('permission-'))).toEqual([
+      'permission-contents',
+    ])
+  })
+
+  it('takes what the App cannot grant from GITHUB_TOKEN instead', () => {
+    // Reading the head commit's check runs and dispatching the measurement are
+    // both within GITHUB_TOKEN's reach; neither is within the App's.
+    expect(workflow.permissions).toMatchObject({ checks: 'read', actions: 'write' })
+  })
+
+  it('confirms the measurement run actually started', () => {
+    // The tag and the draft already exist by this point, so a dispatch that
+    // produced no run would leave a draft that never flips - the failure this
+    // whole design is most anxious about, and the one that takes three hours to
+    // notice.
+    const yamlText = readFileSync('.github/workflows/release.yml', 'utf8')
+    expect(yamlText).toMatch(/gh run list --workflow conformance\.yml/)
+    expect(yamlText).toMatch(/::error title=Measurement not started/)
+  })
+
   it('installs against the bumped tree before anything is tagged', () => {
     // The tagged tree is measured for about three hours and no required check
     // has run against it: the checks passed on the commit before the bump, and
