@@ -1,0 +1,154 @@
+name: Cut a release
+
+# Turn `## Unreleased` into a dated, tagged version, and start the measurement
+# that will publish it.
+#
+# The board measures the most recent release tag, so a release is the thing that
+# moves the published denominator and the dated changelog entry is what explains
+# the move. Before this, the four steps - bump, date, tag, write the body - were
+# by hand and their only ordering was whatever the person remembered.
+#
+# The release is created as a **draft**, and publish-release.yml flips it when
+# the board carrying its version lands. A full conformance run takes about three
+# hours, so nothing here polls and nothing waits: a draft sitting open states the
+# situation exactly, which is tagged, notes written, board not yet settled. If
+# the run fails, re-dispatch conformance.yml at the tag; that same path finishes
+# the release.
+#
+# So this workflow runs once per version and never has to tolerate its own
+# output, which is what makes its preconditions safe to state absolutely.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (MAJOR.MINOR.PATCH, no leading v)"
+        required: true
+
+permissions:
+  contents: read
+
+# One cut at a time. Queue rather than cancel: a cancelled run can leave a
+# bumped tree committed with no tag behind it.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Bump, date, tag, draft
+    runs-on: ubuntu-latest
+    steps:
+      # The `main: gated PRs` ruleset already lists this App as a bypass actor,
+      # so pushing the bump commit relaxes no protection. It also needs actions
+      # write to dispatch the measurement, and a run dispatched by an App token
+      # starts further workflows where one dispatched by GITHUB_TOKEN would not.
+      - name: Mint a token for the results bot
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RESULTS_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RESULTS_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-actions: write
+
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          # Every tag, so the already-tagged precondition sees all of them.
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Read the head commit's checks and the open releases
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          # This dispatched run creates check runs of its own against main's
+          # head, so an unfiltered read would always find one in progress and
+          # refuse every release. Its own check suite is excluded; every other
+          # check on the commit still has to be complete and green.
+          OURS=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq '.check_suite_id')
+          gh api "repos/${GITHUB_REPOSITORY}/commits/main/check-runs" --paginate \
+            --jq "{ check_runs: [.check_runs[] | select(.check_suite.id != $OURS)] }" \
+            > "$RUNNER_TEMP/checks.json"
+          # Drafts are only visible to a token with push access, which is why
+          # this reads the API rather than the public releases list.
+          gh api "repos/${GITHUB_REPOSITORY}/releases" --paginate --jq '[.[] | {tag_name, draft}]' \
+            > "$RUNNER_TEMP/releases.json"
+
+      # Refuses loudly on every precondition: not main, no pending notes, a red
+      # or unfinished check, an already-tagged or backwards version, a draft
+      # still open. See scripts/release.mjs for why each one is a refusal rather
+      # than a warning.
+      - name: Bump the manifests and date the changelog
+        env:
+          VERSION: ${{ inputs.version }}
+          CHECKS_JSON: ${{ runner.temp }}/checks.json
+          RELEASES_JSON: ${{ runner.temp }}/releases.json
+          NOTES_OUT: ${{ runner.temp }}/release-notes.md
+        run: |
+          set -euo pipefail
+          TAGS=$(git tag --list) node scripts/release.mjs
+          echo "--- release notes ---"
+          cat "$NOTES_OUT"
+
+      # The tagged tree is what gets measured for the next three hours, and
+      # nothing has run against it: the required checks passed on the commit
+      # before the bump, and "both manifests moved together" is not the same as
+      # "the result installs". Without this a bad lockfile yields a tag, a draft
+      # and a conformance run that dies at install, whose first visible symptom
+      # is a draft that never flips.
+      - name: Install against the bumped tree
+        run: npm ci
+
+      - name: Commit the bump
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "chore(release): $VERSION"
+
+      # Annotated, matching every tag the repo already carries.
+      - name: Tag and push
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin main
+          git push origin "v$VERSION"
+
+      # A draft, and its body cut from the changelog in the state the tag
+      # captured rather than reassembled later from a file that has moved on
+      # during the measurement.
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ inputs.version }}
+          NOTES: ${{ runner.temp }}/release-notes.md
+        run: |
+          set -euo pipefail
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes-file "$NOTES" \
+            --draft
+
+      # The measurement that will publish it. Explicit about the ref rather than
+      # letting the resolver pick the latest tag, so this stays correct if
+      # another tag is cut while the run is queued.
+      - name: Measure the new tag
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          gh workflow run conformance.yml --ref "v$VERSION" -f "ref=v$VERSION"
+          echo "::notice title=Release v$VERSION drafted::Conformance is measuring v$VERSION. The draft publishes itself when the board lands, in about three hours."
