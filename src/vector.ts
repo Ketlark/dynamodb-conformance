@@ -10,6 +10,15 @@
 // The waiters follow the shape of waitUntilActive / waitForGsiConsistency in
 // helpers.ts: a ceiling expiring is an IndeterminateError (a failed
 // observation), never a divergence.
+//
+// The readiness contract they implement - poll DescribeTable until IndexStatus
+// is ACTIVE and Backfilling is not true, then prove it with a real search in a
+// retry loop - is what AWS documents, as of the corrections it made to the
+// vector search pages on 2026-08-20. Those followed
+// https://martinhicks.dev/articles/dynamodb-vector-search-docs-get-wrong, which
+// set out three problems in the previous guidance from this suite's
+// measurements. captures/2026-08-21-vector-readiness-docs.json records what the
+// pages said before and after, quote by quote.
 
 import {
   CreateTableCommand,
@@ -197,10 +206,17 @@ export async function describeVectorIndex(
 /**
  * Wait until a vector index is ACTIVE and done backfilling.
  *
- * `Backfilling` is only reported for indexes added via UpdateTable; for an
- * index created with the table, DescribeTable leaves the field unset while
- * the status alone walks to ACTIVE (there is no BACKFILLING status value).
- * An unset field therefore counts as "not backfilling" on both paths.
+ * The predicate is `IndexStatus === 'ACTIVE' && Backfilling !== true`, which is
+ * the check AWS documents: "wait until IndexStatus is ACTIVE and Backfilling is
+ * not true before you search". The `!== true` carries the whole thing.
+ * `Backfilling` is a CREATING-time field that disappears rather than settling
+ * to false, and it is never reported at all for an index created with its
+ * table, so the same check written as `Backfilling === false` never fires on
+ * either path.
+ *
+ * ACTIVE is necessary and not sufficient. SearchVectors is served by a separate
+ * endpoint that can lag behind DescribeTable, so anything that goes on to
+ * search wants waitForVectorIndexSearchable instead.
  */
 export async function waitForVectorIndexActive(
   tableName: string,
@@ -225,10 +241,83 @@ export async function waitForVectorIndexActive(
 }
 
 /**
+ * The two rejections AWS documents for a vector index that is not yet serving
+ * searches: one for the window before the index resolves, one for the backfill
+ * itself. The troubleshooting guide names both, says to treat a
+ * ValidationException as retryable during index creation, and names the first
+ * again for the interval after IndexStatus turns ACTIVE while the dedicated
+ * search endpoint is still catching up.
+ *
+ * Deliberately narrow. A retry loop that absorbed every ValidationException
+ * would bury a genuinely malformed request under a readiness timeout, so
+ * anything outside these two is rethrown as the answer it is.
+ */
+function isVectorIndexNotReady(err: unknown, indexName: string): boolean {
+  if (!(err instanceof DynamoDBServiceException)) return false
+  if (err.name !== 'ValidationException') return false
+  return (
+    err.message.includes(`The table does not have the specified index: ${indexName}`) ||
+    err.message.includes(`Cannot search backfilling vector index: ${indexName}`)
+  )
+}
+
+/**
+ * The readiness check AWS documents, end to end: poll DescribeTable until the
+ * index is ACTIVE and not backfilling, then prove the search endpoint agrees by
+ * issuing a real SearchVectors in a retry loop and taking the first successful
+ * response as the signal.
+ *
+ * Both halves are needed. The status fields alone are not enough — DescribeTable
+ * and SearchVectors are served by different endpoints, and the search one can
+ * begin serving the index a beat after the description says ACTIVE — and a
+ * search alone would spend the whole backfill collecting rejections it could
+ * have waited out. A fixture that asserts anything about a search wants this
+ * rather than waitForVectorIndexActive, or its first assertion races the lag and
+ * reads a readiness rejection as the answer to whatever it asked.
+ *
+ * The probe search must be shaped for the index it probes: a vector of the right
+ * dimensions, and the partition key value if the search schema declares one.
+ * Neither is guessable from here, and a malformed probe rejects for a reason the
+ * loop is right not to swallow.
+ */
+export async function waitForVectorIndexSearchable(opts: {
+  tableName: string
+  indexName: string
+  searchVector: AttributeValue[]
+  searchConditionExpression?: string
+  expressionAttributeValues?: Record<string, AttributeValue>
+  timeoutMs?: number
+}): Promise<void> {
+  // Both halves wait on index readiness, so both take the table-active ceiling.
+  // The consistency ceiling waitForVectorSearchable defaults to is sized for
+  // item visibility on a serving index, which is not what is being waited on.
+  const timeoutMs = opts.timeoutMs ?? ceilingsFor(region).tableActiveMs
+  await waitForVectorIndexActive(opts.tableName, opts.indexName, { timeoutMs })
+  try {
+    await waitForVectorSearchable({ ...opts, expectedCount: 0, timeoutMs })
+  } catch (err) {
+    if (err instanceof IndeterminateError) {
+      // Re-typed: nothing here waits on item visibility, so a consistency
+      // reason would name the wrong thing. The index reached ACTIVE and then
+      // never served a search.
+      throw new IndeterminateError(
+        'vector-index-timeout',
+        `Vector index ${opts.indexName} on ${opts.tableName} became ACTIVE but never served a search`,
+        { cause: err },
+      )
+    }
+    throw err
+  }
+}
+
+/**
  * Wait until a search returns the expected number of results — the vector
  * index is eventually consistent with no documented visibility bound, so a
  * test must hold positive evidence that the index has caught up before it
  * asserts anything about search results (especially an absence).
+ *
+ * An expectedCount of 0 makes this the documented readiness loop on its own:
+ * the first response that comes back at all ends the wait.
  */
 export async function waitForVectorSearchable(opts: {
   tableName: string
@@ -243,17 +332,29 @@ export async function waitForVectorSearchable(opts: {
   const start = Date.now()
   let delay = 0
   while (Date.now() - start < timeoutMs) {
-    const res = await ddb.send(
-      new SearchVectorsCommand({
-        TableName: opts.tableName,
-        IndexName: opts.indexName,
-        SearchVector: opts.searchVector,
-        TopK: Math.max(opts.expectedCount, 1),
-        SearchConditionExpression: opts.searchConditionExpression,
-        ExpressionAttributeValues: opts.expressionAttributeValues,
-      }),
-    )
-    if ((res.SearchResults ?? []).length >= opts.expectedCount) return
+    let found: number | undefined
+    try {
+      const res = await ddb.send(
+        new SearchVectorsCommand({
+          TableName: opts.tableName,
+          IndexName: opts.indexName,
+          SearchVector: opts.searchVector,
+          TopK: Math.max(opts.expectedCount, 1),
+          SearchConditionExpression: opts.searchConditionExpression,
+          ExpressionAttributeValues: opts.expressionAttributeValues,
+        }),
+      )
+      found = (res.SearchResults ?? []).length
+    } catch (err) {
+      // Documented: after DescribeTable first reports ACTIVE, the dedicated
+      // search endpoint can need longer before it serves the index, and
+      // SearchVectors answers ValidationException for that interval. AWS's own
+      // advice is to treat it as retryable and let the first successful
+      // response be the readiness signal, so the loop absorbs exactly those two
+      // rejections and rethrows every other answer.
+      if (!isVectorIndexNotReady(err, opts.indexName)) throw err
+    }
+    if (found !== undefined && found >= opts.expectedCount) return
     if (delay > 0) await sleep(delay)
     // Grows: `delay || 500` re-evaluated to 500 on every pass, so this polled
     // at a flat 500ms and the 2000ms ceiling was unreachable.

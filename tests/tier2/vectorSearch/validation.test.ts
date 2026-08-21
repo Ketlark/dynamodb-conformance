@@ -9,7 +9,7 @@ import {
   skipUnlessVectorIndexes,
   skipUnlessVectorSearch,
   supportsVectorSearch,
-  waitForVectorIndexActive,
+  waitForVectorIndexSearchable,
 } from '../../../src/vector.js'
 
 // Request-model-layer rejections (the "N validation errors detected" family)
@@ -76,7 +76,15 @@ describe('SearchVectors — request validation', { tags: ['search-vectors', 'dat
     // Registered before the create so a partial setup still gets torn down.
     created = true
     await ddb.send(new CreateTableCommand(vectorTableInput(tableName)))
-    await waitForVectorIndexActive(tableName, 'vix')
+    // Searchable, not merely ACTIVE. The not-found case below asserts on "does
+    // not have the specified index", which is also the wording a freshly ACTIVE
+    // index answers while the search endpoint is still catching up, so waiting
+    // on the description alone could pass that case for the wrong reason.
+    await waitForVectorIndexSearchable({
+      tableName,
+      indexName: 'vix',
+      searchVector: [{ N: '1' }, { N: '0' }, { N: '0' }],
+    })
   })
 
   afterAll(async () => {

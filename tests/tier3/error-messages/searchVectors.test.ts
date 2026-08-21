@@ -9,7 +9,7 @@ import { uniqueTableName, deleteTable } from '../../../src/helpers.js'
 import {
   skipUnlessVectorSearch,
   supportsVectorSearch,
-  waitForVectorIndexActive,
+  waitForVectorIndexSearchable,
 } from '../../../src/vector.js'
 
 // Exact SearchVectors rejection messages, characterised against real DynamoDB
@@ -82,8 +82,25 @@ describe('SearchVectors — exact error messages', { tags: ['search-vectors', 'd
         ],
       }),
     )
-    await waitForVectorIndexActive(tableName, 'plain')
-    await waitForVectorIndexActive(tableName, 'schema')
+    // Searchable, not merely ACTIVE. Every case below asserts an exact
+    // rejection message, and the interval where the search endpoint has not yet
+    // begun serving a freshly ACTIVE index answers its own ValidationException
+    // — for the 'plain' index, one whose wording ("does not have the specified
+    // index") is indistinguishable from the answer for a name that never
+    // existed. Waiting on the description alone would let that stand in for
+    // whichever message the case actually asked for.
+    await waitForVectorIndexSearchable({
+      tableName,
+      indexName: 'plain',
+      searchVector: vec(1, 0, 0),
+    })
+    await waitForVectorIndexSearchable({
+      tableName,
+      indexName: 'schema',
+      searchVector: vec(1, 0, 0),
+      searchConditionExpression: 'tenant = :t',
+      expressionAttributeValues: { ':t': { S: 'probe' } },
+    })
   })
 
   afterAll(async () => {

@@ -1,0 +1,135 @@
+{
+  "capturedAt": "2026-08-21",
+  "kind": "documentation",
+  "issue": 125,
+  "supersedes": "captures/2026-08-12-vector-backfill-docs.json",
+  "subject": "What AWS documents about vector index readiness, after the corrections",
+  "note": "Not an API response. AWS rewrote the vector index readiness guidance and the three problems the 2026-08-12 capture recorded are all fixed. That file stays as the dated record of what the pages said when the suite measured them; this one records what they say now, so the assertions that used to rest on measurement alone can cite a documented contract. The corrections were prompted by https://martinhicks.dev/articles/dynamodb-vector-search-docs-get-wrong, which set out the three problems from this suite's measurements.",
+  "measuredOn": {
+    "region": "eu-west-2",
+    "characterisedOn": "2026-08-11",
+    "reMeasuredOn": "2026-08-21",
+    "note": "Most of what this file quotes is behaviour the suite already recorded on 2026-08-11; what changed is the documentation. The corrected pages added one claim the suite had never measured, about DeleteTable during index creation, so that one was measured fresh. Doing so turned up two things the new prose does not account for, recorded under measuredWhileChecking."
+  },
+  "corrections": [
+    {
+      "problem": "The documented state machine described a state the index never occupies.",
+      "was": "It then moves to IndexStatus ACTIVE with Backfilling set to true while DynamoDB populates the index from existing base table data.",
+      "now": "It remains CREATING while DynamoDB populates the index from existing base table data, and reports Backfilling as true during that phase. When the index is ready, IndexStatus becomes ACTIVE and the Backfilling field is no longer reported.",
+      "page": "Data synchronization between tables and vector indexes",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchDataSync.html",
+      "anchor": "VectorSearchDataSync.Backfilling",
+      "alsoFixedIn": [
+        "VectorSearchWorkingWith.html - the numbered walk now reads CREATING with Backfilling absent or false, then CREATING with Backfilling true, then ACTIVE with Backfilling no longer reported.",
+        "VectorSearchTroubleshooting.html - the cause cell now reads 'IndexStatus is CREATING, either while the index is provisioned or while it backfills existing data', dropping the ACTIVE-plus-backfilling half."
+      ]
+    },
+    {
+      "problem": "The readiness check was written against a field that disappears rather than settling to false, so a literal implementation never fired.",
+      "was": "Use DescribeTable and wait until IndexStatus is ACTIVE and Backfilling is false before you search.",
+      "now": "Use DescribeTable and wait until IndexStatus is ACTIVE and Backfilling is not true before you search.",
+      "page": "Data synchronization between tables and vector indexes",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchDataSync.html",
+      "anchor": "VectorSearchDataSync.Backfilling",
+      "alsoFixedIn": [
+        "VectorSearchWorkingWith.html - 'wait until IndexStatus is ACTIVE and Backfilling is not true before you search'.",
+        "VectorSearchTroubleshooting.html - 'wait until IndexStatus is ACTIVE and Backfilling is not true, then retry the search'.",
+        "VectorSearchTutorial.html - 'wait until IndexStatus is ACTIVE and Backfilling is not true before you search', plus a new sentence that Backfilling is reported only while the index is CREATING and is absent once it is ACTIVE."
+      ],
+      "residual": {
+        "page": "Troubleshooting vector indexes",
+        "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchTroubleshooting.html",
+        "anchor": "VectorSearchTroubleshooting.ChangePartitionKey",
+        "quote": "Wait for the new index to finish backfilling. Call DescribeTable and confirm that IndexStatus is ACTIVE and Backfilling is false.",
+        "note": "One step of the partition-key migration runbook still says false rather than not true. The main guidance on all four pages is corrected; this one instance is not, and a reader following it waits on a field that is gone. Left recorded rather than asserted, because the suite has no way to test a runbook step."
+      }
+    },
+    {
+      "problem": "The tutorial said searching during backfill could return incomplete results, which contradicted the other three pages and the measured behaviour.",
+      "was": "Searching an index that is not yet ACTIVE fails, and searching during backfill can return incomplete results.",
+      "now": "Searching an index that is not yet ACTIVE fails with a ValidationException. Searching during backfill also returns a ValidationException. It does not return partial results.",
+      "page": "Tutorial: Your first vector search",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchTutorial.html",
+      "anchor": "VectorSearchTutorial"
+    }
+  ],
+  "newlyDocumented": [
+    {
+      "subject": "DescribeTable reporting ACTIVE leads the search endpoint.",
+      "page": "Creating and searching vector indexes",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchWorkingWith.html",
+      "anchor": "VectorSearchWorkingWith.Create.ExistingTable",
+      "callout": "A newly ready index is not immediately searchable",
+      "quote": "SearchVectors requests are served by a dedicated search endpoint, separate from the endpoint that serves DescribeTable. After DescribeTable first reports IndexStatus ACTIVE, the search endpoint can require additional time before it begins serving the index. During that interval SearchVectors returns a ValidationException, typically The table does not have the specified index.",
+      "secondQuote": "Treat a ValidationException on the first searches after index creation as retryable rather than as a failure. Code that searches immediately after observing ACTIVE might appear to work in one environment and fail in another. The interval is brief and varies.",
+      "thirdQuote": "For a readiness check that does not depend on either status field, issue a real SearchVectors request in a retry loop. Treat the first successful response as the signal that the index is ready.",
+      "note": "The suite measured this and built its waiters around it before it was documented. The troubleshooting table now carries a matching row whose symptom is the not-found wording arriving while DescribeTable reports ACTIVE."
+    },
+    {
+      "subject": "The table waiter is the wrong gate for a search.",
+      "page": "Tutorial: Your first vector search",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchTutorial.html",
+      "anchor": "VectorSearchTutorial",
+      "callout": "Wait for the index, not just the table",
+      "quote": "Do not use aws dynamodb wait table-exists to gate the search. That waiter matches on Table.TableStatus, which becomes ACTIVE while the vector index can still be CREATING. There is no waiter for vector index readiness, so you must poll DescribeTable as shown."
+    },
+    {
+      "subject": "Backfill duration does not scale with the item count.",
+      "page": "Data synchronization between tables and vector indexes",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchDataSync.html",
+      "anchor": "VectorSearchDataSync.Backfilling",
+      "quote": "Index construction drives backfill duration, not the number of items in the base table. Even a table with very few items can take a substantial amount of time to finish backfilling. Poll DescribeTable rather than assuming a small table will be ready quickly.",
+      "note": "Matches the suite's own figure: roughly 17 minutes for an index added to a 25-item table. Not asserted, since a duration is not a contract, but it is why the UpdateTable walk carries a 2,400-second ceiling."
+    },
+    {
+      "subject": "The two pre-ready rejections are named.",
+      "page": "Troubleshooting vector indexes",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchTroubleshooting.html",
+      "anchor": "VectorSearchTroubleshooting",
+      "symptom": "ValidationException: Cannot search backfilling vector index: <indexName> or ValidationException: The table does not have the specified index: <indexName>",
+      "cause": "The vector index is not yet ready for search. IndexStatus is CREATING, either while the index is provisioned or while it backfills existing data.",
+      "resolution": "Use DescribeTable and wait until IndexStatus is ACTIVE and Backfilling is not true, then retry the search. Treat ValidationException as retryable during index creation.",
+      "note": "Both messages match what the suite recorded on 2026-08-11. The first is also the answer for an index name that never existed, so it carries no information on its own about which of the two situations a caller is in."
+    },
+    {
+      "subject": "A table cannot be deleted while a vector index is being created.",
+      "page": "Tutorial: Your first vector search",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/VectorSearchTutorial.html",
+      "anchor": "VectorSearchTutorial",
+      "callout": "Wait for the index, not just the table",
+      "quote": "For the same reason, you cannot delete the table until every vector index has finished creating. DeleteTable returns ResourceInUseException with the message \"Cannot delete table while indexes are being created, updated, or deleted.\"",
+      "measured": "Confirmed on the UpdateTable path. The answer is ResourceInUseException with the message \"Attempt to change a resource which is still in use: Cannot delete table while indexes are being created, updated, or deleted.\" The documented sentence is the clause after the envelope, not the whole message, so the suite asserts the clause within it."
+    }
+  ],
+  "stillSilent": {
+    "page": "SearchVectors API reference",
+    "url": "https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_SearchVectors.html",
+    "quote": "The index must be in the ACTIVE state.",
+    "note": "Unchanged. The IndexName parameter still requires ACTIVE, ResourceNotFoundException still notes that a resource's status might not be ACTIVE, and neither mentions backfilling, the Backfilling flag, or the endpoint lag. The listed errors still omit the ValidationException the pre-ready window actually returns, so a reader working from the API reference alone would expect a not-found and write a retry that never fires."
+  },
+  "assertionStatus": {
+    "createTablePath": "tests/tier2/vectorSearch/lifecycle.test.ts asserts Backfilling stays undefined on every poll and that seen statuses stay within CREATING and ACTIVE. A second block runs the documented readiness check end to end: poll to ACTIVE, then search in a retry loop, with every rejection before the first served response required to be a ValidationException carrying one of the two named messages.",
+    "updateTablePath": "tests/tier2/vectorSearch/updateLifecycle.test.ts now pins the pairing the old prose got wrong. Backfilling true is asserted to occur only alongside CREATING, an ACTIVE index is asserted to report no Backfilling field at all, and the base table is required to have been seen ACTIVE while the index was still CREATING. The first search that succeeds must carry every seeded item, which is the tutorial's corrected claim that the backfill window returns an error rather than a partial view.",
+    "readinessPredicate": "src/vector.ts implements the documented wait as IndexStatus ACTIVE and Backfilling not true, and src/vector.test.ts pins each cell of it so neither the ACTIVE-only reading nor the equals-false reading can return.",
+    "endpointLag": "src/vector.ts treats the two named rejections as retryable inside the search wait and rethrows every other answer, so a malformed request still surfaces as itself rather than as a readiness timeout. Fixtures that assert on an exact rejection message now wait for a served search rather than for ACTIVE, since the not-found wording would otherwise stand in for whichever message the case asked for.",
+    "deleteDuringCreation": "tests/tier2/vectorSearch/updateLifecycle.test.ts carries a second test that adds an index to a live table, waits for the table to return to ACTIVE with the index still CREATING, and asserts the documented ResourceInUseException. It then cancels the index rather than waiting out the backfill, and asserts the table is deletable once the index is gone."
+  },
+  "measuredWhileChecking": [
+    {
+      "subject": "On the CreateTable path there is no window in which the table is ACTIVE and the vector index is not.",
+      "measured": "Three runs in eu-west-2 on 2026-08-21, polling DescribeTable every 250ms from the CreateTable call. In all three the table and the index reported ACTIVE in the same poll, at 14.8s, 15.1s and 14.2s. No poll ever saw TableStatus ACTIVE beside IndexStatus CREATING.",
+      "consequence": "The tutorial gives that state as the reason not to gate a search on \"aws dynamodb wait table-exists\": \"That waiter matches on Table.TableStatus, which becomes ACTIVE while the vector index can still be CREATING.\" The advice is sound, and the state does occur, but on the UpdateTable path rather than the CreateTable path the tutorial walks the reader through. A reader testing the warning against the tutorial's own steps would not reproduce it.",
+      "pinned": "No. A target whose table and index settle together is not diverging, and asserting simultaneity would assert the outcome of a race. The suite pins the state where it is reachable by construction, in the UpdateTable walk, and leaves this as a measurement."
+    },
+    {
+      "subject": "The DeleteTable refusal during CreateTable-path index creation cites the table, not the index.",
+      "measured": "DeleteTable issued immediately after CreateTable, while both the table and the index were CREATING, answered ResourceInUseException: \"Attempt to change a resource which is still in use: Table is being created: <tableName>\". The documented index wording was not returned on this path in any run.",
+      "consequence": "The documented message is reachable only once the table is ACTIVE, which on this path is also the moment the index becomes ACTIVE. The claim belongs to the UpdateTable path, though the callout making it sits in the CreateTable tutorial."
+    },
+    {
+      "subject": "A vector index still CREATING accepts a Delete.",
+      "measured": "With the table ACTIVE and the index CREATING with Backfilling true, UpdateTable with a Delete action for that index was accepted rather than refused by the one-online-action limit. The index moved to DELETING, the table to UPDATING, and the index was gone about five seconds later, after which DeleteTable succeeded.",
+      "note": "Undocumented either way, and it matches how a backfilling GSI behaves. It is what lets the suite test the refusal in about a minute instead of waiting out a seventeen-minute backfill to release the table."
+    }
+  ]
+}

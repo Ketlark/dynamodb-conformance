@@ -134,6 +134,18 @@ describe('supportsVectorIndexes', () => {
   })
 })
 
+/** The documented readiness predicate, exercised cell by cell. */
+async function settlesOn(index: Record<string, unknown>): Promise<boolean> {
+  const vector = await loadVector()
+  sendMock.mockResolvedValue({
+    Table: { VectorIndexes: [{ IndexName: 'vix', ...index }] },
+  })
+  return await vector
+    .waitForVectorIndexActive('t', 'vix', { timeoutMs: 30 })
+    .then(() => true)
+    .catch(() => false)
+}
+
 describe('waitForVectorIndexActive', () => {
   it('resolves once the index is ACTIVE and not backfilling', async () => {
     const vector = await loadVector()
@@ -141,6 +153,27 @@ describe('waitForVectorIndexActive', () => {
       Table: { VectorIndexes: [{ IndexName: 'vix', IndexStatus: 'ACTIVE' }] },
     })
     await expect(vector.waitForVectorIndexActive('t', 'vix')).resolves.toBeUndefined()
+  })
+
+  // AWS documents the wait as "IndexStatus is ACTIVE and Backfilling is not
+  // true". An absent field is the terminal state on both creation paths, so
+  // reading the check as `Backfilling === false` would wait forever; and ACTIVE
+  // on its own would return during a backfill if one were ever reported that
+  // way. Each cell is pinned so neither reading can creep back in.
+  it('treats an absent Backfilling field as done', async () => {
+    expect(await settlesOn({ IndexStatus: 'ACTIVE' })).toBe(true)
+  })
+
+  it('treats Backfilling false as done', async () => {
+    expect(await settlesOn({ IndexStatus: 'ACTIVE', Backfilling: false })).toBe(true)
+  })
+
+  it('keeps waiting while Backfilling is true, whatever the status says', async () => {
+    expect(await settlesOn({ IndexStatus: 'ACTIVE', Backfilling: true })).toBe(false)
+  })
+
+  it('keeps waiting while the status is CREATING, whatever Backfilling says', async () => {
+    expect(await settlesOn({ IndexStatus: 'CREATING', Backfilling: false })).toBe(false)
   })
 
   it('types a ceiling expiry as indeterminate, never a divergence', async () => {
@@ -188,5 +221,126 @@ describe('waitForVectorSearchable', () => {
       .catch((e: unknown) => e)) as { name?: string; reason?: string } | null
     expect(err?.name).toBe('IndeterminateError')
     expect(err?.reason).toBe('vector-consistency-timeout')
+  })
+
+  // The search endpoint can lag DescribeTable, and AWS documents the resulting
+  // ValidationException as retryable rather than as an answer. The loop absorbs
+  // the two readiness rejections by name and nothing else, so a malformed
+  // request still surfaces as itself instead of as a readiness timeout.
+  it('retries through a readiness rejection and returns on the first real answer', async () => {
+    const vector = await loadVector()
+    let calls = 0
+    sendMock.mockImplementation(() => {
+      calls += 1
+      if (calls === 1) {
+        return Promise.reject(
+          serviceError('ValidationException', 'The table does not have the specified index: vix'),
+        )
+      }
+      if (calls === 2) {
+        return Promise.reject(
+          serviceError('ValidationException', 'Cannot search backfilling vector index: vix'),
+        )
+      }
+      return Promise.resolve({ SearchResults: [{}] })
+    })
+    await expect(
+      vector.waitForVectorSearchable({
+        tableName: 't',
+        indexName: 'vix',
+        searchVector: [{ N: '1' }],
+        expectedCount: 1,
+      }),
+    ).resolves.toBeUndefined()
+    expect(calls).toBe(3)
+  })
+
+  it('rethrows a rejection that is not about readiness', async () => {
+    const vector = await loadVector()
+    sendMock.mockRejectedValue(
+      serviceError('ValidationException', 'Provided TopK value is out of valid range'),
+    )
+    await expect(
+      vector.waitForVectorSearchable({
+        tableName: 't',
+        indexName: 'vix',
+        searchVector: [{ N: '1' }],
+        expectedCount: 1,
+      }),
+    ).rejects.toThrow('Provided TopK value is out of valid range')
+  })
+
+  it('rethrows a readiness rejection that names a different index', async () => {
+    const vector = await loadVector()
+    sendMock.mockRejectedValue(
+      serviceError('ValidationException', 'The table does not have the specified index: other'),
+    )
+    await expect(
+      vector.waitForVectorSearchable({
+        tableName: 't',
+        indexName: 'vix',
+        searchVector: [{ N: '1' }],
+        expectedCount: 1,
+      }),
+    ).rejects.toThrow('The table does not have the specified index: other')
+  })
+})
+
+describe('waitForVectorIndexSearchable', () => {
+  it('waits for ACTIVE, then for the search endpoint to serve the index', async () => {
+    const vector = await loadVector()
+    let searches = 0
+    sendMock.mockImplementation((cmd) => {
+      if (named(cmd) === 'DescribeTableCommand') {
+        return Promise.resolve({
+          Table: { VectorIndexes: [{ IndexName: 'vix', IndexStatus: 'ACTIVE' }] },
+        })
+      }
+      searches += 1
+      if (searches === 1) {
+        return Promise.reject(
+          serviceError('ValidationException', 'The table does not have the specified index: vix'),
+        )
+      }
+      return Promise.resolve({ SearchResults: [] })
+    })
+    await expect(
+      vector.waitForVectorIndexSearchable({
+        tableName: 't',
+        indexName: 'vix',
+        searchVector: [{ N: '1' }],
+      }),
+    ).resolves.toBeUndefined()
+    // An empty index is ready: the first response that comes back at all ends
+    // the wait, whether or not it carries results.
+    expect(searches).toBe(2)
+  })
+
+  // Nothing here waits on item visibility, so the consistency reason would name
+  // the wrong failure. An index that goes ACTIVE and never serves a search is an
+  // index timeout.
+  it('types a search that never gets served as an index timeout', async () => {
+    const vector = await loadVector()
+    sendMock.mockImplementation((cmd) => {
+      if (named(cmd) === 'DescribeTableCommand') {
+        return Promise.resolve({
+          Table: { VectorIndexes: [{ IndexName: 'vix', IndexStatus: 'ACTIVE' }] },
+        })
+      }
+      return Promise.reject(
+        serviceError('ValidationException', 'The table does not have the specified index: vix'),
+      )
+    })
+    const err = (await vector
+      .waitForVectorIndexSearchable({
+        tableName: 't',
+        indexName: 'vix',
+        searchVector: [{ N: '1' }],
+        timeoutMs: 30,
+      })
+      .then(() => null)
+      .catch((e: unknown) => e)) as { name?: string; reason?: string } | null
+    expect(err?.name).toBe('IndeterminateError')
+    expect(err?.reason).toBe('vector-index-timeout')
   })
 })

@@ -478,7 +478,7 @@ npm test
 | Local emulators | ~2-5 seconds | ~2-5 seconds |
 | Real DynamoDB | ~1-3.5 hours | ~20-25 minutes |
 
-The full suite includes slow online-index lifecycle tests: 14 UpdateTable GSI tests that add and remove Global Secondary Indexes from existing tables, plus the UpdateTable vector index lifecycle test, which backfills on the same machinery. On real DynamoDB, each index creation triggers a backfill that usually takes 5-15 minutes even on small tables, and has been observed taking 25+ on a slow night (a 25-item vector index took ~17). These tests are important for conformance but they dominate runtime against real AWS.
+The full suite includes slow online-index lifecycle tests: 14 UpdateTable GSI tests that add and remove Global Secondary Indexes from existing tables, plus two UpdateTable vector index tests, which backfill on the same machinery: the lifecycle walk, and a shorter one asserting that the table cannot be deleted while an index is still being created. That second one cancels the index rather than waiting the backfill out, so it costs about a minute. On real DynamoDB, each index creation triggers a backfill that usually takes 5-15 minutes even on small tables, and has been observed taking 25+ on a slow night (a 25-item vector index took ~17). These tests are important for conformance but they dominate runtime against real AWS.
 
 `test:quick` excludes the online-index lifecycle tests (GSI and vector) for faster local iteration. CI's gating real-DynamoDB job runs `test:gating`, which drops those *and* the S3 and Kinesis integration suites (see "Operations every emulator skips" above), so a slow async import can't redden the build. Emulator targets run the full `npm test` since index creation is instant locally.
 

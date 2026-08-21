@@ -8,6 +8,48 @@ section its date and version, so several branches can write ahead of one.
 
 ## Unreleased
 
+AWS corrected the vector index readiness documentation, prompted by [a write-up
+of the earlier guidance][vector-docs] that drew on the suite's measurements. The
+ACTIVE-plus-backfilling state the old advice was built around, and which no
+index ever occupies, is gone from the three pages that described it. The wait
+now reads "Backfilling is not true" rather than "is false", so a check written
+literally from it fires on both creation paths instead of neither. The tutorial
+no longer says a search during backfill can return incomplete results. Two
+things the suite had measured but nobody had written down are documented as
+well: that DescribeTable reporting ACTIVE leads the dedicated search endpoint,
+and that the readiness check depending on neither status field is a real search
+in a retry loop.
+
+[vector-docs]: https://martinhicks.dev/articles/dynamodb-vector-search-docs-get-wrong
+
+That contract is now pinned rather than described. The UpdateTable walk asserts
+that Backfilling true is only ever reported alongside CREATING, that an ACTIVE
+index reports no Backfilling field at all, and that the base table goes ACTIVE
+while the index is still building, which is what makes a table waiter the wrong
+gate for a search. The first search that succeeds has to carry every seeded
+item, since the backfill window answers with an error rather than a partial
+view. On the CreateTable path a new test runs the documented check the way an
+application would, and every rejection before the first served response has to
+be the retryable ValidationException rather than a not-found.
+
+The suite's own search wait now absorbs those two rejections and rethrows every
+other answer, so a fixture waiting on an index that is ACTIVE but not yet served
+no longer fails on the lag it was waiting out. Two files asserting exact
+rejection messages wait for a served search rather than for ACTIVE: "does not
+have the specified index" is also what a freshly ACTIVE index says, and it would
+otherwise stand in for whichever message the case asked for.
+
+The tutorial's other new claim, that a table cannot be deleted while a vector
+index is being created, has a test of its own. Only the UpdateTable path can ask
+it. Across three runs an index created with its table reached ACTIVE in the same
+250ms poll as the table, so the table is never ACTIVE with the index still
+building there, and a DeleteTable during creation is refused for the table's own
+status rather than with the documented index wording. Adding an index to a live
+table opens that window about thirty seconds in. The test cancels the index
+afterwards instead of waiting out the backfill, which a still-creating vector
+index turns out to accept the way a backfilling GSI does, so it costs a minute
+rather than seventeen.
+
 A release now dispatches its measurement as the results bot rather than with
 the workflow's own token. GitHub raises no `workflow_run` event when a run
 started by `GITHUB_TOKEN` finishes, so 3.2.0 measured green for three hours and

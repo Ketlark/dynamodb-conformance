@@ -27,6 +27,42 @@ baseline lives in the dated snapshot below instead, and the scheduled-run drift
 verdict flags when it needs refreshing. Currently seeded from the 2026-06-09
 capture until the first scheduled run overwrites it.
 
+## 2026-08-21-vector-readiness-docs.json
+
+AWS rewrote the vector index readiness guidance, and all three problems the
+2026-08-12 capture recorded are fixed: the impossible ACTIVE-plus-backfilling
+state is gone from every page that carried it, the wait now reads "Backfilling
+is not true" rather than "is false", and the tutorial no longer claims a search
+during backfill can return incomplete results. The corrections were prompted by
+[a write-up of those three problems][writeup], which drew on this suite's
+measurements.
+
+[writeup]: https://martinhicks.dev/articles/dynamodb-vector-search-docs-get-wrong
+
+This file records what the pages say now, quote by quote against what they said
+before, so the assertions that used to rest on measurement alone can cite a
+documented contract. It also records what is newly documented and was not
+before: that DescribeTable reporting ACTIVE leads the dedicated search endpoint,
+that the ValidationException answered in between is retryable, and that the
+readiness check which depends on neither status field is a real search in a
+retry loop. One residual is noted rather than asserted, since the suite cannot
+test a runbook step: the partition-key migration steps still say to wait for
+Backfilling false.
+
+Most of it needed no re-measuring: the behaviour it quotes is what the suite
+recorded on 2026-08-11, and what moved is the documentation. The corrected pages
+do carry one claim the suite had never measured, that a table cannot be deleted
+while a vector index is being created, so that one was measured fresh. It holds.
+
+Measuring it turned up two things the new prose does not account for, both filed
+under `measuredWhileChecking`. The tutorial gives "the table goes ACTIVE while
+the index can still be CREATING" as its reason not to gate a search on `wait
+table-exists`, but on the CreateTable path the tutorial itself walks, the table
+and the index reached ACTIVE in the same 250ms poll on all three runs. The state
+is real and the advice is sound; it is the UpdateTable path that shows it. A
+DeleteTable during CreateTable-path index creation is likewise refused for the
+table's own status, not with the documented index wording.
+
 ## 2026-08-12-vector-backfill-docs.json
 
 The one capture that is not an API response. AWS's developer guide states two
@@ -37,8 +73,11 @@ incomplete results", and the API reference is silent. The suite asserts the
 error, so this file fixes the prose on both sides with its URLs and anchors,
 dated, rather than leaving the claim resting on a changelog sentence. Measured
 behaviour lives in `tests/tier2/vectorSearch/updateLifecycle.test.ts`; this is
-the evidence for the disagreement it settles. Re-check it if AWS edits either
-side.
+the evidence for the disagreement it settles.
+
+Superseded on 2026-08-21, when AWS corrected the pages. Kept as the dated record
+of what they said while the suite was measuring them; see
+`2026-08-21-vector-readiness-docs.json` above for what they say now.
 
 ## 2026-07-21-null-false-envelope.json
 
