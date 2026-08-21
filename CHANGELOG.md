@@ -8,6 +8,8 @@ section its date and version, so several branches can write ahead of one.
 
 ## Unreleased
 
+## 2026-08-21 (3.2.1)
+
 AWS corrected the vector index readiness documentation, prompted by [a write-up
 of the earlier guidance][vector-docs] that drew on the suite's measurements. The
 ACTIVE-plus-backfilling state the old advice was built around, and which no
