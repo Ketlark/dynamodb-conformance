@@ -884,6 +884,12 @@
         "create-table",
         "control-plane",
         "vector"
+      ],
+      "SearchVectors — index readiness after CreateTable": [
+        "search-vectors",
+        "create-table",
+        "data-plane",
+        "vector"
       ]
     },
     "tests/tier2/vectorSearch/partiql.test.ts": {
@@ -903,6 +909,7 @@
     "tests/tier2/vectorSearch/updateLifecycle.test.ts": {
       "UpdateTable — vector index lifecycle": [
         "update-table",
+        "delete-table",
         "search-vectors",
         "control-plane",
         "vector",
