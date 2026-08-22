@@ -58,7 +58,7 @@ Rows are sorted by divergence. The tier columns are divergence within that tier,
 
 `me-south-1` has been dropped from the observed set and is not scored against.
 
-_Suite v3.2.1, measured against real DynamoDB on 2026-08-21. Region health as of 2026-08-15._
+_Suite v3.2.1, measured against real DynamoDB on 2026-08-21. Region health as of 2026-08-22._
 
 | Target | Grade | Version | Divergence | Coverage | Fail | Skip | Tier 1 | Tier 2 | Tier 3 | Regions |
 |--------|-------|---------|-----------|----------|------|------|--------|--------|--------|---------|
