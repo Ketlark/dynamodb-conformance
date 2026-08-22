@@ -3,8 +3,12 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  ABANDON_PROVISIONING_AFTER,
   clearIndeterminateMarker,
   clearStaleSidecar,
+  noteProvisioningFailed,
+  noteProvisioningSucceeded,
+  provisioningAbandoned,
   recordRunLevel,
   resetSinkForTesting,
   resultSlug,
@@ -80,6 +84,40 @@ describe('recordRunLevel', () => {
   it('records nothing at all for a clean run: no file exists', () => {
     // Absence of the sidecar is the signal that nothing was absent.
     expect(existsSync(sidecarPath('dynamodb', dir))).toBe(false)
+  })
+})
+
+describe('provisioningAbandoned', () => {
+  it('holds off until provisioning has failed enough files running', () => {
+    for (let i = 0; i < ABANDON_PROVISIONING_AFTER - 1; i++) {
+      noteProvisioningFailed()
+      expect(provisioningAbandoned()).toBe(false)
+    }
+    noteProvisioningFailed()
+    expect(provisioningAbandoned()).toBe(true)
+  })
+
+  it('does not abandon a target over failures a later file recovered from', () => {
+    // The per-file retry exists for exactly this: a transient fault during one
+    // file's provisioning must not take out the files behind it, however many
+    // separate blips a long run accumulates.
+    for (let i = 0; i < ABANDON_PROVISIONING_AFTER * 3; i++) {
+      noteProvisioningFailed()
+      noteProvisioningSucceeded()
+    }
+    expect(provisioningAbandoned()).toBe(false)
+  })
+
+  it('starts counting again from zero after a recovery', () => {
+    noteProvisioningFailed()
+    noteProvisioningFailed()
+    noteProvisioningSucceeded()
+    for (let i = 0; i < ABANDON_PROVISIONING_AFTER - 1; i++) noteProvisioningFailed()
+    expect(provisioningAbandoned()).toBe(false)
+  })
+
+  it('is false for a run that has never failed provisioning', () => {
+    expect(provisioningAbandoned()).toBe(false)
   })
 })
 
