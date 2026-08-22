@@ -15,8 +15,24 @@ const retryConfig = {
   retryMode: 'standard',
 } as const
 
+// Connect timeout, pinned for the same reason as the retry policy and left
+// unset by the SDK: @smithy/node-http-handler applies no connectionTimeout of
+// its own, so establishing a TCP connection is bounded only by the kernel,
+// which gives up on an unroutable address after roughly two minutes. Both
+// outcomes classify as `transport` either way, so this changes how long a
+// failed observation takes to reach that verdict, never what the verdict is.
+//
+// Only the connection is bounded. requestTimeout stays off: a control-plane
+// call that legitimately runs long (a table creation, a GSI backfill) must not
+// be cut off and misread as a failed observation.
+const CONNECTION_TIMEOUT_MS = 5_000
+
+const httpConfig = {
+  requestHandler: { connectionTimeout: CONNECTION_TIMEOUT_MS },
+} as const
+
 /** Low-level DynamoDB client */
-export const ddb = new DynamoDBClient({ ...commonConfig, ...retryConfig })
+export const ddb = new DynamoDBClient({ ...commonConfig, ...retryConfig, ...httpConfig })
 
 /** DynamoDB Streams client */
-export const ddbStreams = new DynamoDBStreamsClient({ ...commonConfig, ...retryConfig })
+export const ddbStreams = new DynamoDBStreamsClient({ ...commonConfig, ...retryConfig, ...httpConfig })

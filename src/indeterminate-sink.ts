@@ -95,6 +95,46 @@ export function recordedRunLevel(): readonly RunLevelIndeterminate[] {
   return recorded
 }
 
+// ── Abandoning an unreachable target ────────────────────────────────────────
+//
+// The shared tables are provisioned in a beforeAll that vitest runs once per
+// test file, and a rejected attempt is dropped from the memo in src/helpers.ts
+// so the next file tries again. That retry earns its place: a transient fault
+// during one file's provisioning must not take out the hundred files behind
+// it.
+//
+// A target whose endpoint never answers is the other case, and the same retry
+// turns it into one failed attempt per test file, each paying the SDK's full
+// retry budget before it gives up. The weekly sweep runs inside a two-hour
+// credential window, so a region that has gone dark spends the entire window
+// re-answering a question already settled by its first failure - and settled in
+// the artefact too, because that failure wrote the sidecar.
+//
+// So the retry is kept and bounded. Consecutive failures, reset by any
+// provisioning that succeeds, so a blip costs one attempt and a dark target
+// costs this many.
+export const ABANDON_PROVISIONING_AFTER = 3
+
+let consecutiveProvisioningFailures = 0
+
+/** Note that provisioning succeeded, clearing any run of failures before it. */
+export function noteProvisioningSucceeded(): void {
+  consecutiveProvisioningFailures = 0
+}
+
+/** Note that provisioning failed on a failed observation. Determinate
+ * failures are not counted: a target answering definitely is reachable, and
+ * whatever it is refusing is a real result for every file that asks. */
+export function noteProvisioningFailed(): void {
+  consecutiveProvisioningFailures += 1
+}
+
+/** True once provisioning has failed enough files running to call the target
+ * unreachable for this run. */
+export function provisioningAbandoned(): boolean {
+  return consecutiveProvisioningFailures >= ABANDON_PROVISIONING_AFTER
+}
+
 /** Remove a previous run's sidecar. A clean run must leave no sidecar behind. */
 export function clearStaleSidecar(opts: { slug?: string; dir?: string } = {}): void {
   rmSync(sidecarPath(opts.slug ?? resultSlug(), opts.dir ?? resultsDir()), {
@@ -105,6 +145,7 @@ export function clearStaleSidecar(opts: { slug?: string; dir?: string } = {}): v
 /** Test hook: reset the in-memory sink between unit tests. */
 export function resetSinkForTesting(): void {
   recorded.length = 0
+  consecutiveProvisioningFailures = 0
 }
 
 // ── Test-level marker hooks ─────────────────────────────────────────────────

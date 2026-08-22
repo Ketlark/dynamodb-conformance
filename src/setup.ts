@@ -1,7 +1,11 @@
 import { cleanupAllTablesOnce, provisionDeclaredTables } from './helpers.js'
-import { indeterminateFrom } from './indeterminate.js'
+import { IndeterminateError, indeterminateFrom } from './indeterminate.js'
 import {
+  ABANDON_PROVISIONING_AFTER,
   clearIndeterminateMarker,
+  noteProvisioningFailed,
+  noteProvisioningSucceeded,
+  provisioningAbandoned,
   recordRunLevel,
   stampIndeterminateMarker,
 } from './indeterminate-sink.js'
@@ -16,8 +20,21 @@ import { clearObservedMarker } from './observation-sink.js'
 // run start. Final teardown runs once in src/global-teardown.ts.
 beforeAll(async () => {
   try {
+    // A target that has failed provisioning this many files running is
+    // unreachable for this run, and the sidecar saying so was written by the
+    // first of those failures. Attempting again cannot change the run's verdict
+    // and costs another full retry budget, so the remaining files give up
+    // immediately - see ABANDON_PROVISIONING_AFTER for why the retry is bounded
+    // rather than removed.
+    if (provisioningAbandoned()) {
+      throw new IndeterminateError(
+        'transport',
+        `provisioning abandoned: ${ABANDON_PROVISIONING_AFTER} consecutive failed observations`,
+      )
+    }
     await cleanupAllTablesOnce()
     await provisionDeclaredTables()
+    noteProvisioningSucceeded()
   } catch (e: unknown) {
     // Vitest does not retry beforeAll, so a provisioning failure takes out the
     // whole run and no test ever executes to annotate itself. When the failure
@@ -26,6 +43,7 @@ beforeAll(async () => {
     // produced nothing" instead of several hundred behavioural disagreements.
     const indeterminate = indeterminateFrom(e)
     if (indeterminate) {
+      noteProvisioningFailed()
       recordRunLevel({
         reason: indeterminate.reason,
         phase: 'provisioning',
