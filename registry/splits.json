@@ -955,6 +955,255 @@
         "date": "2026-08-12",
         "issue": "https://github.com/paritysuite/dynamodb-conformance/issues/126"
       }
+    },
+    {
+      "id": "batch-write-item-empty-request-items-message",
+      "test": {
+        "file": "tests/tier3/error-messages/batchWriteItem.test.ts",
+        "fullName": "BatchWriteItem — exact error messages empty RequestItems: full required-parameter error"
+      },
+      "behaviour": "BatchWriteItem with an empty RequestItems map: the 2026-06 validation-framework rollout reaching the operation beside BatchGetItem. eu-north-1 answers the framework's generic constraint message; the other 32 answering regions answer the bespoke required-parameter sentence. The 2026-08-17 capture found every answering region on the bespoke wording, which dates the crossing to that week. Unlike its BatchGetItem neighbour this one is answering consistently: eu-north-1 gave the generic message on five sweep re-runs and on every observation since, and no other region has given it once.",
+      "pinned": "eu-west-2",
+      "firstObserved": "2026-08-22",
+      "lastRefreshed": "2026-08-22",
+      "captures": [
+        "captures/2026-08-17-batch-empty-request-items.json",
+        "captures/2026-08-22-batch-validation-messages.json",
+        "https://github.com/paritysuite/dynamodb-conformance/actions/runs/32549181630"
+      ],
+      "regions": {
+        "af-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-east-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-northeast-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-northeast-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-northeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-southeast-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-southeast-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-southeast-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-southeast-4": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-southeast-5": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-southeast-6": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ap-southeast-7": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ca-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "ca-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "eu-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "eu-central-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "eu-north-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "1 validation error detected: Value at 'RequestItems' failed to satisfy constraint: Member must have length greater than or equal to 1"
+          }
+        },
+        "eu-south-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "eu-south-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "eu-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "eu-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "eu-west-3": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "il-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "me-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "mx-central-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "sa-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "us-east-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "us-east-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "us-west-1": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        },
+        "us-west-2": {
+          "outcome": "rejected",
+          "error": {
+            "name": "ValidationException",
+            "message": "The requestItems parameter is required for BatchWriteItem"
+          }
+        }
+      }
     }
   ]
 }

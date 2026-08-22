@@ -39,7 +39,28 @@ import {
 } from '@aws-sdk/client-dynamodb'
 
 const DEFAULT_REGIONS = ['eu-west-2', 'eu-central-1', 'us-east-1', 'ap-southeast-2']
-const regions = process.argv.slice(2).length ? process.argv.slice(2) : DEFAULT_REGIONS
+
+const args = process.argv.slice(2)
+const flags = args.filter((a) => a.startsWith('--'))
+const regions = args.filter((a) => !a.startsWith('--')).length
+  ? args.filter((a) => !a.startsWith('--'))
+  : DEFAULT_REGIONS
+
+// `--probes=a,b,c` records only the named probes. `--no-tables` skips creating
+// the two fixtures, which the run otherwise needs CreateTable for.
+//
+// Together they capture the probes DynamoDB refuses before it looks at a table
+// at all: an empty RequestItems map, an over-length batch, a request naming no
+// table. Those answers do not depend on the fixture existing - the table name
+// only gets echoed into the message - so a maintainer holding read-only
+// credentials can still take the evidence a registry row needs. Selecting a
+// probe that does need the fixture will simply record a ResourceNotFound, which
+// is a real answer to a different question and does not belong in a row.
+const probeFilter = flags
+  .filter((f) => f.startsWith('--probes='))
+  .flatMap((f) => f.slice('--probes='.length).split(',').map((x) => x.trim()).filter(Boolean))
+const selected = probeFilter.length ? new Set(probeFilter) : null
+const noTables = flags.includes('--no-tables')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 /** A value nested `depth` maps deep. Mirrors deepMap in the nesting-depth test. */
@@ -111,7 +132,10 @@ async function probe(id, family, note, fn) {
 }
 
 async function captureRegion(region) {
-  const ddb = new DynamoDBClient({ region })
+  // Bounded connect for the same reason src/client.ts pins one: the SDK sets no
+  // connectionTimeout, so a region whose endpoint does not answer is bounded
+  // only by the kernel's TCP timeout, and this loop is serial.
+  const ddb = new DynamoDBClient({ region, requestHandler: { connectionTimeout: 5_000 } })
   const suffix = `${Date.now()}${Math.floor(Math.random() * 1e6)}`
   const H = `_conformance_capdrift_h_${suffix}`
   const C = `_conformance_capdrift_c_${suffix}`
@@ -120,7 +144,7 @@ async function captureRegion(region) {
 
   // H carries a KEYS_ONLY GSI so the projection family can probe reads that ask
   // an index for an attribute the index does not project.
-  await ddb.send(new CreateTableCommand({
+  if (!noTables) await ddb.send(new CreateTableCommand({
     TableName: H,
     BillingMode: 'PAY_PER_REQUEST',
     AttributeDefinitions: [
@@ -136,9 +160,9 @@ async function captureRegion(region) {
       },
     ],
   }))
-  await ddb.send(new CreateTableCommand({ TableName: C, BillingMode: 'PAY_PER_REQUEST', AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }, { AttributeName: 'sk', AttributeType: 'S' }], KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }, { AttributeName: 'sk', KeyType: 'RANGE' }] }))
-  await waitActive(ddb, H)
-  await waitActive(ddb, C)
+  if (!noTables) await ddb.send(new CreateTableCommand({ TableName: C, BillingMode: 'PAY_PER_REQUEST', AttributeDefinitions: [{ AttributeName: 'pk', AttributeType: 'S' }, { AttributeName: 'sk', AttributeType: 'S' }], KeySchema: [{ AttributeName: 'pk', KeyType: 'HASH' }, { AttributeName: 'sk', KeyType: 'RANGE' }] }))
+  if (!noTables) await waitActive(ddb, H)
+  if (!noTables) await waitActive(ddb, C)
 
   // Canonical seed for the projection family: sibling scalars and a nested map
   // under one top-level attribute, plus a list of maps whose elements carry
@@ -146,7 +170,7 @@ async function captureRegion(region) {
   // recorded response bodies show the returned shape, not an empty result.
   const PROJ_PK = 'proj-val'
   const PROJ_GPK = 'proj-val-g'
-  await ddb.send(new PutItemCommand({
+  if (!noTables) await ddb.send(new PutItemCommand({
     TableName: H,
     Item: {
       pk: { S: PROJ_PK },
@@ -162,7 +186,10 @@ async function captureRegion(region) {
   }))
 
   const probes = []
-  const p = (id, family, note, fn) => probe(id, family, note, fn).then((r) => probes.push(r))
+  const p = (id, family, note, fn) =>
+    selected && !selected.has(id)
+      ? Promise.resolve()
+      : probe(id, family, note, fn).then((r) => probes.push(r))
   try {
     // scalar echo (tableName)
     await p('s_put_table_null', 'echo-scalar', 'PutItem TableName=undefined', () => ddb.send(new PutItemCommand({ TableName: undefined, Item: { pk: { S: 'test' } } })))
@@ -198,11 +225,15 @@ async function captureRegion(region) {
     await p('o_del_two_bad_enums', 'ordering', 'DeleteItem 2 invalid enums', () => ddb.send(new DeleteItemCommand({ TableName: '_conformance_valid_table_name', Key: { pk: { S: 'test' } }, ReturnValues: 'INVALID', ReturnConsumedCapacity: 'INVALID' })))
     await p('o_upd_empty_table', 'ordering', "UpdateItem TableName='' Key={}", () => ddb.send(new UpdateItemCommand({ TableName: '', Key: {} })))
     await p('o_upd_two_bad_enums', 'ordering', 'UpdateItem 2 invalid enums', () => ddb.send(new UpdateItemCommand({ TableName: '_conformance_valid_table_name', Key: { pk: { S: 'test' } }, ReturnValues: 'INVALID', ReturnConsumedCapacity: 'INVALID' })))
-    // Two behaviours the weekly sweep raised as split candidates and could not
-    // then admit, because a row records what a region answered and nothing
-    // captured that. Both mirror their test's request exactly, so the answer
-    // recorded here is the one the committed assertion compares against.
+    // Three behaviours the weekly sweep raised as split candidates and could
+    // not then admit, because a row records what a region answered and nothing
+    // captured that. All three mirror their test's request exactly, so the
+    // answer recorded here is the one the committed assertion compares against.
+    // The two batch operations are captured as a pair: they share an assertion
+    // shape and the validation-framework rollout has been reaching them one at
+    // a time, so the one that has not moved is the control for the one that has.
     await p('o_bg_empty_requestitems', 'ordering', 'BatchGetItem RequestItems={}', () => ddb.send(new BatchGetItemCommand({ RequestItems: {} })))
+    await p('o_bw_empty_requestitems', 'ordering', 'BatchWriteItem RequestItems={}', () => ddb.send(new BatchWriteItemCommand({ RequestItems: {} })))
     // No seed: a region that rejects the 32-level value answers with the
     // nesting ValidationException whether the item is there or not, and one
     // that accepts it evaluates the condition and answers
@@ -399,7 +430,7 @@ async function captureRegion(region) {
     }
     return { region, probes, nullRoundTrip }
   } finally {
-    for (const name of [H, C, CT3]) {
+    for (const name of noTables ? [] : [H, C, CT3]) {
       try {
         await ddb.send(new DeleteTableCommand({ TableName: name }))
       } catch {
@@ -410,10 +441,23 @@ async function captureRegion(region) {
 }
 
 async function main() {
-  const out = { capturedAt: new Date().toISOString(), regions: {} }
+  const out = {
+    capturedAt: new Date().toISOString(),
+    ...(selected ? { probes: [...selected] } : {}),
+    ...(noTables ? { tables: 'none: only probes refused before a table is read' } : {}),
+    regions: {},
+  }
   for (const region of regions) {
     process.stderr.write(`capturing ${region}...\n`)
-    out.regions[region] = await captureRegion(region)
+    try {
+      out.regions[region] = await captureRegion(region)
+    } catch (e) {
+      // A region that cannot be set up carries no definite answer, and a row
+      // may never record one (registry/README.md). Record why it is absent and
+      // keep going: losing the other regions to it would be the worse outcome.
+      process.stderr.write(`  ${region} did not answer: ${e?.name} ${e?.message}\n`)
+      out.regions[region] = { region, unanswered: { name: e?.name ?? null, message: e?.message ?? null } }
+    }
   }
   process.stdout.write(JSON.stringify(out, null, 2) + '\n')
 }
