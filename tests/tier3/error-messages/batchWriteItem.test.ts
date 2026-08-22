@@ -4,6 +4,7 @@ import {
   ResourceNotFoundException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
+import { observeSplit } from '../../../src/observation-sink.js'
 import {
   hashTableDef,
   hashBTableDef,
@@ -23,9 +24,16 @@ afterAll(async () => {
 })
 
 describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plane', 'negative-path'] }, () => {
-  it('empty RequestItems: full required-parameter error', async () => {
+  it('empty RequestItems: full required-parameter error', async (ctx) => {
+    // Split behaviour (registry row batch-write-item-empty-request-items-message):
+    // the answer differs by region, so what the target actually returned is
+    // recorded for per-region scoring. eu-west-2 is pinned and still answers the
+    // bespoke sentence. eu-north-1 crossed to the validation framework's generic
+    // constraint message between the 2026-08-17 capture, which found all 33
+    // answering regions on the bespoke wording, and the 2026-08-22 sweep - the
+    // same crossing BatchGetItem beside it made a week earlier.
     try {
-      await ddb.send(new BatchWriteItemCommand({ RequestItems: {} }))
+      await observeSplit(ctx.task, () => ddb.send(new BatchWriteItemCommand({ RequestItems: {} })))
       expect.unreachable('should have thrown')
     } catch (err) {
       expect(err).toBeInstanceOf(DynamoDBServiceException)
@@ -45,12 +53,28 @@ describe('BatchWriteItem — exact error messages', { tags: ['batch', 'data-plan
     // structural envelope (`{<table>=[<dump>]}`) and the constraint phrase
     // at the end lets the dump vary without weakening what we actually
     // care about: that the right validation fires.
+    //
+    // The pattern now spans both validation cohorts. eu-north-1 crossed to the
+    // framework's generic wording on 2026-08-22 and names the constraint
+    // against the member path instead of echoing the request; the 25-item
+    // limit is what fires either way, which is all this assertion claims. It
+    // stays a pattern rather than a registry row because a row records one
+    // verbatim answer per region, and neither cohort's message is constant:
+    // the table name carries a per-run suffix and the old cohort embeds the
+    // whole request. Nothing byte-exact exists here for a row to hold.
     const requests = Array.from({ length: 26 }, (_, i) => ({
       PutRequest: { Item: { pk: { S: `bw-${i}` } } },
     }))
     const escapedName = hashTableDef.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const echoedRequest =
+      `Value '\\{${escapedName}=\\[.+\\]\\}' at 'requestItems' failed to satisfy constraint: ` +
+      `Map value must satisfy constraint: \\[Member must have length less than or equal to 25, ` +
+      `Member must have length greater than or equal to 1\\]`
+    const namedMemberPath =
+      `Value at 'RequestItems\\.${escapedName}\\.member' failed to satisfy constraint: ` +
+      `Member must have length less than or equal to 25`
     const expectedPattern = new RegExp(
-      `^1 validation error detected: Value '\\{${escapedName}=\\[.+\\]\\}' at 'requestItems' failed to satisfy constraint: Map value must satisfy constraint: \\[Member must have length less than or equal to 25, Member must have length greater than or equal to 1\\]$`,
+      `^1 validation error detected: (?:${echoedRequest}|${namedMemberPath})$`,
       's',
     )
     try {

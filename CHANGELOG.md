@@ -8,6 +8,27 @@ section its date and version, so several branches can write ahead of one.
 
 ## Unreleased
 
+`BatchWriteItem` with an empty `RequestItems` map is now a recorded regional
+split. eu-north-1 answers the validation framework's generic constraint message
+where the other 32 answering regions answer the bespoke required-parameter
+sentence. A capture on 2026-08-17 found every answering region on the bespoke
+wording, which dates the crossing to that week rather than guessing at it.
+
+The over-25-requests assertion beside it spans both cohorts instead of becoming
+a second row. Neither wording is byte-stable: the table name carries a per-run
+suffix, the old cohort echoes all 26 requests back, and seven regions echo them
+as a JVM object identity rather than expanded fields. A row records one verbatim
+answer per region and there is nothing verbatim here to record, so the anchored
+pattern grew a second branch instead. It still refuses a wrong limit and a wrong
+table, and it matches every one of the 33 answering regions.
+
+The capture harness can take that evidence without creating tables. `--probes`
+selects named probes and `--no-tables` skips the fixtures, which is all these
+three need: DynamoDB refuses each of them before it looks at a table, so the
+answers do not depend on one existing, and read-only credentials are enough. The
+2026-08-17 capture was taken with a scoped script that was never committed; this
+is the committed way to reproduce it.
+
 ## 2026-08-21 (3.2.1)
 
 AWS corrected the vector index readiness documentation, prompted by [a write-up
