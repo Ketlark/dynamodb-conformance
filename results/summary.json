@@ -6,7 +6,7 @@
     "commit": "47ac9e0e25008c3e2407428ea8f08893236ea51a",
     "version": "3.2.1",
     "region": "eu-west-2",
-    "measuredAt": "2026-08-23T05:05:59Z"
+    "measuredAt": "2026-08-25T21:13:30Z"
   },
   "regions": {
     "observed": [
@@ -190,24 +190,24 @@
   "groundTruth": {
     "slug": "dynamodb",
     "rate": 100,
-    "runDate": "2026-08-23",
+    "runDate": "2026-08-25",
     "derived": true,
     "testsObserved": 1056,
     "suiteSize": 1056,
     "lanes": [
       {
         "name": "gating",
-        "runDate": "2026-08-23",
+        "runDate": "2026-08-25",
         "tests": 1037
       },
       {
         "name": "integrations",
-        "runDate": "2026-08-23",
+        "runDate": "2026-08-25",
         "tests": 3
       },
       {
         "name": "gsi",
-        "runDate": "2026-08-23",
+        "runDate": "2026-08-25",
         "tests": 16
       }
     ],
@@ -1174,7 +1174,7 @@
         }
       },
       "version": "4.0.0",
-      "runDate": "2026-08-23"
+      "runDate": "2026-08-25"
     },
     "dynamodb-local": {
       "headline": {
@@ -2108,1875 +2108,2179 @@
         }
       },
       "version": "ff89bd48ff32",
-      "runDate": "2026-08-23"
+      "runDate": "2026-08-25"
     },
     "dynoxide": {
       "headline": {
         "region": "ap-east-2",
-        "rate": 99
+        "rate": 100
       },
       "regions": {
         "af-south-1": {
-          "rate": 98.6,
-          "passed": 984,
-          "failed": 14,
-          "skipped": 58,
+          "rate": 99.6,
+          "passed": 1038,
+          "failed": 4,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 320,
+              "p": 336,
               "f": 4,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-east-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-east-2": {
-          "rate": 99,
-          "passed": 988,
-          "failed": 10,
-          "skipped": 58,
+          "rate": 100,
+          "passed": 1042,
+          "failed": 0,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 324,
+              "p": 340,
               "f": 0,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-northeast-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-northeast-2": {
-          "rate": 98.9,
-          "passed": 987,
-          "failed": 11,
-          "skipped": 58,
+          "rate": 99.9,
+          "passed": 1041,
+          "failed": 1,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 323,
+              "p": 339,
               "f": 1,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-northeast-3": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-south-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-south-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-southeast-1": {
-          "rate": 98.9,
-          "passed": 987,
-          "failed": 11,
-          "skipped": 58,
+          "rate": 99.9,
+          "passed": 1041,
+          "failed": 1,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 323,
+              "p": 339,
               "f": 1,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-southeast-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-southeast-3": {
-          "rate": 98.6,
-          "passed": 984,
-          "failed": 14,
-          "skipped": 58,
+          "rate": 99.6,
+          "passed": 1038,
+          "failed": 4,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 320,
+              "p": 336,
               "f": 4,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-southeast-4": {
-          "rate": 98.6,
-          "passed": 984,
-          "failed": 14,
-          "skipped": 58,
+          "rate": 99.6,
+          "passed": 1038,
+          "failed": 4,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 320,
+              "p": 336,
               "f": 4,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-southeast-5": {
-          "rate": 98.6,
-          "passed": 984,
-          "failed": 14,
-          "skipped": 58,
+          "rate": 99.6,
+          "passed": 1038,
+          "failed": 4,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 320,
+              "p": 336,
               "f": 4,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-southeast-6": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ap-southeast-7": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ca-central-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "ca-west-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "eu-central-1": {
-          "rate": 98.9,
-          "passed": 987,
-          "failed": 11,
-          "skipped": 58,
+          "rate": 99.9,
+          "passed": 1041,
+          "failed": 1,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 323,
+              "p": 339,
               "f": 1,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "eu-central-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "eu-north-1": {
-          "rate": 98.9,
-          "passed": 987,
-          "failed": 11,
-          "skipped": 58,
+          "rate": 99.9,
+          "passed": 1041,
+          "failed": 1,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 323,
+              "p": 339,
               "f": 1,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "eu-south-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "eu-south-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "eu-west-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "eu-west-2": {
-          "rate": 98.9,
-          "passed": 987,
-          "failed": 11,
-          "skipped": 58,
+          "rate": 99.9,
+          "passed": 1041,
+          "failed": 1,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 323,
+              "p": 339,
               "f": 1,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "eu-west-3": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "il-central-1": {
-          "rate": 98.6,
-          "passed": 984,
-          "failed": 14,
-          "skipped": 58,
+          "rate": 99.6,
+          "passed": 1038,
+          "failed": 4,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 320,
+              "p": 336,
               "f": 4,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "me-central-1": {
-          "rate": 98.8,
-          "passed": 986,
-          "failed": 12,
-          "skipped": 58,
+          "rate": 99.8,
+          "passed": 1040,
+          "failed": 2,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 322,
+              "p": 338,
               "f": 2,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "mx-central-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "sa-east-1": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "us-east-1": {
-          "rate": 99,
-          "passed": 988,
-          "failed": 10,
-          "skipped": 58,
+          "rate": 100,
+          "passed": 1042,
+          "failed": 0,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 324,
+              "p": 340,
               "f": 0,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "us-east-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "us-west-1": {
-          "rate": 98.6,
-          "passed": 984,
-          "failed": 14,
-          "skipped": 58,
+          "rate": 99.6,
+          "passed": 1038,
+          "failed": 4,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 320,
+              "p": 336,
               "f": 4,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         },
         "us-west-2": {
-          "rate": 98.7,
-          "passed": 985,
-          "failed": 13,
-          "skipped": 58,
+          "rate": 99.7,
+          "passed": 1039,
+          "failed": 3,
+          "skipped": 14,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 185,
+              "p": 213,
               "f": 0,
-              "s": 42,
+              "s": 14,
               "i": 0
             },
             "tier3": {
-              "p": 321,
+              "p": 337,
               "f": 3,
-              "s": 16,
+              "s": 0,
               "i": 0
             }
           }
         }
       },
-      "version": "0.13.0",
-      "runDate": "2026-08-23"
+      "version": "1.0.0",
+      "runDate": "2026-08-25",
+      "regionFailures": {
+        "af-south-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-east-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-northeast-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-northeast-2": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "ap-northeast-3": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-south-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-south-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "ap-southeast-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-3": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-4": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-5": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-6": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-7": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ca-central-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ca-west-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-central-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "eu-central-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-north-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "eu-south-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-south-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-west-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-west-2": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "eu-west-3": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "il-central-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "me-central-1": [
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "mx-central-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "sa-east-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "us-east-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "us-west-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "us-west-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ]
+      }
     },
     "dynoxide-wasm": {
       "headline": {
         "region": "ap-east-2",
-        "rate": 98.9
+        "rate": 100
       },
       "regions": {
         "af-south-1": {
-          "rate": 98.4,
-          "passed": 865,
-          "failed": 14,
-          "skipped": 177,
+          "rate": 99.6,
+          "passed": 919,
+          "failed": 4,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 285,
+              "p": 301,
               "f": 4,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-east-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-east-2": {
-          "rate": 98.9,
-          "passed": 869,
-          "failed": 10,
-          "skipped": 177,
+          "rate": 100,
+          "passed": 923,
+          "failed": 0,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 289,
+              "p": 305,
               "f": 0,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-northeast-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-northeast-2": {
-          "rate": 98.7,
-          "passed": 868,
-          "failed": 11,
-          "skipped": 177,
+          "rate": 99.9,
+          "passed": 922,
+          "failed": 1,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 288,
+              "p": 304,
               "f": 1,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-northeast-3": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-south-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-south-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-southeast-1": {
-          "rate": 98.7,
-          "passed": 868,
-          "failed": 11,
-          "skipped": 177,
+          "rate": 99.9,
+          "passed": 922,
+          "failed": 1,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 288,
+              "p": 304,
               "f": 1,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-southeast-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-southeast-3": {
-          "rate": 98.4,
-          "passed": 865,
-          "failed": 14,
-          "skipped": 177,
+          "rate": 99.6,
+          "passed": 919,
+          "failed": 4,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 285,
+              "p": 301,
               "f": 4,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-southeast-4": {
-          "rate": 98.4,
-          "passed": 865,
-          "failed": 14,
-          "skipped": 177,
+          "rate": 99.6,
+          "passed": 919,
+          "failed": 4,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 285,
+              "p": 301,
               "f": 4,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-southeast-5": {
-          "rate": 98.4,
-          "passed": 865,
-          "failed": 14,
-          "skipped": 177,
+          "rate": 99.6,
+          "passed": 919,
+          "failed": 4,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 285,
+              "p": 301,
               "f": 4,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-southeast-6": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ap-southeast-7": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ca-central-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "ca-west-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "eu-central-1": {
-          "rate": 98.7,
-          "passed": 868,
-          "failed": 11,
-          "skipped": 177,
+          "rate": 99.9,
+          "passed": 922,
+          "failed": 1,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 288,
+              "p": 304,
               "f": 1,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "eu-central-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "eu-north-1": {
-          "rate": 98.7,
-          "passed": 868,
-          "failed": 11,
-          "skipped": 177,
+          "rate": 99.9,
+          "passed": 922,
+          "failed": 1,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 288,
+              "p": 304,
               "f": 1,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "eu-south-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "eu-south-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "eu-west-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "eu-west-2": {
-          "rate": 98.7,
-          "passed": 868,
-          "failed": 11,
-          "skipped": 177,
+          "rate": 99.9,
+          "passed": 922,
+          "failed": 1,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 288,
+              "p": 304,
               "f": 1,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "eu-west-3": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "il-central-1": {
-          "rate": 98.4,
-          "passed": 865,
-          "failed": 14,
-          "skipped": 177,
+          "rate": 99.6,
+          "passed": 919,
+          "failed": 4,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 285,
+              "p": 301,
               "f": 4,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "me-central-1": {
-          "rate": 98.6,
-          "passed": 867,
-          "failed": 12,
-          "skipped": 177,
+          "rate": 99.8,
+          "passed": 921,
+          "failed": 2,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 287,
+              "p": 303,
               "f": 2,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "mx-central-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "sa-east-1": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "us-east-1": {
-          "rate": 98.9,
-          "passed": 869,
-          "failed": 10,
-          "skipped": 177,
+          "rate": 100,
+          "passed": 923,
+          "failed": 0,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 289,
+              "p": 305,
               "f": 0,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "us-east-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "us-west-1": {
-          "rate": 98.4,
-          "passed": 865,
-          "failed": 14,
-          "skipped": 177,
+          "rate": 99.6,
+          "passed": 919,
+          "failed": 4,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 285,
+              "p": 301,
               "f": 4,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         },
         "us-west-2": {
-          "rate": 98.5,
-          "passed": 866,
-          "failed": 13,
-          "skipped": 177,
+          "rate": 99.7,
+          "passed": 920,
+          "failed": 3,
+          "skipped": 133,
           "indeterminate": 0,
           "count": 1056,
           "tiers": {
             "tier1": {
-              "p": 479,
-              "f": 10,
+              "p": 489,
+              "f": 0,
               "s": 0,
               "i": 0
             },
             "tier2": {
-              "p": 101,
+              "p": 129,
               "f": 0,
-              "s": 126,
+              "s": 98,
               "i": 0
             },
             "tier3": {
-              "p": 286,
+              "p": 302,
               "f": 3,
-              "s": 51,
+              "s": 35,
               "i": 0
             }
           }
         }
       },
-      "version": "0.13.0",
-      "runDate": "2026-08-23"
+      "version": "1.0.0",
+      "runDate": "2026-08-25",
+      "regionFailures": {
+        "af-south-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-east-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-northeast-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-northeast-2": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "ap-northeast-3": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-south-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-south-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "ap-southeast-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-3": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-4": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-5": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-6": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ap-southeast-7": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ca-central-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "ca-west-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-central-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "eu-central-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-north-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "eu-south-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-south-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-west-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "eu-west-2": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error"
+        ],
+        "eu-west-3": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "il-central-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "me-central-1": [
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "mx-central-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "sa-east-1": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "us-east-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "us-west-1": [
+          "tests/tier3/error-messages/batchGetItem.test.ts::BatchGetItem — exact error messages empty RequestItems: full required-parameter error",
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ],
+        "us-west-2": [
+          "tests/tier3/limits/nestingDepth.test.ts::Nesting depth — 32-level document limit rejects a 32-level ExpressionAttributeValue with ValidationException",
+          "tests/tier3/validation-ordering/putItem.test.ts::PutItem — validation ordering empty TableName with invalid ReturnValues reports only tableName",
+          "tests/tier3/validation-ordering/updateItem.test.ts::UpdateItem — validation ordering rejects invalid ReturnValues (UpdateItem reports the first enum error)"
+        ]
+      }
     },
     "extenddb": {
       "headline": {
@@ -4909,8 +5213,8 @@
           }
         }
       },
-      "version": "v0.1.7",
-      "runDate": "2026-08-23"
+      "version": "untagged-b3af5afc01320f40240e",
+      "runDate": "2026-08-25"
     },
     "extenddb-sqlite": {
       "headline": {
@@ -5843,8 +6147,8 @@
           }
         }
       },
-      "version": "v0.1.7",
-      "runDate": "2026-08-23"
+      "version": "untagged-b3af5afc01320f40240e",
+      "runDate": "2026-08-25"
     },
     "floci": {
       "headline": {
@@ -6778,7 +7082,7 @@
         }
       },
       "version": "bec9b9f74932",
-      "runDate": "2026-08-23"
+      "runDate": "2026-08-25"
     },
     "localstack": {
       "headline": {
@@ -7712,7 +8016,7 @@
         }
       },
       "version": "2026.7.5",
-      "runDate": "2026-08-23"
+      "runDate": "2026-08-25"
     },
     "ministack": {
       "headline": {
@@ -8645,8 +8949,8 @@
           }
         }
       },
-      "version": "7d1d5a5be4ea",
-      "runDate": "2026-08-23"
+      "version": "6ac5c45a0ba7",
+      "runDate": "2026-08-25"
     }
   }
 }
