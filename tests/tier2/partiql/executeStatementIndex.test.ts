@@ -3,6 +3,7 @@ import {
   DeleteItemCommand,
   ExecuteStatementCommand,
   PutItemCommand,
+  DynamoDBServiceException,
 } from '@aws-sdk/client-dynamodb'
 import { ddb } from '../../../src/client.js'
 import { isUnsupportedFault } from '../../../src/infra.js'
@@ -31,7 +32,10 @@ describe('ExecuteStatement — index-qualified SELECT', { tags: ['partiql', 'dat
 
     await ddb.send(new PutItemCommand({
       TableName: compositeIndexedTableDef.name,
-      Item: { pk: { S: 'pq-idx-select' }, sk: { S: 's1' }, lsi1sk: { S: 'pq-gsi-a' }, data: { S: 'one' } },
+      Item: {
+        pk: { S: 'pq-idx-select' }, sk: { S: 's1' }, lsi1sk: { S: 'pq-gsi-a' },
+        lsi2sk: { S: 'pq-lsi-b' }, data: { S: 'one' },
+      },
     }))
     // The GSI read follows its write immediately; give the index time to
     // surface the item before any assertion depends on it.
@@ -77,6 +81,48 @@ describe('ExecuteStatement — index-qualified SELECT', { tags: ['partiql', 'dat
       ConsistentRead: true,
     }))
     expect(res.Items).toHaveLength(1)
+  })
+
+  // Characterised on real AWS (eu-west-1, 2026-09-02): an LSI read reaches the
+  // co-located base item, so an explicit column outside the index projection
+  // still returns. lsi2 is INCLUDE lsi1sk, so `data` is outside it.
+  it('reaches non-projected attributes through an LSI-qualified read', async () => {
+    const res = await ddb.send(new ExecuteStatementCommand({
+      Statement: `SELECT data FROM "${compositeIndexedTableDef.name}"."lsi2" WHERE pk = 'pq-idx-select' AND lsi2sk = 'pq-lsi-b'`,
+    }))
+    expect(res.Items).toHaveLength(1)
+    expect(res.Items![0].data.S).toBe('one')
+  })
+  // A GSI cannot reach outside its projection: the rejection lists every
+  // unprojected column in statement order, bracketed.
+  it('rejects non-projected columns on a GSI in statement order', async () => {
+    try {
+      await ddb.send(new ExecuteStatementCommand({
+        Statement: `SELECT alternate, mymap FROM "${compositeIndexedTableDef.name}"."gsi2" WHERE lsi1sk = 'pq-gsi-a'`,
+      }))
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'One or more parameter values were invalid: Global secondary index gsi2 does not project [alternate, mymap]',
+      )
+    }
+  })
+
+  it('rejects non-projected columns on the GSI scan path too', async () => {
+    try {
+      await ddb.send(new ExecuteStatementCommand({
+        Statement: `SELECT alternate FROM "${compositeIndexedTableDef.name}"."gsi2"`,
+      }))
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(DynamoDBServiceException)
+      expect((err as DynamoDBServiceException).name).toBe('ValidationException')
+      expect((err as DynamoDBServiceException).message).toBe(
+        'One or more parameter values were invalid: Global secondary index gsi2 does not project [alternate]',
+      )
+    }
   })
 })
 
